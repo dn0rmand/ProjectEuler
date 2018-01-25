@@ -1,21 +1,23 @@
-function isNumberPrime(n) 
-{
-    if (n < 2 || n % 1 || n % 2 === 0 || n % 3 === 0) 
-    {
-        return false;
-    }
+const isNumberPrime = require('is-number-prime');
 
-    var root = Math.floor(Math.sqrt(n));
+// function isNumberPrime(n) 
+// {
+//     if (n < 2 || n % 1 || n % 2 === 0 || n % 3 === 0) 
+//     {
+//         return false;
+//     }
 
-    for (var i = 5; i <= root; i += 6) 
-    {
-        if (n % i === 0 || n % (i + 2) == 0) 
-        {
-            return false;
-        }
-    }
-    return true;
-}
+//     var root = Math.floor(Math.sqrt(n));
+
+//     for (var i = 5; i <= root; i += 6) 
+//     {
+//         if (n % i === 0 || n % (i + 2) == 0) 
+//         {
+//             return false;
+//         }
+//     }
+//     return true;
+// }
 
 function* getMaxPrime(value)
 {
