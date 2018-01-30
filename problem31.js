@@ -11,31 +11,37 @@ const coins = [
     1
 ];
 
-let solutionCount = 0;
+let MAXCOIN = coins.length-1;
+let memoize = {};
 
 function change(pences, coin)
 {    
     if (pences === 0)
-    {
-        solutionCount++;
-        return;
-    }
-    if (pences < 0 || coin >= coins.length)
-        return;
+        return 1;
+    if (pences < 0)
+        return 0;
+    if (coin > MAXCOIN)
+        return 0;
+    if (coin === MAXCOIN)
+        return 1;
 
+    let k = pences + '-' + coin;
+    let solutions = memoize[k];
+    if (solutions !== undefined)
+        return solutions;
+
+        solutions = 0;
     let value = coins[coin];
-    if (value === 1)
-    {
-        solutionCount++;
-        return;
-    }
     
     for(let count = 0; count*value <= pences; count++)
     {
-        change(pences - (count*value), coin + 1);
+        solutions += change(pences - (count*value), coin + 1);
     }
+
+    memoize[k] = solutions;
+    return solutions;
 }
 
-change(200, 0);
+let solutionCount = change(200, 0);
 
 console.log(solutionCount);
