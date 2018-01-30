@@ -1,18 +1,4 @@
-const isNumberPrime = require('is-number-prime');
-
-function* primes()
-{
-    yield 2;
-    yield 3;
-
-    let v = 3;
-    while (true)
-    {
-        v++;
-        if (isNumberPrime(v))
-            yield v;
-    }
-}
+const primes = require('./tools/primes.js');
 
 let primeIterator = primes();
 
