@@ -285,7 +285,7 @@ module.exports = function(grid, allowBruteForce)
             return done;
         },
 
-        removeByLookup: function()
+        removeByLookupV1: function()
         {
             let foundSome = false;
 
@@ -332,33 +332,78 @@ module.exports = function(grid, allowBruteForce)
                         });
                     }
                 });
-
-                // // if appear only in a row inside the square, then remove from other rows of that square            
-                // cell1.possibilities.forEach(value => {
-                //     if (foundSome)
-                //         return false;
-                //     let unique = true;
-                //     cell1.forRow((cell2) => {
-                //         if (cell2.value !== 0)
-                //             return;
-                //         if (cell1.square !== cell2.square && cell2.possibilities.includes(value))
-                //         {
-                //             unique = false;
-                //             return false;
-                //         }
-                //     });
-                //     if (unique)
-                //     {
-                //         cell1.forSquare((cell2) => {
-                //             if (cell2.value !== 0)
-                //                 return;
-                //             if (cell1.y !== cell2.y)
-                //                 foundSome |= cell.remove(value, true);
-                //         });
-                //     }
-                // });
             });
 
+            return foundSome;
+        },
+
+        removeByLookupV2H: function()
+        {
+            let foundSome = false;
+            grid.forEach((cell1) => {
+                if (foundSome)
+                    return false;
+
+                cell1.possibilities.forEach((value) => {
+                    if (foundSome)
+                        return;
+
+                    let doIt = true;
+
+                    cell1.forOtherSquaresH((cell2) => {
+                        if (cell2.value === value || cell2.possibilities.includes(value))
+                        {
+                            if (cell2.y === cell1.y)
+                            {
+                                doIt = false;
+                                return false;
+                            }
+                        }
+                    });
+                    if (doIt)
+                    {
+                        cell1.forSquare((cell2) => {
+                            if (cell2.y !== cell1.y && cell2.possibilities.includes(value))
+                                foundSome |= cell2.remove(value);
+                        });
+                    }
+                });
+            });
+            return foundSome;
+        },
+
+        removeByLookupV2V: function()
+        {
+            let foundSome = false;
+            grid.forEach((cell1) => {
+                if (foundSome)
+                    return false;
+
+                cell1.possibilities.forEach((value) => {
+                    if (foundSome)
+                        return;
+
+                    let doIt = true;
+
+                    cell1.forOtherSquaresV((cell2) => {
+                        if (cell2.value === value || cell2.possibilities.includes(value))
+                        {
+                            if (cell2.x === cell1.x)
+                            {
+                                doIt = false;
+                                return false;
+                            }
+                        }
+                    });
+                    if (doIt)
+                    {
+                        cell1.forSquare((cell2) => {
+                            if (cell2.x !== cell1.x && cell2.possibilities.includes(value))
+                                foundSome |= cell2.remove(value);
+                        });
+                    }
+                });
+            });
             return foundSome;
         },
 
@@ -424,15 +469,19 @@ module.exports = function(grid, allowBruteForce)
         
                 if (this.uniqueCandidate())
                     continue;
-                if (this.removeByLookup())
+                if (this.removeByLookupV1())
                     continue;
                 if (this.nakedSubset(2))
                     continue;
                 if (this.nakedSubset(3))
                     continue;
                 if (this.nakedSubset(4))
+                    continue;        
+                if (this.removeByLookupV2H())
                     continue;
-        
+                if (this.removeByLookupV2V())
+                    continue;
+
                 if (allowBruteForce === true) // Stuck ... maybe something went wrong. Start again
                     return this.bruteForce();
                 else

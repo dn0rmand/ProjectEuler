@@ -39,6 +39,16 @@ module.exports = function(grid, x, y, value)
             grid.forSquare(this.x, this.y, fn);
         },
 
+        forOtherSquaresV: function(fn)
+        {
+            grid.forOtherSquaresV(this.x, this.y, fn);
+        },
+
+        forOtherSquaresH: function(fn)
+        {
+            grid.forOtherSquaresH(this.x, this.y, fn);
+        },
+
         setValue: function(value)
         {
             let main = this;

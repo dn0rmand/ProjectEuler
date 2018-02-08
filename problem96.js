@@ -1,14 +1,12 @@
-// #region SUDOKU Grids
-
 const sudokus = require("./problem96+data.js");
 const Grid = require("./tools/sudoku/grid.js");
 const sudokuSolver = require("./tools/sudoku/solver.js");
 
-function SolveSudoku(sudoku)
+function SolveSudoku(sudoku, allowBruteForce)
 {    
     let grid   = Grid(sudoku);
-    let solver = sudokuSolver(grid, true);
-
+    let solver = sudokuSolver(grid, allowBruteForce);
+    
     let canStop = () => {
         let c1 = grid.get(0,0).value;
         let c2 = grid.get(1,0).value;
@@ -30,7 +28,9 @@ function SolveSudoku(sudoku)
             return value;
     }
     else
+    {
         return 0;
+    }
 }
 
 let sum     = 0;
@@ -39,7 +39,7 @@ let brute   = 0;
 for (let i = 0; i < sudokus.length; i++)
 {
     let sudoku = sudokus[i];
-    let v = SolveSudoku(sudoku);
+    let v = SolveSudoku(sudoku, true);
     if (v === 0)
     {
         failed++;

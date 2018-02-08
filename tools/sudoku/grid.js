@@ -91,6 +91,42 @@ module.exports = function(grid)
             }
         },
 
+        forOtherSquaresV: function(x, y, fn)
+        {
+            let xx = (x - (x % 3));
+            let yy = (y - (y % 3));
+            let id = yy + xx/3;
+
+            // Find n cells with a same set of possible values
+
+            for(let y2 = 0; y2 < 9; y2++)
+            for(let x2 = xx; x2 < xx+3; x2++)
+            {
+                let cell = cells[y2][x2];
+                if (cell.square !== id)
+                    if (fn(cell) === false)
+                        return;
+            }
+        },
+
+        forOtherSquaresH: function(x, y, fn)
+        {
+            let xx = (x - (x % 3));
+            let yy = (y - (y % 3));
+            let id = yy + xx/3;
+
+            // Find n cells with a same set of possible values
+
+            for(let x2 = 0; x2 < 9; x2++)
+            for(let y2 = yy; y2 < yy+3; y2++)
+            {
+                let cell = cells[y2][x2];
+                if (cell.square !== id)
+                    if (fn(cell) === false)
+                        return;
+            }
+        },
+
         dump: function()
         {
             let line = '+' + '-'.repeat(7) + '+' + '-'.repeat(7) + '+' + '-'.repeat(7) + '+';
