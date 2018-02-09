@@ -407,6 +407,168 @@ module.exports = function(grid, allowBruteForce)
             return foundSome;
         },
 
+        xWingH: function()
+        {
+            let foundSome = false;
+
+            grid.forEach((cell1) => {
+                if (foundSome)
+                    return false;
+
+                cell1.possibilities.forEach((value) => {
+                    if (foundSome)
+                        return;
+                    let x1 = cell1.x;
+                    let y1 = cell1.y;
+                    let x2 = -1;
+                    let y2 = -1;
+                    let ok = false;
+                    cell1.forRow((cell2) => {
+                        if (cell2.x !== x1 && cell2.possibilities.includes(value))
+                        {
+                            if (x2 === -1)
+                            {
+                                ok = true;
+                                x2 = cell2.x;
+                            }
+                            else
+                            {
+                                ok = false;
+                                return false;
+                            }
+                        }
+                    });
+                    if (ok) // only appears twice on that row ... check the other rows
+                    {
+                        ok = false;
+                        for(let row = 0; row < 9; row++)
+                        {
+                            if (row === y1) continue;
+                            let c = grid.get(x1, row);
+                            if (c.possibilities.includes(value))
+                            {
+                                c = grid.get(x2, row);
+                                if (c.possibilities.includes(value))
+                                {
+                                    // row might be good ... check
+                                    ok = true;
+                                    c.forRow((cell2) => {
+                                        if (cell2.x !== x1 && cell2.x !== x2 && cell2.possibilities.includes(value))
+                                        {
+                                            ok = false;
+                                            return false;
+                                        }
+                                    });
+                                    if (ok)
+                                    {
+                                        y2 = row;
+                                        break; // Found one !!!!!
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (ok) // !!! YES !!! x-wing
+                    {
+                        let action = (cell2) => {
+                            if (cell2.y !== y1 && cell2.y !== y2 && cell2.value === 0)
+                            {
+                                foundSome |= cell2.remove(value);
+                            }
+                        };
+
+                        cell1.forColumn(action);
+                        grid.get(x2, cell1.y).forColumn(action);
+                    }
+                });
+            });
+
+            return foundSome;
+        },
+
+        xWingV: function()
+        {
+            let foundSome = false;
+
+            grid.forEach((cell1) => {
+                if (cell1.value !== 0)
+                    return;
+
+                if (foundSome)
+                    return false;
+
+                cell1.possibilities.forEach((value) => {
+                    if (foundSome)
+                        return;
+
+                    let x1 = cell1.x;
+                    let y1 = cell1.y;
+                    let x2 = -1;
+                    let y2 = -1;
+                    let ok = false;
+                    cell1.forColumn((cell2) => {
+                        if (cell2.y !== y1 && cell2.possibilities.includes(value))
+                        {
+                            if (y2 === -1)
+                            {
+                                ok = true;
+                                y2 = cell2.y;
+                            }
+                            else
+                            {
+                                ok = false;
+                                return false;
+                            }
+                        }
+                    });
+                    if (ok) // only appears twice on that row ... check the other rows
+                    {
+                        ok = false;
+                        for(let col = 0; col < 9; col++)
+                        {
+                            if (col === x1) continue;
+                            let c = grid.get(col, y1);
+                            if (c.possibilities.includes(value))
+                            {
+                                c = grid.get(col, y2);
+                                if (c.possibilities.includes(value))
+                                {
+                                    // row might be good ... check
+                                    ok = true;
+                                    c.forColumn((cell2) => {
+                                        if (cell2.y !== y1 && cell2.y !== y2 && cell2.possibilities.includes(value))
+                                        {
+                                            ok = false;
+                                            return false;
+                                        }
+                                    });
+                                    if (ok)
+                                    {
+                                        x2 = col;
+                                        break; // Found one !!!!!
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (ok) // !!! YES !!! x-wing
+                    {
+                        let action = (cell2) => {
+                            if (cell2.y !== y1 && cell2.y !== y2 && cell2.value === 0)
+                            {
+                                foundSome |= cell2.remove(value);
+                            }
+                        };
+
+                        cell1.forRow(action);
+                        grid.get(x2, cell1.y).forRow(action);
+                    }
+                });
+            });
+
+            return foundSome;
+        },
+
         bruteForce: function()
         {
             this.usedBruteForce = true;
@@ -481,7 +643,11 @@ module.exports = function(grid, allowBruteForce)
                     continue;
                 if (this.removeByLookupV2V())
                     continue;
-
+                if (this.xWingH())
+                    continue;
+                if (this.xWingV())
+                    continue;
+                    
                 if (allowBruteForce === true) // Stuck ... maybe something went wrong. Start again
                     return this.bruteForce();
                 else
