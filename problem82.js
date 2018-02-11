@@ -6,7 +6,6 @@ const readInput = readline.createInterface({
 });
 
 let matrix  = [];
-let memoize = [];
 let SIZE    = -1;
 
 function getMinSum(sums)
@@ -21,47 +20,38 @@ function getMinSum(sums)
     return sum;
 }
 
-function findMinimalSum(x, y, visited)
+let minSum = -1;
+let memoize = [];
+
+function findMinimalSum(x, y, sum)
 {
     if (x < 0 || x >= SIZE || y < 0 || y >= SIZE)
+        return;
+
+    sum += matrix[y][x];
+
+    if (minSum !== -1 && sum > minSum)
+        return;
+
+    let k = x + 100*y;
+    let min = memoize[k];
+    if (min !== undefined)
     {
-        return -1;
-    }    
+        if (min < sum)
+            return; // Already got to this with a lower sum
+    }
+    memoize[k] = sum;
 
     if (x === SIZE-1) // Reached the end
     {
-        return matrix[y][x];
+        if (minSum === -1 || sum < minSum)
+            minSum = sum;
+        return;
     }
 
-    let k = x + y*100;
-    let value = memoize[k];
-    if (value !== undefined)
-        return value;
-
-    if (visited[k] === 1)
-        return -1;
-    
-    visited[k] = 1;
-
-    let sums = [
-        findMinimalSum(x+1, y, visited),       
-        findMinimalSum(x, y+1, visited),
-        findMinimalSum(x, y-1, visited)
-    ];
-
-    visited[k] = 0;
-
-    let sum = getMinSum(sums);
-
-    if (sum !== -1)
-    {
-        sum += matrix[y][x];
-        memoize[k] = sum;
-    }
-    else
-        memoize[k] = -1;
-
-    return sum;
+    findMinimalSum(x+1, y, sum);       
+    findMinimalSum(x, y+1, sum);
+    findMinimalSum(x, y-1, sum);
 }
 
 readInput
@@ -77,14 +67,10 @@ readInput
 .on('close', () => {
     SIZE = matrix.length;
 
-    let sums = [];
-
     for(let y = 0; y < SIZE; y++)
     {
-        memoize = [];
-        sums.push(findMinimalSum(0, y, []));
+        findMinimalSum(0, y, 0);
     }
-    let minSum = getMinSum(sums);
     console.log("Minimal path sum is " + minSum);
     process.exit(0);
 });
