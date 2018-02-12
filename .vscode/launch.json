@@ -8,6 +8,7 @@
         {
             "type": "node",
             "request": "launch",
+            "runtimeArgs": [ "--stack-size=8092" ],
             "name": "Launch Program",
             "program": "${file}",
             "cwd": "${fileDirname}",
