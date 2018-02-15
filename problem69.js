@@ -21,40 +21,35 @@
 const assert = require("assert");
 const isPrime = require("./tools/isPrime.js");
 
-const primes       = new Map();
-const closestPrime = [];
+const primes = [];
+const primeTable = new Map();
 
 function generatePrimes()
 {
-    let previousPrime = 1;
-
     for (let n = 1; n <= 1000000; n++)
     {
         if (isPrime(n))
-            previousPrime = n;
-
-        closestPrime[n] = previousPrime;
+        {
+            primes.push(n);
+            primeTable.set(n,1);
+        }
     }
 }
 
 function PHI(n)
 {
+    function isPrime(value)
+    {
+        return (primeTable.has(value));
+    }
+
     if (n === 1)
         return 1;
 
-    let p = closestPrime[n];
-    if (p === n)
+    if (isPrime(n))
         return n-1;
-
-    let start;
-
-    if ((p & 1) === 0)
-        start = p / 2;
-    else
-        start = (p+1)/2;
-
-    p = closestPrime[start];
-
+    let pIndex    = 0;
+    let p         = primes[0];
     let value     = n;
     let phi       = 1;
     let numerator = 1;
@@ -79,16 +74,16 @@ function PHI(n)
             if (value === 1)
                 break;
 
-            p = closestPrime[value];
-
-            if (p === value)
+            if (isPrime(value))
             {
-                phi *= (p-1);
+                phi *= (value-1);
                 break;
             }
+
+            p = primes[++pIndex];
         }
         else
-            p = closestPrime[p-1];
+            p = primes[++pIndex];
     }
 
     return phi * numerator / divisor;
