@@ -13,85 +13,26 @@
 
 const assert = require('assert');
 
-const factorialCache = [];
-
-function factorial(n)
+function possibleWays(m, n) 
 {
-//    nPr(n,r) = n! / (n-r)!
-
-    if (n < 2)
+    if (m === 1 || n === 1) 
+    {
         return 1;
-
-    let v = factorialCache[n];
-    if (v === undefined)
+    } 
+    else if (n >= m) 
     {
-        v = n * factorial(n-1);
-        factorialCache[n] = v;
-    }
-    return v;
-}
-
-function nPr(n ,r)
-{
-    assert.ok(n >= r);
-    return factorial(n) / factorial(n-r);
-}
-
-function nCr(n, r)
-{
-    return nPr(n,r) / factorial(r);
-}
-
-let memoizeWays = [];
-
-function possibleWays(n)
-{
-    if (n === 1)
-        return [];
-
-    let solutions = memoizeWays[n];
-    if (solutions !== undefined)
-        return solutions;
-
-    solutions = [];
-
-    let middle = n >> 1;
-    let map = new Map();
-
-    for (let x = 1; x <= middle; x++)
+        return possibleWays(m, m - 1) + 1;
+    } 
+    else 
     {
-        solutions.push([x, n-x]);
-        let ways = possibleWays(n-x);
-        for (let way of ways)
-        {
-            let sol = [x];
-            sol.push(...way);
-            sol.sort();
-            let key = sol.join('+');
-            if (! map.has(key))
-            {
-                map.set(key, 1);
-                solutions.push(sol);
-            }
-        }
+        return possibleWays(m - n, n) + possibleWays(m, n - 1);
     }
-
-    console.log(n + " = " + solutions.length);
-    memoizeWays[n] = solutions;
-    return solutions;
 }
 
 function countPossibleWays(n)
 {
-    let solutions = possibleWays(n);
-    return solutions.length;
+    return possibleWays(n,n)-1;
 }
 
-// console.log('4 -> ' + countPossibleWays(4));
-// console.log('5 -> ' + countPossibleWays(5));
-// console.log('6 -> ' + countPossibleWays(6));
-console.log('40 -> ' + countPossibleWays(40));
-
-//let value  = countPossibleWays(100);
-
-//console.log("100 -> " + value);
+let result = countPossibleWays(100);
+console.log(result + " different ways to write one hundred as a sum of at least two positive integers");
