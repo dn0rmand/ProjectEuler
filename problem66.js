@@ -21,66 +21,48 @@
 // Find the value of D ≤ 1000 in minimal solutions of x for which the largest value of x is obtained.
 
 const assert = require('assert');
-const prettyHrtime = require("pretty-hrtime");
+const bigInt = require('big-integer');
+const squareRoot = require('./tools/squareRoot.js');
 
-let sqrtTime = 0;
-
-function sqrt(root)
+function evaluate(sequence)
 {
-    let start = process.hrtime();
-    try
-    {
-        if ((root & 3) != 0 && ((root-1) & 7) != 0)
-            return;
+    let size      = sequence.length;
+    let numerator = bigInt(sequence[size-1]);
+    let divisor   = bigInt(1);
 
-        let v = Math.sqrt(root);
-        if (Math.floor(v) === v)
-            return v;
-    }
-    finally
+    for (let i = size-1; i > 0; i--)
     {
-        let end = process.hrtime(start);
+        let x = numerator;
+        numerator = divisor;
+        divisor   = x;
 
-        sqrtTime += end[1];
-    }
+        let a = sequence[i-1];
+
+        numerator = divisor.multiply(a).add(numerator);
+    }    
+    return {
+        numerator:numerator,
+        divisor:divisor
+    };
 }
 
-function getMinX(D)
+function getMinX(D, d)
 {
-    let previous;
-    let value = D+1;
+    let sequence  = [d]; 
+    let fractions = squareRoot(D);
 
-    // Find first Square
-    while(true)
+    for(let a of fractions)
     {
-        previous = sqrt(value);
+        sequence.push(a);
+        let obj = evaluate(sequence);
+        let x = obj.numerator;
+        let y = obj.divisor;
 
-        if (previous !== undefined)
-            break;
-        else
-            value += D;
+        let r = x.square().subtract(y.square().multiply(D));
+
+        if (r.equals(1))
+            return x; 
     }
-
-    // Keep going now that we have a square
-    do
-    {
-        let v2 = sqrt((value-1)/D);
-        if (v2 !== undefined)
-            return previous;
-
-        let next, offset;
-
-        do 
-        {
-            previous = previous+1;
-            next     = previous*previous;
-            offset   = next - value;
-        }
-        while ((offset % D) != 0)
-
-        value = next;
-    }
-    while(true);
 }
 
 function solve(min, max)
@@ -90,11 +72,13 @@ function solve(min, max)
 
     for(let D = min; D <= max; D++)
     {
-        if (sqrt(D) !== undefined)
+        let d = Math.sqrt(D);
+        if (Math.floor(d) === d)
             continue;
+        d = Math.floor(d);
 
-        let x = getMinX(D);
-        if (x > maxX)
+        let x = getMinX(D, d);
+        if (x.greater(maxX))
         {
             result = D;
             maxX   = x;
@@ -104,25 +88,6 @@ function solve(min, max)
     return result;
 }
 
-let start = process.hrtime();
+let result = solve(2,1000);
 
-assert.equal(getMinX(13), 649);
-assert.equal(solve(2, 7), 5);
-assert.equal(getMinX(53), 66249);
-
-let result = solve(0, 60);
-
-let end = process.hrtime(start);
-
-console.log("Tests executed  in " + prettyHrtime(end, {verbose:true}));
-
-let percent = (sqrtTime / end[1])*100;
-
-end[0] = 0;
-end[1] = sqrtTime;
-console.log("Sqrt time is "+ prettyHrtime(end, {verbose:true}));
-console.log("It's " + percent + " %");
-
-// let result = solve(54,1000);
-
-// console.log(result + " is the value of D ≤ 1000 in minimal solutions of x for which the largest value of x is obtained");
+console.log(result + " is the value of D ≤ 1000 in minimal solutions of x for which the largest value of x is obtained");
