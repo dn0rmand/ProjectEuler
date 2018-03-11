@@ -1,66 +1,67 @@
 const assert = require('assert');
 
-function minProductSum(size)
+const MADMAX = 12000;
+
+function solve(MAX)
 {
-    let values   = new Array(size);
-    let minIndex = size;
+    const maxProd    = 2 * MAX;
+    const maxFactors = Math.floor(Math.log10(maxProd) / Math.log10(2));
+    const sums       = new Array(MAX+1);
+    const factors    = [];
 
     function productMatchSum()
     {        
         let p = 1;
-        let s = minIndex;
-
-        // Everything up to minIndex is 1
-
-        for(let i = minIndex; i < size; i++)
+        let s = 0;
+    
+        for (let v of factors)
         {
-            let v = values[i];
-            s += v;
             p *= v;
+            s += v;
         }
+    
+        return {p: p, s: s };
+    }
         
-        if (p === s)
-            return s;
-        
-        // Check Stop
-        p /= values[size-1];
-        if (p > size)
-            return -1;
+    function setSum(index, sum)
+    {
+        if (index > MAX)
+            return;
+        if (sums[index] === undefined)
+            sums[index] = sum;
+        else if (sums[index] > sum)
+            sums[index] = sum;
+    }
 
-        // if (s > 2*size)
-        //     return -1;
-
-        return 0;
+    function addFactor()
+    {
+        factors.push(2);
+        for (i = 0; i < factors.length; i++)
+            factors[i] = 2;
     }
 
     function next()
     {
-        let index = size-1;
+        let index = factors.length-1;
         while (true)
         {
-            let v = values[index];
-            if (v < size)
+            let v = factors[index];
+            if (v < MAX)
             {
-                values[index] = v+1;
-                if (index < minIndex)
-                    minIndex = index;
+                factors[index] = v+1;
                 return true;
             }
             else if (index > 0)
             {
                 index--;
-                let v = values[index];
-                if (v < size)
+                let v = factors[index];
+                if (v < MAX)
                 {
-                    v++;
-                    values[index] = v;
+                    factors[index] = v+1;
 
-                    if (index < minIndex)
-                        minIndex = index;
-
-                    for(let i = index+1; i < size; i++)
+                    for(let i = index+1; i < factors.length; i++)
                     {
-                        values[i] = v;
+                        factors[i] = 2;
                     }
                     return true;
                 }
@@ -72,35 +73,66 @@ function minProductSum(size)
         }
     }
 
-    values.fill(1);
+    factors.push(2, 2);
 
-    let min = -1;
+    // for(let i = 2; i <= MAX; i++)
+    //     sums[i] = 2*i;
 
-    do
+    while(factors.length <= maxFactors)
     {
-        let result = productMatchSum();
-        if (result < 0) // Need to stop looking
-            break;
+        let result = productMatchSum(factors);
 
-        if (result > 0 && (min === -1 || result < min))
-            min = result;   
+        if (result.p === result.s)
+        {
+            setSum(factors.length, result.s);
+            if (! next())
+                addFactor();
+        }
+        else if (result.p <= maxProd)
+        {
+            let diff = result.p - result.s;
+            let size = factors.length + diff;
+            setSum(size, result.p);
+            if (! next())
+                addFactor();
+        }
+        else
+        {
+            // addFactor();
+            let p = 1;
+            for (let i = 0; i < factors.length; i++)
+            {
+                if (p <= maxProd)
+                    p *= factors[i];
+                if (p > maxProd)
+                {
+                    factors[i] = MAX;
+                } 
+            }
+            if (! next())
+                addFactor();
+        }
     }
-    while (next());
-    return min;
-}
 
-function solve(min, max)
-{
-    let sums = [];
+    sums[0] = 0;
+    sums[1] = 0;
+              
+    assert.equal(sums[2], 4);
+    assert.equal(sums[3], 6);
+    assert.equal(sums[4], 8);
+    assert.equal(sums[5], 8);
+    assert.equal(sums[6], 12);
+    // assert.equal(sums[7], 12);
+    // assert.equal(sums[8], 12);
+    // assert.equal(sums[9], 15);
+    // assert.equal(sums[10],16);
 
-    for(let n = min; n <= max; n++)
+    sums.sort((a, b) => 
     {
-        let s = minProductSum(n);
-        // console.log(n + ' -> ' + s);
-        sums.push(s);
-    }
-
-    sums.sort((a, b) => { return a-b; });
+        if (a === undefined || b === undefined)
+            throw "Missing values";
+        return a-b; 
+    });
 
     let sum = 0;
     let previous = 0;
@@ -116,20 +148,8 @@ function solve(min, max)
     return sum;
 }
 
-assert.equal(minProductSum(2), 4);
-assert.equal(minProductSum(3), 6);
-assert.equal(minProductSum(4), 8);
-assert.equal(minProductSum(5), 8);
-assert.equal(minProductSum(6), 12);
-assert.equal(minProductSum(7), 12);
-assert.equal(minProductSum(8), 12);
-assert.equal(minProductSum(9), 15);
-assert.equal(minProductSum(10),16);
+assert.equal(solve(6), 30);
+console.log("---- TEST PASSED ----");
 
-assert.equal(solve(2, 6), 30);
-
-console.log("---- TESTS PASSED ----");
-
-let sum = solve(2, 12000);
-
-console.log(sum + " is the answer");
+let sum = solve(MADMAX);
+console.log(sum + " is the sum of all the minimal product-sum numbers for 2≤k≤12000");
