@@ -1,7 +1,7 @@
 const bigInt = require('big-integer');
 const isPrime = require("./tools/isPrime.js");
 
-const MOD = 5764801;
+const MOD    = 5764801;
 const modulo = MOD * Math.pow(2, 8);
 
 function A(m, n)
