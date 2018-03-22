@@ -10,7 +10,7 @@ module.exports = function()
         let v = 3;
         while (true)
         {
-            v++;
+            v += 2;
             if (isNumberPrime(v))
                 yield v;
         }
