@@ -1,103 +1,76 @@
 const assert = require('assert');
-const fraction = require('fraction.js');
-
-const MINUS_ONE = fraction(-1);
-const TWO       = fraction(2);
-const ONE       = fraction(1);
-const FOUR      = fraction(4);
-const MINUS_FOUR= fraction(-4);
+const precision = 10000;
 
 let line = 
 {
-    a: fraction(-197).div(14), 
-    c: fraction(101).div(10),
-    x: fraction(0), 
-    y: fraction(101).div(10)
+    x0: 0,
+    y0: 10.1,
+    x1: 1.4,
+    y1: -9.6
 };
+
+function makeLine(line)
+{
+    let m = (line.y1-line.y0)/(line.x1-line.x0);
+    let c = line.y1 - m * line.x1;
+
+    line.m = m;
+    line.c = c;
+    return line;
+}
 
 function getIntersection(line)
 {
-    let A = FOUR.add(line.a.mul(line.a));
-    let B = TWO.mul(line.a).mul(line.c);
-    let C = line.c.mul(line.c).sub(100);
+    let c = line.m;
+    let c2 = line.m * line.m;
 
-    let delta = B.mul(B).sub(FOUR.mul(A).mul(C));
-    if (delta.s < 0)
-        throw "No Solutions";
-    delta = fraction(Math.sqrt(delta.valueOf())); // This NEEDS WORK
-
-    let x;
-    let x1 = delta.sub(B).div(TWO.mul(A));
-    let x2 = delta.mul(MINUS_ONE).sub(B).div(TWO.mul(A));
-
-    let v1 = x1.valueOf();
-    let v2 = x2.valueOf();
-
-    if ((v1 < -5 || v1 > 5) && (v2 < -5 || v2 > 5))
-        throw "Invalid Solutions";
-
-    let diff1 = Math.abs(line.x.valueOf() - v1);
-    let diff2 = Math.abs(line.x.valueOf() - v2);
-    if (diff1 > diff2)
-        x = x1;
-    else
-        x = x2;
-
-    if (line.x.equals(x))
-        throw "Invalid Solutions";
-
-    let y = x.mul(line.a).add(line.c);
+    let x = (line.x0 * (c2 - 4) - 2 * c * line.y0) / (c2 + 4);
+    let y = (x * c) + line.c;
 
     return {x: x, y: y};
 }
 
-function getLine(point)
+function getNewLine(line)
 {
-    let m = MINUS_FOUR.mul(point.x).div(point.y);
-    let c = point.y.sub(m.mul(point.x));
+    let m0 = line.m;
+    let m1 = -(4*line.x1)/line.y1;
 
-    return {a: m, c: c, x:point.x, y:point.y};
-}
+    let tanA = (m0-m1)/(1+m0*m1);
 
-function getNewLine(line1, line2)
-{
-    let A = line1.a.mul(MINUS_ONE);
-    let C = line1.c;
-
-    let D = line2.a.mul(MINUS_ONE);
-    let F = line2.c;
-
-    let k = C.sub(F).div(A.sub(D));
-    let h = C.mul(D).sub(A.mul(F)).div(D.sub(A));
-
-    let coef = ONE.sub(D.mul(D)).add(A.mul(D).mul(TWO));
-    
-    coef = A.mul(A).sub(A.mul(A).mul(D).mul(D)).sub(D.mul(TWO)).div(coef);
-
-    let c = h.sub(k.mul(coef));
+    let m2 = (m1-tanA) / (1+tanA*m1);
+    let c2 = line.y1 - m2 * line.x1; 
 
     return {
-        a: coef,
-        c: c,
-        x: line2.x,
-        y: line2.y
-    };
-}
-
-let count = 0;
-while (true)
-{
-    let point = getIntersection(line);
-    let v1 = point.x.compare(-0.01);
-    let v2 = point.x.compare( 0.01);
-
-    if (! point.y.s < 0 && (v1 > 0 && v2 <= 0))
-    {
-        console.log("Found the exit after " + count + " rebounds");
-        break;
+        m: m2,
+        c: c2,
+        x0: line.x1,
+        y0: line.y1
     }
-    let mirror= getLine(point);
-    line = getNewLine(line, mirror);
-    count++;
 }
 
+function solve()
+{
+    let count = 1;
+
+    while (true)
+    {
+        line = makeLine(line);
+        line = getNewLine(line);
+
+        let point = getIntersection(line);
+        if (point.y > 0 && (point.x >= -0.01 && point.x <= 0.01))
+        {
+            console.log("Found the exit after " + count + " rebounds");
+            break;
+        }
+
+        line.x1 = point.x;
+        line.y1 = point.y;
+
+        if (line.x1 === line.x0 && line.y0 === line.y1)
+            console.log('what');
+        count++;
+    }
+}
+
+solve();
