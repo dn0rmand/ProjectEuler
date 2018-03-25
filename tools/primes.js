@@ -1,13 +1,25 @@
-module.exports = function()
+module.exports = function(start)
 {
     const isNumberPrime = require('is-number-prime');
 
-    function* primes()
+    function* primes(start)
     {
-        yield 2;
-        yield 3;
+        if (start === undefined)
+            start = 0;
 
-        let v = 3;
+        if (start < 2)
+        {
+            start = 3;
+            yield 2;
+            yield 3;
+        }
+        else if (start < 3)
+        {
+            start = 3;
+            yield 3;
+        }
+        
+        let v = start;
         while (true)
         {
             v += 2;
@@ -16,5 +28,5 @@ module.exports = function()
         }
     }    
 
-    return primes();
+    return primes(start);
 };
