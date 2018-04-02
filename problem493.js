@@ -40,7 +40,7 @@ function executeStep(step)
     if (step === 1)
     {
         // Initialization
-        chances[0] = undefined; // 
+        chances[0] = 0; // 
         chances[1] = 1; // 
         chances[2] = 0; // 
         chances[3] = 0; // 
@@ -52,82 +52,30 @@ function executeStep(step)
         return;
     }
 
-    for(let i = 1; i <= maxColorCount; i++)
-    {
-        chances[i] *= chanceOfExistingColor(i, step-1);
-    }
+    let maxCount = maxColorCount;
 
-    if (maxColorCount < 7)
+    if (maxCount < 7)
     {
         // We can add more
-        chances[maxColorCount+1] = chanceOfNewColor(maxColorCount, step-1);
+        chances[maxCount+1] = chances[maxCount] * chanceOfNewColor(maxCount, step-1);
         maxColorCount++;
     }
-}
 
-function calculateChanges(colorCount)
-{
-    let total = 70;
-    let cards = colorCount*10;
-    let chances = 1;
-
-    for (let i = 0; i < 20; i++)
+    for(let color = maxCount; color >= 1; color--)
     {
-        chances *= (cards / total);
-        cards--;
-        total--;
+        chances[color] = (chances[color] * chanceOfExistingColor(color, step-1)) + 
+                         (chances[color-1] * chanceOfNewColor(color-1, step-1));
     }
-    return chances;
 }
 
 for(let step = 1; step <= 20; step++)
     executeStep(step);
 
-console.log(chances[1]);
-console.log(chances[2]);
-console.log(chances[3]);
-console.log(chances[4]);
-console.log(chances[5]);
-console.log(chances[6]);
-console.log(chances[7]);
+let result = 0;
 
-let chance =// calculateChanges(1) + 
-            //  calculateChanges(2) +
-            //  calculateChanges(3) +
-            //  calculateChanges(4) +
-            //  calculateChanges(5) +
-            calculateChanges(6);
+for (let c = 1; c <= 7; c++)
+    result += c*chances[c];
 
-chance = 7*(1-chance);
-chance = Math.floor(chance*1000000000)/1000000000;
-console.log(chance);
-//chances[7] = calculateChanges(7);
-
-// let total = 0;
-// for (let color = 1; color < 7 ; color++)
-//     total += chances[color];
-
-// total += 7*(1+total-chances[7]);
-
-// console.log(total);
-// 6.818741802;
-
-
-// 7*(1-prob) = 6.818741802
-// 1-prob = 6.818741802/7
-// prob = 1-6.818741802/7
-// prob = 0.0258940282857143
-
+result = Math.floor(result*1000000000)/1000000000;
+console.log("Answer is " + result);
 console.log('Done');
-
-/*
-
-0
-6.827475454045845e-17
-1.8399530020822342e-9
-0.000005100308006238302
-0.0007559163237121202
-0.020866401886459163
-0.15625
-
-*/
