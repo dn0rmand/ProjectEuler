@@ -12,15 +12,18 @@
 
 */
 
-const assert = require('assert');
-const fs = require('fs');
-const readline = require('readline');
+const assert    = require('assert');
+const fs        = require('fs');
+const readline  = require('readline');
 
 const readInput = readline.createInterface({
     input: fs.createReadStream('data/p107_network.txt')
 });
 
 const network = {
+};
+
+const excluded = {
 };
 
 function key(value)
@@ -51,36 +54,102 @@ function getWeight()
     return sum;
 }
 
-function optimize()
+function isValid()
 {
-    for(let pt = max; pt > 0; pt--)
+    let visited = [];
+    let count = 0;
+
+    function navigate(pt)
     {
-        let min = Number.MAX_SAFE_INTEGER;
-        let minK = 0;
+        if (visited[pt] === 1)
+            return;
+        visited[pt] = 1;
+        count++;
+        if (count > max)
+            return;
 
-        let k1 = key(pt);
-
-        let connections = network[k1];
-        for(let target = 0; target < pt; target++)
+        let k = key(pt);
+        let connections = network[k];
+        for(let p2 = 0; p2 <= max; p2++)
         {
-            let k2 = key(target);
-            let v = connections[k2];
-            if (v != undefined && v < min)
-            {
-                min = v;
-                minK = k2;
-            }
-        }
-        for(let target = 0; target < pt; target++)
-        {
-            let k3 = key(target);
-            if (k3 != minK && connections[k3] !== undefined)
-            {
-                delete connections[k3];
-                delete network[k3][k1];
-            }
+            if (p2 === pt)
+                continue;
+            let k2 = key(p2);
+            if (connections[k2] !== undefined)
+                navigate(p2);
+            if (count > max)
+                return;
         }
     }
+
+    navigate(0); // from 0 should be able to reach all other points
+
+    return count > max;
+}
+
+function optimize()
+{
+    function isExcluded(k1, k2)
+    {
+        if (k1 === k2)
+            return true;
+
+        let ka = k1 + '-' + k2;
+        let kb = k2 + '-' + k1;
+
+        return excluded[ka] === 1 || excluded[kb] === 1;
+    }
+
+    function exclude(k1, k2)
+    {
+        let ka = k1 + '-' + k2;
+        let kb = k2 + '-' + k1;
+
+        excluded[ka] = excluded[kb] = 1;
+    }
+
+    let max = -1;
+    let maxKey1, maxKey2;
+
+    let keys = Object.keys(network);
+
+    for(let source of keys)
+    for(let target of keys)
+    {
+        if (isExcluded(source, target))
+            continue;
+
+        let value = network[source][target];
+        if (value === undefined)
+            continue;
+
+        if (value >= max)
+        {
+            max = value;
+            maxKey1 = source;
+            maxKey2 = target;
+        }
+    }
+
+    if (max < 0)
+        return false;
+
+    assert.equal(network[maxKey1][maxKey2], max);
+    assert.equal(network[maxKey2][maxKey1], max);
+
+    delete network[maxKey1][maxKey2]; 
+    delete network[maxKey2][maxKey1];
+
+    if (! isValid())
+    {
+        // put it back
+        network[maxKey1][maxKey2] = max; 
+        network[maxKey2][maxKey1] = max;
+    
+        exclude(maxKey1, maxKey2);
+    }
+
+    return true;
 }
 
 let max  = 0;
@@ -107,12 +176,16 @@ readInput
 })
 
 .on('close', () => {
-    console.log("Data Loaded");
+    assert.ok(isValid());
+
     let before = getWeight();
-    optimize(network);
+
+    while (optimize(network));
+
     let after = getWeight();
 
-    console.log('Saved ' + (before - after));
+    assert.ok(isValid());
+    console.log('Saved ' + (before - after)); // 259679
 
     process.exit(0);
 });
