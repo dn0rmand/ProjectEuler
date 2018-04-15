@@ -28,6 +28,9 @@ function *pandigitals()
 
         for (let d = 9; d >= 0; d--)
         {
+            if (usedCount === 0 && d === 0)
+                continue; // Can't start with 0
+
             if (used[d] === 1)
                 continue;
 
@@ -66,13 +69,14 @@ function isPandigital(value)
     return true;
 }
 
-let maxResult = 9765312048;
-let description = ['9x1 | 9x85 | 9x34672 = 9765312048'];
+let maxResult = 0; //9876241305;
+let description = '';
 
 function solve(value, MASK)
 {
     let inputs = value % MASK;
     let factor = (value - inputs) / MASK;
+    let ll = factor.toString().length;
 
     for(let mask = MASK; mask > 1; mask /= 10)
     {
@@ -81,23 +85,24 @@ function solve(value, MASK)
 
         if (input1 === 0 || input2 === 0)
             continue;
-            
+        
+        if ((ll + input1.toString().length + input2.toString().length) !== 10)
+            continue;
+
         let res1 = factor*input1;
         let res2 = factor*input2;
+
         let res = +(res1.toString() + res2.toString());
-        if (res < maxResult)
+        if (res <= maxResult)
             continue;
 
         if (isPandigital(res))
         {
-            if (res > maxResult)
-                description = [];
-            description.push(factor + 'x' + input1 + ' | ' + factor + 'x' + input2 + ' = ' + res);
+            description = factor + '*' + input1 + ' | ' + factor + '*' + input2 + ' = ' + res;
             maxResult = res;
         }
     }
 }
-
 
 for(let value of pandigitals())
 {
@@ -108,11 +113,8 @@ for(let value of pandigitals())
     solve(value, 100000);
     solve(value, 10000);
     solve(value, 1000);
-    solve(value, 100);
-    solve(value, 10);
 }
 
-console.log(maxResult + ' ( 9873614520 )');
-for(let d of description)
-    console.log(d);
+console.log("Result is " + maxResult);
+console.log(description);
 console.log('done');
