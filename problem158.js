@@ -18,60 +18,64 @@
 
 const assert = require('assert');
 
-let counts = [];
-
-function solve(length, target)
+function solve(length)
 {
-    let used = [];
-    let conditionMet = false;
-    let value = [];
+    let used  = [];
+    let counts= [];
+    for (let i = 0; i <= 26; i++)
+        counts[i] = 0;
 
-    function inner(conditionMet)
+    function inner(pos, last, met)
     {
-        let len = value.length;
-        if (conditionMet && len >= 2 && len <= length)
-            counts[len]++;
+        if (met && pos >= 2)
+            counts[pos]++;
 
-        if (len === length)
+        if (pos === length)
             return;
 
-        let previous = len > 0 ? value[len-1] : 27;
+        if (pos === 1)
+            console.log(last);
 
-        for (let letter = 1; letter <= 26; letter++)
+        // continue not metting the condition
+        for (let letter = 1; letter < last; letter++)
         {
-            if (conditionMet && letter > previous)
-                continue;
-
             if (used[letter] !== 1)
-            {                
+            {
                 used[letter] = 1;
-                value.push(letter);
-
-                inner(conditionMet || letter > previous);
-
-                value.pop(letter);
+                inner(pos+1, letter, met);
                 used[letter] = 0;
+            }
+        }
+
+        // condition not met so we can use next letters
+        if (! met)
+        {
+            for(let letter = last+1; letter <= 26; letter++)
+            {
+                if (used[letter] !== 1)
+                {
+                    used[letter] = 1;
+                    inner(pos+1, letter, true);
+                    used[letter] = 0;
+                }
             }
         }
     }
 
-    for (let i = 2; i <= length; i++)
-        counts[i] = 0;
-    
-    inner(false);
+    inner(0, 27, false);
 
-    if (length >= 3)
-        assert.equal(counts[3], 10400);
+    assert(counts[3], 10400);
 
     let max = 0;
-    for (let i = 2; i <= length; i++)
+
+    for (let i = 0; i <= 26; i++)
         if (counts[i] > max)
             max = counts[i];
-    
+
     return max;
 }
 
-solve(3);
+//assert(solve(3), 10400);
 
 let maxTotal = solve(26);
 console.log(maxTotal);
