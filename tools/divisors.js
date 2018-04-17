@@ -10,21 +10,25 @@ module.exports = function(n)
         if (isNumberPrime(value))
             return;
 
-        let max = value;
-        for(let i = 2; i < max; i++)
+        let max   =  Math.ceil(Math.sqrt(number))+1;
+        let start = 2;
+        let steps = 1;
+        if (value & 1 !== 0)
+        {
+            start = 3;
+            steps = 2;
+        }
+        for(let i = start; i < max; i+=steps)
         {
             if ((value % i) == 0)
             {
                 let res = value / i;
-                if (res < max)
-                    max = res;
                 if (res != i)
                     yield res;
 
                 yield i;
             }
         }
-        return divisor;
     }
 
     return getDivisors(n);
