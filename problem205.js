@@ -74,4 +74,4 @@ total *= 10000000;
 total = Math.round(total);
 total /= 10000000;
 
-console.log(total);
+console.log("The probability that Pete beats Colin is " + total);
