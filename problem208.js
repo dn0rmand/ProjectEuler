@@ -1,7 +1,8 @@
 const assert = require('assert');
 const bigNum = require('bigNumber.js');
+const bigInt = require('big-integer');
 
-bigNum.config({ DECIMAL_PLACES: 10 })
+//bigNum.set({ ROUNDING_MODE: 1, DECIMAL_PLACES: 10 })
 
 const arc = /*72*/ (Math.PI * 2)/5;
 const circle  = 2*Math.PI;
@@ -14,8 +15,75 @@ let X = bigNum(0);
 let Y = bigNum(0);
 let direction = 0;
 
+function memorizer()
+{
+    const memoize = [];
+
+    return {
+        set: function(id, x, y, d, value)
+        {
+            let entry = memoize[id];
+            if (entry === undefined)
+            {
+                entry = new Map();
+                memoize[id] = entry;
+            }
+            x = x.toString();
+            y = y.toString();
+
+            let xE = entry.get(x);
+            if (xE === undefined)
+            {
+                xE = new Map();
+                entry.set(x, xE);
+            }
+            let yE = xE.get(y);
+            if (yE === undefined)
+            {
+                yE = new Map();
+                xE.set(y, yE);
+            }
+            yE.set(d, value);
+        },
+        get: function(id, x, y, d)
+        {
+            let entry = memoize[id];
+            if (entry !== undefined)
+            {
+                x = x.toString();
+                entry = entry.get(x);
+                if (entry !== undefined)
+                {
+                    y = y.toString();
+                    entry = entry.get(y);
+                    if (entry !== undefined)
+                    {
+                        entry = entry.get(d);
+                    }
+                }
+            }
+            return entry;
+        }
+    };
+}
+
+const moveMemoize = memorizer();
+
 function move(clockWise) // 1 or -1
 {
+    let xx = X;
+    let yy = Y;
+    let dd = direction;
+
+    let result = moveMemoize.get(clockWise+1, xx, yy, dd);
+    if (result !== undefined)
+    {
+        X = result.X;
+        Y = result.Y;
+        direction = result.direction;
+        return;
+    }
+
     let offsetY = sin_arc;
     let offsetX = bigNum(1).minus(cos_arc).times(clockWise);
 
@@ -29,7 +97,7 @@ function move(clockWise) // 1 or -1
         // y′=ycosθ+xsinθ
 
         x2 = offsetX.times(cos_dir).minus(offsetY.times(sin_dir));
-        y2 = offsetY.times(cos_dir).plus(offsetY.times(sin_dir));
+        y2 = offsetY.times(cos_dir).plus(offsetX.times(sin_dir));
 
         offsetX = x2;
         offsetY = y2;
@@ -50,22 +118,19 @@ function move(clockWise) // 1 or -1
     while (direction <= -circle)
         direction += circle;
 
-    atStart();
-}
+    if (X.abs().lte(ERROR))
+        X = bigNum(0);
 
-function atStart()
-{
-    if (X.abs().gt(ERROR))
-        return false;
+    if (Y.abs().lte(ERROR))
+        Y = bigNum(0);
 
-    X = bigNum(0);
+    let data = {
+        X: X,
+        Y: Y,
+        direction: direction
+    };
 
-    if (Y.abs().gt(ERROR))
-        return false;
-
-    Y = bigNum(0);
-
-    return true;
+    moveMemoize.set(clockWise+1,  xx, yy, dd, data);
 }
 
 function test()
@@ -100,26 +165,25 @@ function reset(x, y, d)
     direction = d;    
 }
 
+let memoize = memorizer() ;
+    
 function process(totalMoves)
 {
-    let count = 0
-    let memoize = {};
+    let count = bigInt(0);
 
     function inner(moves)
     {
-        if (moves === totalMoves)
+        if (moves === 0)
         {
             if (X == 0 && Y == 0)
-                count++;
+                count = count.next();
             return;
         }
 
-        let key = moves + "|" + X.valueOf() + "|" + Y.valueOf() + "|" + direction;
-
-        let saved = memoize[key];
+        let saved = memoize.get(moves, X, Y, direction);
         if (saved !== undefined)
         {
-            count += saved;
+            count = count.plus(saved);
             return;
         }
 
@@ -131,27 +195,58 @@ function process(totalMoves)
         let d = direction;
 
         move(-1);
-        inner(moves+1);
+        inner(moves-1);
         reset(x, y, d);
 
         move(1);
-        inner(moves+1)
+        inner(moves-1)
         reset(x, y, d);
 
-        let added = count-oldCount;
-        memoize[key] = added;
+        let added = count.minus(oldCount);
+        memoize.set(moves, X, Y, direction, added);
     }
 
     reset(bigNum(0), bigNum(0), 0);
-    inner(0);
+    inner(totalMoves);
 
     return count;
 }
 
-assert.equal(test(), true);
-assert.equal(process(25), 70932);
+function passes()
+{
+   let total = bigInt(0);
 
-// let count = process(70);
-// console.log(count);
+   let memoize=[];
+
+   function inner(moves)
+   {
+        if (moves === 0)
+        {
+            total = total.next();
+            return;
+        }
+        let t = memoize[moves];
+        if (t !== undefined)
+        {
+            total = total.plus(t);
+            return;
+        }
+        let old = total;
+        inner(moves-1);
+        inner(moves-1);
+        memoize[moves] = total.minus(old);
+   } 
+
+   inner(25);
+   console.log(total.toString());
+}
+
+//passes();
+
+assert.equal(test(), true);
+assert.equal(process(25).valueOf(), 70932);
+
+let count = process(70);
+console.log(count.toString());
 
 console.log("Done");
