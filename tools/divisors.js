@@ -1,16 +1,20 @@
-module.exports = function(n)
+module.exports = function(value)
 {
     const isNumberPrime = require('is-number-prime');
 
-    function *getDivisors(value)
+    function *getDivisors()
     {
         yield 1;
-        yield value;
+        if (value > 1)
+            yield value;
+
+        if (value <= 2)
+            return;
 
         if (isNumberPrime(value))
             return;
 
-        let max   =  Math.ceil(Math.sqrt(number))+1;
+        let max   =  Math.floor(Math.sqrt(value))+1;
         let start = 2;
         let steps = 1;
         if (value & 1 !== 0)
@@ -23,13 +27,16 @@ module.exports = function(n)
             if ((value % i) == 0)
             {
                 let res = value / i;
-                if (res != i)
+                if (res > i)
                     yield res;
 
                 yield i;
+
+                if (res < max)
+                    max = res;
             }
         }
     }
 
-    return getDivisors(n);
+    return getDivisors();
 }
