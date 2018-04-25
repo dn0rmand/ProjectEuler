@@ -7,130 +7,172 @@
 // Find G(10^11). Give your answer modulo 998244353
 
 const assert    = require('assert');
-const bigInt    = require('big-integer');
 const prettyTime= require("pretty-hrtime");
-const isPrime   = require('./tools/isPrime.js');
-const totient   = require('./tools/totient.js');
-const divisors  = require('./tools/divisors.js');
 
 const MODULO = 998244353;
 
 const MAX  = Math.pow(10, 11);
-const TEST = 200000000;
+const TEST = Math.pow(10, 8);
 
-let memoize = new Map();
+const _primeMap    = new Map();
+let   _primes      = []
+let   _maxPrime    = 3;
 
-function g(N, useTotient)
+function isPrime(p)
 {
-    let n = N;
-    let result = memoize.get(n);
+    if (_primeMap.has(p))
+        return true;
+    if (p <= _maxPrime)
+        return false;
 
-    if (result !== undefined)
-        return result;
-
-    if (totient.isPrime(n))
+    if ((p & 1)  === 0 || (p % 3) === 0)
+        return false;
+    let root = Math.floor(Math.sqrt(p));
+    for(let i of _primes)
     {
-        memoize.set(n , n+n-1);
-        return n + n - 1;
+        if (i > root)
+            break;
+        if (p % i === 0)
+            return false;
+    }
+    return true;                        
+}
+
+function generatePrimes2() 
+{
+    _primeMap.set(2);
+    _primeMap.set(3);
+    _primes.push(2);
+    _primes.push(3);
+
+    let n = Math.ceil(Math.sqrt(MAX));
+
+    for (let i = 5; i <= n; i += 2) 
+    {
+        if (isPrime(i))
+        {
+            _primeMap.set(i);
+            _primes.push(i);
+            _maxPrime    = i;
+        }
+    }
+}
+
+function generatePrimes(max) 
+{
+    _primeMap.set(2);
+    _primeMap.set(3);
+    _primes.push(2);
+    _primes.push(3);
+
+    let n = max || Math.ceil(Math.sqrt(MAX));
+    
+    let sieve = []; //new Int32Array(max / 31);
+
+    for (let i = 2, j = 3; ; i+=2, j+=3)
+    {
+        if (i > n)
+            break;
+        sieve[i] = 0;
+        if (j <= n)
+            sieve[j] = 0;
     }
 
-    let total = 0;
-
-    if (useTotient === true)
+    for (let i = 5; i <= n; i += 2) 
     {
-        // Set New Max
-        totient.initialize(n);
-        for(let d of divisors(n))
+        if (sieve[i] === 0)
+            continue;
+        sieve[i] = 1;
+        _primes.push(i);
+        _primeMap.set(i);
+        _maxPrime = i;
+
+        for(let j = i+i; j <= n; j += i)
         {
-            let phi = totient.PHI(n / d);
-            total += phi * d;
+            sieve[j] = 0;
         }
-        memoize.set(n, total);
+    }
+
+    _maxPrime = n;
+}
+
+function g(n, e)
+{
+    if (e === 1)
+        return n+n-1;
+
+    if (e !== undefined)
+    {
+        //(p^(e−1)) * ((p−1)*e+p)
+
+        let total = Math.pow(n, e-1) * (((n-1) * e) + n);
+
+        return total;
     }
     else
     {
-        for (let p of totient.primes())
+        let total = 1;
+
+        let max = Math.floor(Math.sqrt(n));
+
+        for (let p of _primes)
         {
-            if (p > n)
+            if (p > max)
                 break;
 
-            let power = 1;
+            let power = 0;
             
             while ((n % p) === 0)
             {
                 n /= p;
-                power *= p;
+                power++;
             }
 
-            if (power > 1)
+            if (power > 0)
             {
-                let v = g(power, true);
+                total *= g(p, power);
 
-                if (total === 0)
-                    total = v;
-                else
-                    total *= v;
+                if (n === 1)
+                    break;
+
+                max = Math.floor(Math.sqrt(n));
             }
-            if (n === 1)
-                break;
         }
 
         if (n > 1)
-        {
-            // Total shouldn't be 0 or n would be prime
-            total *= g(n);
-        }
+            total *= g(n, 1);
+
+        return total;
     }
-
-    return total;
 }
-
-let _gMax = 0;
-let _gMaxValue = 0;
 
 function G(N)
 {
+    let start = process.hrtime();
+    
     let total = 1;
-    let start = 2;
-    if (_gMax > 0 && _gMax <= N)
-    {
-        total = _gMaxValue;
-        if (_gMax === N)
-            return total;
 
-        start = _gMax+1;
-    }
-
-    for(let i = start; i <= N; i++)
+    for(let i = 2; i <= N; i++)
     {
         total = (total + g(i)) % 998244353;
     }
-    _gMax = N;
-    _gMaxValue = total;
-    return total;
-}
 
-function speedTest(max)
-{
-    let start = process.hrtime();
-    let last = 0;
-    for (let i = /*_gMax+*/1; i <= max ; i++)
-    for (let d of divisors(i))
-    {
-        last = d;
-    }
     let end = process.hrtime(start);
-    console.log('lopped divisors up to ' + max + " executed in " + prettyTime(end, {verbose:true}));
+    
+    console.log('G(' + N + ') = ' + total +' - Calculated in ' + prettyTime(end, {verbose:true}));
+    return total;
 }
 
 // Prepare
 
-let maxPrime = Math.ceil(Math.sqrt(MAX));
-console.log("initializing totient primes");
+console.log("initializing primes");
 let start = process.hrtime();
-totient.initialize(maxPrime); // Max prime needed for iterating
+generatePrimes(10000000);
 let end = process.hrtime(start);
-console.log('totient.initialize(' + maxPrime + ") executed in " + prettyTime(end, {verbose:true}));
+console.log('primes loaded in ' + prettyTime(end, {verbose:true}));
+
+// console.log(MODULO);
+// console.log(G(MODULO));
 
 // Tests
 
@@ -140,14 +182,9 @@ assert.equal(G(10000), 317257140);
 
 // Remember last execution
 
-// _gMax = 200000000; _gMaxValue = 613187659; // 247283132184682720;
+// start = 4858174389; current Total = 501957719
 
-
-// Do it 
-let v1 = G(TEST);
-console.log("_gMax = " + TEST + "; _gMaxValue = " + v1.toString() + ";");
-
-// let v2 = G(MAX);
-// console.log(v2);
+let v2 = G(MAX);
+console.log(v2);
 
 console.log('done');
