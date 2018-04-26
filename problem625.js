@@ -8,6 +8,7 @@
 
 const assert    = require('assert');
 const prettyTime= require("pretty-hrtime");
+const cluster   = require('cluster');
 
 const MODULO = 998244353;
 
@@ -36,26 +37,6 @@ function isPrime(p)
             return false;
     }
     return true;                        
-}
-
-function generatePrimes2() 
-{
-    _primeMap.set(2);
-    _primeMap.set(3);
-    _primes.push(2);
-    _primes.push(3);
-
-    let n = Math.ceil(Math.sqrt(MAX));
-
-    for (let i = 5; i <= n; i += 2) 
-    {
-        if (isPrime(i))
-        {
-            _primeMap.set(i);
-            _primes.push(i);
-            _maxPrime    = i;
-        }
-    }
 }
 
 function generatePrimes(max) 
@@ -146,45 +127,123 @@ function g(n, e)
     }
 }
 
-function G(N)
+function G(min, max)
 {
-    let start = process.hrtime();
+    let timer = process.hrtime();
     
-    let total = 1;
+    let total = 0;
 
-    for(let i = 2; i <= N; i++)
+    let start = min;
+    if (min === 1)
+    {
+        total = 1;
+        start = 2;
+    }
+
+    for(let i = start; i <= max; i++)
     {
         total = (total + g(i)) % 998244353;
     }
 
-    let end = process.hrtime(start);
+    timer = process.hrtime(timer);
     
-    console.log('G(' + N + ') = ' + total +' - Calculated in ' + prettyTime(end, {verbose:true}));
+    console.log('G(' + min + ', ' + max + ') = ' + total + ' - Calculated in ' + prettyTime(timer, {verbose:true}));
     return total;
 }
 
-// Prepare
+function solve(start, end, runTests)
+{
+    // Prepare
 
-console.log("initializing primes");
-let start = process.hrtime();
-generatePrimes(10000000);
-let end = process.hrtime(start);
-console.log('primes loaded in ' + prettyTime(end, {verbose:true}));
+    console.log("initializing primes");
+    let timer = process.hrtime();
+    generatePrimes(10000000);
+    timer = process.hrtime(timer);
+    console.log('primes loaded in ' + prettyTime(timer, {verbose:true}));
 
-// console.log(MODULO);
-// console.log(G(MODULO));
+    // Tests
 
-// Tests
+    if (runTests === true)
+    {
+        assert.equal(G(1, 10), 122);
+        assert.equal(G(1, 1000), 2475190);
+        assert.equal(G(1, 10000), 317257140);
+    }
+    else
+    {
+        let total = G(start, end);
 
-assert.equal(G(10), 122);
-assert.equal(G(1000), 2475190);
-assert.equal(G(10000), 317257140);
+        return total;
+    }
+}
 
-// Remember last execution
+// ------------------------------------------------
+//    1 to 4999999999; current Total = 335885638
+//
+// 5000000000 to 5999999999 = 178920722
+// 6000000000 to 6999999999 = 597747200
+// 7000000000 to 7999999999 = 4189793
+// 8000000000 to 8999999999 = 305574685
+// 9000000000 to 9999999999 = 912882500
+// 
+// 1 to 9999999999 -> 338711832
+// ------------------------------------------------
 
-// start = 4858174389; current Total = 501957719
+if (cluster.isMaster) 
+{
+    solve(1, 100000, true);
 
-let v2 = G(MAX);
-console.log(v2);
+    console.log("I'm the master");
 
-console.log('done');
+    let works = [
+        { start: 5000000000, end: 5999999999 },
+        { start: 6000000000, end: 6999999999 },
+        { start: 7000000000, end: 7999999999 },
+        { start: 8000000000, end: 8999999999 },
+        { start: 9000000000, end: 9999999999 },
+    ];
+    let mainTotal = 338711832; 
+
+    console.log("Main Total is " + mainTotal);
+    let workers = 0;
+    for (let w of works)
+    {
+        const worker = cluster.fork();
+
+        workers++ ;
+
+        // Tell worker what section to calculate
+        worker.send(w);
+        
+        // When worker done, add total
+        worker.on('message', (msg) =>
+        {
+            if (msg.cmd === 'done')
+            {
+                console.log(msg.start + " to " + msg.end + " = " + msg.total);
+                mainTotal = (mainTotal + msg.total) % MODULO;
+                workers--;
+                if (workers === 0)
+                {
+                    console.log("Up to 9999999999 -> " + mainTotal);
+                }
+            }
+        });    
+    }
+} 
+else
+{
+    console.log("I'm a worker");
+
+    process.on('message', (msg) => {
+        let s = msg.start;
+        let e = msg.end;
+
+        console.log("Solving from " + s + " to " + e);
+
+        let total = solve(s, e);
+
+        process.send({ cmd: 'done', start: s, end: e, total:total });  
+        process.exit(0);      
+    });
+}
