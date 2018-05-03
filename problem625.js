@@ -1,3 +1,5 @@
+// TOO SLOW and give bad result so switched to plain C
+
 // Gcd sum
 // Problem 625 
 
@@ -8,14 +10,13 @@
 
 const assert    = require('assert');
 const prettyTime= require("pretty-hrtime");
-const cluster   = require('cluster');
 const bitBuffer = require('bitbuffer');
 
 const MODULO = 998244353;
 
 const MAX           = Math.pow(10, 11);
 const TEST          = Math.pow(10, 8);
-const ARRAY_SIZE    = MAX/8;
+const ARRAY_SIZE    = MAX/16; // One big buffer too much, so split in multiple ones
 
 const _primeMap    = new Map();
 let   _primes      = []
@@ -30,14 +31,25 @@ let caches = [
     new bitBuffer.BitBuffer(ARRAY_SIZE),//5
     new bitBuffer.BitBuffer(ARRAY_SIZE),//6
     new bitBuffer.BitBuffer(ARRAY_SIZE),//7
-    new bitBuffer.BitBuffer(ARRAY_SIZE) //8
+    new bitBuffer.BitBuffer(ARRAY_SIZE),//8
+    new bitBuffer.BitBuffer(ARRAY_SIZE),//9
+    new bitBuffer.BitBuffer(ARRAY_SIZE),//10
+    new bitBuffer.BitBuffer(ARRAY_SIZE),//11
+    new bitBuffer.BitBuffer(ARRAY_SIZE),//12
+    new bitBuffer.BitBuffer(ARRAY_SIZE),//13
+    new bitBuffer.BitBuffer(ARRAY_SIZE),//14
+    new bitBuffer.BitBuffer(ARRAY_SIZE),//15
+    new bitBuffer.BitBuffer(ARRAY_SIZE) //16
 ];
 console.log("Arrays now ready");
 
-caches.total = 0;
-
 caches.get = function(index)
 {    
+    if (index === 10000247)
+        index = 10000247;
+    if (index === 10000247*2)
+        index === 10000247*2;
+
     index--;
 
     let offset  = index % ARRAY_SIZE;
@@ -50,6 +62,11 @@ caches.get = function(index)
 
 caches.set = function(index)
 {
+    if (index === 10000247)
+        index = 10000247;
+    if (index === 10000247*2)
+        index === 10000247*2;
+
     index--;
 
     let offset  = index % ARRAY_SIZE;
@@ -58,7 +75,6 @@ caches.set = function(index)
     array = caches[array];
 
     array.set(offset, 1);
-    caches.total++;
 }
 
 function isPrime(p)
@@ -174,6 +190,9 @@ function seed(max)
     let timer = process.hrtime();
     
     let total = 1; // 1 => 1
+    let count = 1;
+    let percent = "";
+
     caches.set(1);
 
     function add(index, value)
@@ -183,6 +202,13 @@ function seed(max)
         total = (total + value) % MODULO;
         caches.set(index);
         // }  
+        // count++;
+        // let p = ((count / max)*100).toFixed(2);
+        // if (p !== percent)
+        // {
+        //     percent = p;
+        //     console.log(percent);
+        // }
     }
 
     function inner(pi, factor, value, index)
@@ -232,24 +258,19 @@ function seed(max)
         }
     }
 
-    console.log("Seeding ...");
     for(let pi = 0; pi < _primes.length; pi++)
     {
         inner(pi, 1, 1, _primes[pi]);
     }
-
-    console.log("Seeded");
-    console.log((max - caches.total) + " values remaining");
 
     for(let i = 2; i <= max; i++)
     {        
         if (! caches.get(i))
         {
             // Some verification
-            if (! isPrime(i))
+            if ((i & 1) === 0) // even !!!!
                 throw i + " is not a prime!!!";
 
-            console.log("Found new prime " + i + "... seeding some more ...");
             let v = g(i, 1);
 
             add(i, v);
@@ -262,10 +283,6 @@ function seed(max)
 
                 inner(pi, 1, v, idx);
             }
-
-            console.log("Seeded");
-            console.log((max - caches.total) + " values remaining");
-            // total = (total + g(i, 1)) % MODULO;
         }
     }
 
@@ -299,116 +316,50 @@ function G(min, max)
     return total;
 }
 
-function solve(start, end, runTests)
+function solve(start, end)
 {
     // Prepare
 
     console.log("initializing primes");
     let timer = process.hrtime();
-    generatePrimes(100000000);                        
+    generatePrimes(10000000);                      
     timer = process.hrtime(timer);
     console.log('primes loaded in ' + prettyTime(timer, {verbose:true}));
 
-    let answer = seed(9999999999);
-//    let answer = seed(MAX);
-    console.log("ANSWER is " + answer + " - expected = 551614306");
-    process.exit(0);
+//  let answer = seed(MAX);
+//    console.log("ANSWER is " + answer + " - expected = 551614306");
 
     // Tests
 
-    if (runTests === true)
-    {
-        assert.equal(seed(50000000), 954109446); 
+    // assert.equal(seed(1, 10), 122);
+    // assert.equal(seed(1, 1000), 2475190);
+    // assert.equal(seed(1, 10000), 317257140);
+    // assert.equal(seed(1, 10000000), 825808541);     
+    // assert.equal(seed(1, 20000000), 974543073);      
+    // assert.equal(seed(1, 50000000), 954109446);       
+    
+    // G(50000000) = 954109446 - Calculated in 3 minutes 5 seconds 520 milliseconds 159 microseconds 936 nanoseconds        
 
-        // assert.equal(G(1, 10), 122);
-        // assert.equal(G(1, 1000), 2475190);
-        // assert.equal(G(1, 10000), 317257140);
-        // assert.equal(G(1, 10000000), 825808541);     
-        // assert.equal(G(1, 20000000), 974543073);  
-        
-        assert.equal(G(1, 50000000), 954109446);       
-        
-        // G(50000000) = 954109446 - Calculated in 3 minutes 5 seconds 520 milliseconds 159 microseconds 936 nanoseconds        
-    }
-    else
-    {
-        let total = G(start, end);
+    let a1 = seed(9999999999); // 9);
+//  let a2 = G(1, 300000000);
 
-        return total;
-    }
+    console.log(a1);
 }
 
 // ------------------------------------------------
 //    1 to 4999999999; current Total = 335885638
 //
-// 5000000000 to 5999999999 = 178920722
-// 6000000000 to 6999999999 = 597747200
-// 7000000000 to 7999999999 = 4189793
-// 8000000000 to 8999999999 = 305574685
-// 9000000000 to 9999999999 = 912882500
+// 5000000000 to 5999999999 = 178920722  -> 514806360 *
+// 6000000000 to 6999999999 = 597747200  -> 114309207 *
+// 7000000000 to 7999999999 = 4189793    -> 118499000 *
+// 8000000000 to 8999999999 = 305574685  -> 424073685 *
+// 9000000000 to 9999999999 = 912882500  -> 338711832 *
 // 
 // 1 to 9999999999 -> 338711832
+// 100000000000
 // ------------------------------------------------
 
-
-if (cluster.isMaster) 
-{
-    solve(1, 100000, true);
-    process.exit(0);
-
-    console.log("I'm the master");
-
-    let works = [
-        { start: 5000000000, end: 5999999999 },
-        { start: 6000000000, end: 6999999999 },
-        { start: 7000000000, end: 7999999999 },
-        { start: 8000000000, end: 8999999999 },
-        { start: 9000000000, end: 9999999999 },
-    ];
-    let mainTotal = 338711832; 
-
-    console.log("Main Total is " + mainTotal);
-    let workers = 0;
-    for (let w of works)
-    {
-        const worker = cluster.fork();
-
-        workers++ ;
-
-        // Tell worker what section to calculate
-        worker.send(w);
-        
-        // When worker done, add total
-        worker.on('message', (msg) =>
-        {
-            if (msg.cmd === 'done')
-            {
-                console.log(msg.start + " to " + msg.end + " = " + msg.total);
-                mainTotal = (mainTotal + msg.total) % MODULO;
-                workers--;
-                if (workers === 0)
-                {
-                    console.log("Up to 9999999999 -> " + mainTotal);
-                }
-            }
-        });    
-    }
-} 
-else
-{
-    console.log("I'm a worker");
-
-    process.on('message', (msg) => {
-        let s = msg.start;
-        let e = msg.end;
-
-        console.log("Solving from " + s + " to " + e);
-
-        let total = solve(s, e);
-
-        process.send({ cmd: 'done', start: s, end: e, total:total });  
-        process.exit(0);      
-    });
-}
+solve();
+console.log("Done");
 
 // 551614306
