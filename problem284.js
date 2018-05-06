@@ -65,7 +65,7 @@ function solve(max)
     let total = 1;
 
     total += innerSolve(max, 7); // 304015089
-    total += innerSolve(max, 8);
+    total += innerSolve(max, 8); // 300542903
 
     return total;
 }
