@@ -126,7 +126,7 @@ class DNMatrix extends Matrix
             console.log(pow);
             m = m.mmul(mm);
         }
-        
+
         return m;
     }
 }
@@ -175,7 +175,8 @@ function *GENERATE()
 let matrix = DNMatrix.create();
 let vector = DNMatrix.createVector();
 
-let T = Math.pow(10, /*5*/18);
+let T = Math.pow(10,18);
+// let T = 100000; // For Test
 
 matrix = matrix.pow(T);
 vector = matrix.mmul(vector);
