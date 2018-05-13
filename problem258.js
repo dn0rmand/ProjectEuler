@@ -9,13 +9,109 @@
 // Find gk mod 20092010 for k = 10^18.
 
 const assert = require('assert');
+const {Matrix} = require('ml-matrix');
 const bigInt = require('big-integer');
 const prettyHrtime = require('pretty-hrtime');
 
-const LAG     = 20; // 00;
+const LAG     = 2000; // 00;
 const MODULO  = 20092010;
-const MOD     = 0x10000000; // 2^28
+const BIG_MODULO = 20092010 * 1000;
 
+function G(n)
+{
+    if (n < LAG)
+        return 1;
+    return G(n-LAG) + G(n-LAG+1); 
+}
+
+function makeMatrix()
+{
+    let matrix = Matrix.zeros(LAG, LAG);
+
+    let i;
+
+    for (let r = 1; r < LAG; r++)
+    {
+        matrix.set(r, r-1, 1);
+    }
+
+    matrix.set(0,LAG-1,1);
+    matrix.set(0,LAG-2,1);
+    return matrix;
+}
+
+function makeVector()
+{
+    let vector = Matrix.zeros(LAG, 1);
+
+    for (let r = 0; r < LAG; r++)
+    {
+        vector.set(r, 0, G(r));
+    }
+
+    return vector;
+}
+
+function multiply(m1, m2)
+{
+    // let rows    = m1.rows;
+    // let columns = m1.columns;
+
+    // let result = new Matrix(rows, columns);
+    // let cache  = new Array(columns);
+
+    // for (let col = 0; col < columns; col++) 
+    // {
+    //     for (let col2 = 0; col2 < columns; col2++) 
+    //         cache[col2] = m2.get(col2, col);
+
+    //     for (let row = 0; row < rows; row++) 
+    //     {
+    //         let s = 0;
+    //         for (let col2 = 0; col2 < columns; col2++)
+    //             s += (m1.get(row, col2) * cache[col2]) % BIG_MODULO;
+
+    //         result.set(row, col, s);
+    //     }
+    // }
+
+    let result = m1.mmul(m2);
+    
+    return result;
+}
+
+function matrixPower(m, pow)
+{
+    let mm = undefined;
+
+    if (pow === 1)
+        return m;
+
+    while (pow > 1)
+    {
+        if ((pow & 1) !== 0)
+        {
+            if (mm === undefined)
+                mm = m;
+            else
+                mm = multiply(mm, m);
+
+            pow--;
+        }
+
+        while (pow > 1 && (pow & 1) === 0)
+        {
+            console.log(pow);
+            pow /= 2;
+            m =  multiply(m, m);
+        }
+    }
+
+    if (mm !== undefined)
+        m = multiply(mm, m);
+
+    return m;
+}
 function *GENERATE()
 {
     let cache = [];
@@ -24,6 +120,7 @@ function *GENERATE()
     for(let i = 0; i < LAG; i++)
     {
         cache.push(1);
+        yield 1;
     }
 
     while (1)
@@ -37,135 +134,22 @@ function *GENERATE()
     }
 }
 
-function calculate(power, other)
-{
-    //let end = Math.pow(10, power);
-    let end = LAG * power;
-    if (other !== undefined)
-        end += other;
+console.log("Make sure to modify ml-matrix mmul to include the modulo");
 
-    let expected = Math.pow(2, power);// % MODULO;
+let matrix = makeMatrix();
+// printM(matrix);
 
-    if (end < LAG)
-        return 1;
+let v = makeVector();
+let T = Math.pow(10, 18);
 
-    let i = LAG-1;
+rows = matrixPower(matrix, T);
+rows = rows.mmul(v).mod(MODULO);
 
-    for (p of GENERATE())
-    {
-        i++;
+let target = rows.get(LAG-1, 0);
+//let x = G(T);
 
-        if (i === end)
-        {            
-            let diff = p - expected;
-            let d1 = diff % LAG;
-            let d2 = (diff - d1) / LAG;
-            console.log(end + " = " + p + " - expected: " + expected + " - diff: " + (p - expected));
-            return p;
-        }
-    }
-}
+//assert.equal(target, x);
 
-calculate(LAG-1);
-calculate(LAG);
-calculate(LAG+1);
-calculate(LAG+2);
-calculate(LAG+3);
-calculate(LAG+4);
-calculate(LAG+LAG);
-
-//console.log(calculate(10)); // 1815672
-
-// let old = G(10000);
-// let first= 10000;
-// let k    = first;
-
-// while (k <= 20000)
-// {
-//     k++;
-//     let g = G(k);
-//     if (g !== old)
-//     {
-//         console.log(first + ' to ' + (k-1) + ' -> ' + old);
-//         first = k;
-//         old = g;
-//     }
-// }
-
-// console.log(first + ' to ' + (k-1) + ' -> ' + old);
-
-// let max     = bigInt(10).pow(18);
-// let power   = max.divide(LAG).valueOf();
-// console.log(power);
-
-// let offset  = 10;
-// let sum     = bigInt(2).pow(offset);
-
-// let total   = 1;
-
-// while (power >= offset)
-// {
-//     total *= sum;
-//     total %= MODULO;
-//     power -= offset;
-// }
-// console.log(power);
-// console.log(total.toString());
-
+console.log('G(' + T + ') = ' + target);
+console.log("FYI, 3394748 is incorrect.")
 console.log('Done');
-/*
-
- 2000 to  3998 -> 2 - k = 1*2000 -> + 1 value
- 		  3999 -> 3
- 		  
- 4000 to  5997 -> 4 - k = 2*2000 -> + 2 values
- 		  5998 -> 5
- 		  5999 -> 7
- 		  
- 6000 to  7996 -> 8  - k = 3*2000 -> + 3 values
- 		  7997 -> 9
- 		  7998 -> 12
- 		  7999 -> 15
- 		  
- 8000 to  9995 -> 16 - k = 4 * 2000 -> + 4 values
- 		  9996 -> 17
- 		  9997 -> 21
- 		  9998 -> 27
- 		  9999 -> 31
- 
-10000 to 11994 -> 32 - k = 5 * 2000 -> + 5 values
- 		 11995 -> 33
-		 11996 -> 38
-		 11997 -> 48
-		 11998 -> 58
-		 11999 -> 63
-
-12000 to 13993 -> 64
-14000 to 15992 -> 128
-16000 to 17991 -> 256
-		 17992 -> 257
-		 17993 -> 265
-		 17994 -> 293
-		 17995 -> 349
-		 17996 -> 419
-		 17997 -> 475
-		 17998 -> 503
-		 17999 -> 511
-
-18000 to 19990 -> 512 - k = 9 * 2000 -> + 9 values
-		 19991 -> 513
-		 19992 -> 522
-		 19993 -> 558
-		 19994 -> 642
-		 19995 -> 768
-		 19996 -> 894
-		 19997 -> 978
-		 19998 -> 1014
-		 19999 -> 1023
-
-((2 ^ 5000000000)^100000) mod 20092010
-		
-1787109376
-19012496		 
-		 
-*/
