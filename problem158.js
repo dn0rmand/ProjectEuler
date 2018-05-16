@@ -75,7 +75,16 @@ function solve(length)
     return max;
 }
 
-//assert(solve(3), 10400);
+// Loop on string length N. For a given string length N there are N-1 places you can have the 1 increasing number. 
+// Loop on that. Then the number that is after the increase, call it M, has a number of possible values 
+// (<<26 based on # numbers before/after). Loop on that.  
+// Then the downward string before the increasing number can be partitioned into numbers >M 
+// (must be all of them for string length 26, could be a subset on smaller strings) and numbers <M. 
+// Loop on count >M. 
+// Gives you 3 strings with different numbers which are pure descending. 
+// Normal combinatorials to compute number of ways those can exist.
+
+assert(solve(3), 10400);
 
 let maxTotal = solve(26);
 console.log(maxTotal);
