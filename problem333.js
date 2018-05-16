@@ -44,10 +44,9 @@ function possiblePartitions()
 
 let possible = possiblePartitions();
 
-function *partition(value)
+function *generate()
 {
     let products = [];
-    let yielded = {};
 
     function isValid(v)
     {
@@ -62,65 +61,53 @@ function *partition(value)
 
     function *inner(value, index)
     {
-        if (value === 0)
+        if (value > MAX)
+            return;
+
+        if (value !== 0)
         {
-            let p = products.toString();
-            if (yielded[p] === undefined)
-            {
-                yielded[p] = 1;
-                yield products;
-            }
-            return;
+            if (helper.isPrime(value))
+                yield value;
         }
-        if (value < 2)
-            return;
 
         for (let i = index; i < possible.length; i++)
         {
-            let v = possible[i];
-            if (v > value)
+            let o = possible[i];
+
+            if (value + o > MAX)
                 continue;
             
-            if (! isValid(v))
-                continue;
-
-            products.push(v);
-            yield *inner(value-v, i+1);
-            products.pop(v);
+            if (isValid(o))
+            {
+                products.push(o);
+                yield *inner(value + o, i+1);
+                products.pop();
+            }
         }
     }
 
-    yield *inner(value, 0);
+    yield *inner(0, 0);
 }
-
-function hasOnlyOne(number)
-{
-    let c = 0;
-    for (let p of partition(number))
-    {
-        c++;
-        if (c > 1)
-            return false;
-    }
-    return c === 1;
-}
-
-assert.equal(hasOnlyOne(17), true);
-assert.equal(hasOnlyOne(11), false);
 
 helper.initialize(MAX);
 
-let total = 0;
+let total = 0; 
+let visited = new Map();
 
-for(let p of helper.primes())
+for (let v of generate())
 {
-    if (p >= MAX)
-        break;
-    if (hasOnlyOne(p))
+    let n = visited.get(v);
+
+    if (n === 1)
     {
-        //console.log(p);
-        total += p;
+        total -= v;
+        visited.set(v, 2);
+    }
+    else if (n === undefined)
+    {
+        total += v; 
+        visited.set(v, 1);
     }
 }
 
-console.log(total);
+console.log("And the answer is ....... " + total);
