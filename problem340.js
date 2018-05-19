@@ -27,22 +27,27 @@ class CrazyFunction extends Object
         this.cache = new Map();
     }
     
-    F(n)
+    F(n, recursive)
     {
         if (n <= this.b)
         {
-            let result = this.cache.get(n);
-            if (result !== undefined)
-                return result;
-    
             let x;
-            
-            x = this.F(this.a + n);
-            x = this.F(this.a + x);
-            x = this.F(this.a + x);
-            x = this.F(this.a + x);
-
-            this.cache.set(n, x);
+            // let result = this.cache.get(n);
+            // if (result !== undefined)
+            //     return result;
+    
+            if (recursive !== true)
+            {
+                x = 4*this.a + n - 4*this.c;
+            }
+            else
+            {
+                x = this.F(this.a + n, true);
+                x = this.F(this.a + x, true);
+                x = this.F(this.a + x, true);
+                x = this.F(this.a + x, true);
+            }
+            // this.cache.set(n, x);
             return x;
         }
         else
@@ -66,6 +71,11 @@ function test()
 {
     let cf = new CrazyFunction(50, 2000, 40);
 
+    let v1 = cf.F(1900, true);
+    let v2 = cf.F(1900, false);
+
+    //assert.equal(v1, v2);
+
     let old = cf.F(0);
 
     for (let i = 1; i <= 4000; i++)
@@ -75,6 +85,10 @@ function test()
             console.log(i + " => " + old + ' - ' + n + " (" + (old+1 - n) + ")");
         old = n;
     }
+
+    console.log(2405-1325);// 50-40
+    console.log(1325 + " = " + cf.F(1325));
+    console.log((2345-cf.c) + " = " + cf.F(2345));
 
     assert.equal(cf.F(0), 3240);
     assert.equal(cf.F(2000), 2040);
