@@ -63,35 +63,13 @@ function isValid(c)
 
 function M(n)
 {
-    let memoizeW = new Map();
-    let memoizeL = new Map();
+    let memoize = new Map();
 
-    function losingPosition(c)
+    function winningPosition(c, player1)
     {
-        let v = memoizeL.get(c);
-        if (v !== undefined)
-            return v;
+        let key = player1 ? -c : c;
 
-        for (let m = n; m > 0; m--)
-        {
-            let newC = c + m;
-            if (! isValid(newC))
-                continue;
-
-            if (winningPosition(newC))
-            {
-                memoizeL.set(c, true);
-                return true;
-            }
-        }    
-
-        memoizeL.set(c, false);
-        return false;
-    }
-
-    function winningPosition(c)
-    {
-        let v = memoizeW.get(c);
+        let v = memoize.get(key);
         if (v !== undefined)
             return v;
 
@@ -101,15 +79,22 @@ function M(n)
             if (! isValid(newC))
                 continue;
             
-            if (! losingPosition(newC))
+            let win = winningPosition(newC, ! player1);
+
+            if (player1 && win)
             {
-                memoizeW.set(c, false);
+                memoize.set(key, true);
+                return true;
+            }
+            else if (! player1 && ! win)
+            {
+                memoize.set(key, false);
                 return false;
             }
         }    
 
-        memoizeW.set(c, true);
-        return true;
+        memoize.set(key, ! player1);
+        return ! player1;    
     }
 
     for (let c = n; c > 0; c--)
@@ -117,7 +102,7 @@ function M(n)
         if (! isValid(c))
             continue;
 
-        if (winningPosition(c))
+        if (winningPosition(c, false))
             return c;
     }
 
@@ -136,16 +121,16 @@ function solve(value)
     return total;
 }
 
-console.log(solve(10));
-console.log(solve(13));
-
 assert.equal(M(2), 2);
 assert.equal(M(7), 1);
 assert.equal(M(20), 4);
-assert.equal(solve(20), 8150);
 
+// console.log(solve(10));
+// console.log(solve(13));
 
-let answer = solve(MAX);
+// assert.equal(solve(20), 8150);
 
-console.log("Answer is " + answer + " (61029882288)");
-console.log(maxC);
+// let answer = solve(MAX);
+
+// console.log("Answer is " + answer + " (61029882288)");
+// console.log(maxC);
