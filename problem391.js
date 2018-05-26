@@ -27,6 +27,8 @@
 
 const assert = require('assert');
 
+const MAX = 1000;
+
 const S = new Map();
 
 const state = {
@@ -46,24 +48,72 @@ function buildS(max)
             if (d !== 0)
                 state.last++;
         }
-        S.set(state.last);
+        S.set(state.last, state.n-1);
     }
 }
 
-buildS(10000);
+buildS(736176); 
 
 function isValid(c)
 {
-    if (c > state.last)
-        buildS(c);
+    // if (c > state.last)
+    // {
+    //     buildS(c);
+    // }
 
     return S.has(c);
 }
 
-
-function M(n)
+function M(n, reverse, start)
 {
     let memoize = new Map();
+
+    function $winningPosition(c)
+    {
+        let player1 = false;
+        let stack   = [];
+        let losingChoices = [];
+        let hasMoves = false;
+
+        let start = n;
+
+        while(true)
+        {
+            for(let m = start; m > 0; m--)
+            {
+                let newC = c + m;
+                if (! isValid(newC))
+                    continue;
+                
+                stack.push({m: m-1, c:c, hasMoves: true, player: player1});
+                c = newC;
+                m = n+1;
+            }
+
+            if (player1)
+            {
+                memoize.set(-c, false);
+            }
+            else
+            {
+                memoize.set(c, true);
+            }
+
+            if (stack.length === 0)
+                break;
+
+            let s = stack.pop();
+            c = s.c;
+            start = s.m;
+        }
+
+        for(let m = n; m > 0; m--)
+        {
+            if (memoize.get(c+m) === true)
+                return false;
+        }
+        return true;
+    }
 
     function winningPosition(c, player1)
     {
@@ -97,13 +147,24 @@ function M(n)
         return ! player1;    
     }
 
+    if (start === undefined)
+        start = 0;
+
     for (let c = n; c > 0; c--)
     {
-        if (! isValid(c))
+        if (! isValid(c + start))
             continue;
 
-        if (winningPosition(c, false))
+        if (reverse)
+        {
+            let x = M(n, false, c+start);
+            if (x !== 0)
+                return c;
+        }
+        else if (winningPosition(c+start, false))
+        {
             return c;
+        }
     }
 
     return 0;
@@ -121,16 +182,28 @@ function solve(value)
     return total;
 }
 
-assert.equal(M(2), 2);
-assert.equal(M(7), 1);
-assert.equal(M(20), 4);
+for (let i = 33; ; i++)
+{
+    let v1 = M(i, false);
+    let v2 = M(i, true);
 
-// console.log(solve(10));
-// console.log(solve(13));
+    if (v1 === 0 || i === 8 || i === 16)
+    {
+        console.log("M(" + i + ") -> " + S.get(v1) + " - " + S.get(v2));
+        if (v1 === 0)
+            break;
+    }
+}
 
+// assert.equal(M(20), 4);
+
+// assert.equal(M(2), 2);
+// assert.equal(M(7), 1);
+
+// assert.equal(solve(10), 683);
+// assert.equal(solve(13), 3287);
 // assert.equal(solve(20), 8150);
 
 // let answer = solve(MAX);
 
 // console.log("Answer is " + answer + " (61029882288)");
-// console.log(maxC);
