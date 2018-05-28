@@ -12,112 +12,175 @@
 // Find f(10).
 
 const assert = require('assert');
+const prettyHrtime = require("pretty-hrtime");
+const bigInt = require('big-integer');
 
-function process(visited, size)
+// let x = 112398351350823112;
+// if (Number.MAX_SAFE_INTEGER < x)
+//     throw "Big Integer required";
+
+let memoize = {};
+
+function get(visited)
 {
-    let total = 0;
+    const reducerL = (accumulator, currentValue) => accumulator + currentValue;
+    const reducer1 = (accumulator, currentValue) => accumulator + currentValue.reduce(reducerL, '');
+
+    let k1 = visited.reduce(reducer1, '');
+
+    let v = memoize[k1];
+
+    return v;
+}
+
+function set(visited, total)
+{
+    let width = visited[0].length;
+
+    const reducerL = (accumulator, currentValue) => accumulator + currentValue;
+    const reducerR = (accumulator, currentValue) => currentValue + accumulator;
+
+    const reducer1 = (accumulator, currentValue) => accumulator + currentValue.reduce(reducerL, '');
+    const reducer3 = (accumulator, currentValue) =>  accumulator + currentValue.reduce(reducerR, '');
+    const reducer2 = (accumulator, currentValue) =>  currentValue.reduce(reducerR, '') + accumulator;
+    const reducer4 = (accumulator, currentValue) =>  currentValue.reduce(reducerL, '') + accumulator;
+
+    let prefix = '';
+
+    let k1 = visited.reduce(reducer1, prefix);
+    let k2 = visited.reduce(reducer2, prefix);
+    let k3 = visited.reduce(reducer3, prefix);
+    let k4 = visited.reduce(reducer4, prefix);
+
+    memoize[k1] = total;
+    memoize[k2] = total;
+    memoize[k3] = total;
+    memoize[k4] = total;
+}
+
+let skipped = 0;
+let shortcut = 0;
+
+function processHoles(visited, width, height)
+{
+    let total = get(visited);
+
+    if (total !== undefined)
+    {
+        skipped++;
+        return total;
+    }
+
+    total = execute(visited, width, height);
+
+    set(visited, total);
+    return total;
+}
+
+function execute(visited, width, height)
+{
     let startX = -1;
     let startY = -1;
     let SIZE = 0;
 
-    // let s = "";
-    for (let i = 0; i < visited.length; i++)
+    for (let y = 0; y < height; y++)
+    for (let x = 0; x < width; x++)
     {
-        // if ((i % size) === 0)
-        // {
-        //     console.log(s);
-        //     s = "";
-        // }
-        
-        if (visited[i] !== 1)
+        if (visited[y][x] !== 1)
         {
-            // s += ".";
             if (SIZE === 0)
             {
-                startY = i % size;
-                startX = (i - startY) / size;
+                startX = x;
+                startY = y;
             }
-            
             SIZE++;
         }
-        // else
-        //     s += "*";
     }
-    // console.log(s);
-    // console.log('----')
-    if (SIZE <= 3)
-        return 0;
-    
-    inner(startX, startY, 0);
 
-    return total;
+    if (SIZE <= 3)
+        return bigInt.zero;
+    
+    let maxCount = 50;
+
+    return inner(startX, startY, 0);
 
     function inner(x, y, count)
     {
-        if (x < 0 || x >= size || y < 0 || y >= size)
-            return;
+        if (count > maxCount)
+        {
+            maxCount = count;
+            console.log(count);
+        }
+
+        if (x < 0 || x >= width || y < 0 || y >= height)
+            return bigInt.zero;
 
         if (x === startX && y === startY && count > 3)
         {
             if (count === SIZE)
-            {
-                total++;
-                return;
-            }
-            else
-            {
-                total += process(visited, size);
-            }
+                return bigInt(1);
+
+            return processHoles(visited, width, height);
         }
 
-        let k = (x * size) + y;
+        if (visited[y][x] === 1)
+            return bigInt.zero;
 
-        if (visited[k] === 1)
-            return;
+        let distance = Math.abs(x - startX) + Math.abs(y - startY);
 
-        visited[k] = 1;
-        inner(x, y+1, count+1);
-        inner(x, y-1, count+1);
-        inner(x+1, y, count+1);
-        inner(x-1, y, count+1);
-        visited[k] = 0;
+        if (SIZE-count < distance)
+        {
+            shortcut++;
+            return bigInt.zero; // Won't make it!
+        }
+
+        visited[y][x] = 1;
+
+        let result;
+
+        if (count === 0)
+        {
+            result = inner(x+1, y, count+1).times(2);
+        }
+        else
+        {
+            let v1 = inner(x, y+1, count+1);
+            let v2 = inner(x, y-1, count+1);
+            let v3 = inner(x+1, y, count+1);
+            let v4 = inner(x-1, y, count+1);
+            
+            result = v1.plus(v2).plus(v3).plus(v4);
+        }
+
+        visited[y][x] = 0;
+
+        return result;
     }
-
-    inner(0, 0, 0);
-
-    return total;
 }
 
 function f(size)
 {
     let visited = [];
 
-    for (let i = 0; i < size*size; i++)
-        visited.push(0);
+    for(let y = 0; y < size; y++)
+    {
+        let r = new Array(size);
+        r.fill(0, 0, size);
+        visited.push(r);
+    }
 
-    let total = process(visited, size);
+    skipped = 0;
+
+    let start = process.hrtime();
+    let total = execute(visited, size, size);
+    let end = process.hrtime(start);
+
+    console.log('f(' + size + ') executed in ' + prettyHrtime(end, {verbose:true}));
+    console.log(skipped + ' calculation skipped - used ' + shortcut + ' shortcut');            
     return total;
 }
 
-// console.log(f(2));
-// console.log(f(3));
-console.log(f(4));
-console.log(f(6));
-console.log(f(8));
-
-//assert.equal(f(4), 88);
-
-// console.log(f(3));
-// console.log(f(4));
+assert.equal(f(4).valueOf(), 88);
+assert.equal(f(6).valueOf(), 207408);
+// console.log(f(8));
 // console.log(f(10));
-// console.log(f(6));
-
-/*
-+---+---+---+
-| A | B | C |
-+---+---+---+
-| D | E | F |
-+---+---+---+
-| G | H | I |
-+---+---+---+
-*/
