@@ -12,175 +12,235 @@
 // Find f(10).
 
 const assert = require('assert');
-const prettyHrtime = require("pretty-hrtime");
 const bigInt = require('big-integer');
 
-// let x = 112398351350823112;
-// if (Number.MAX_SAFE_INTEGER < x)
-//     throw "Big Integer required";
+const UP    = 1;
+const DOWN  = 2;
+const LEFT  = 3;
+const RIGHT = 4;
 
-let memoize = {};
-
-function get(visited)
+class Row
 {
-    const reducerL = (accumulator, currentValue) => accumulator + currentValue;
-    const reducer1 = (accumulator, currentValue) => accumulator + currentValue.reduce(reducerL, '');
-
-    let k1 = visited.reduce(reducer1, '');
-
-    let v = memoize[k1];
-
-    return v;
-}
-
-function set(visited, total)
-{
-    let width = visited[0].length;
-
-    const reducerL = (accumulator, currentValue) => accumulator + currentValue;
-    const reducerR = (accumulator, currentValue) => currentValue + accumulator;
-
-    const reducer1 = (accumulator, currentValue) => accumulator + currentValue.reduce(reducerL, '');
-    const reducer3 = (accumulator, currentValue) =>  accumulator + currentValue.reduce(reducerR, '');
-    const reducer2 = (accumulator, currentValue) =>  currentValue.reduce(reducerR, '') + accumulator;
-    const reducer4 = (accumulator, currentValue) =>  currentValue.reduce(reducerL, '') + accumulator;
-
-    let prefix = '';
-
-    let k1 = visited.reduce(reducer1, prefix);
-    let k2 = visited.reduce(reducer2, prefix);
-    let k3 = visited.reduce(reducer3, prefix);
-    let k4 = visited.reduce(reducer4, prefix);
-
-    memoize[k1] = total;
-    memoize[k2] = total;
-    memoize[k3] = total;
-    memoize[k4] = total;
-}
-
-let skipped = 0;
-let shortcut = 0;
-
-function processHoles(visited, width, height)
-{
-    let total = get(visited);
-
-    if (total !== undefined)
+    constructor(item)
     {
-        skipped++;
-        return total;
-    }
+        this.isRow = true;
 
-    total = execute(visited, width, height);
-
-    set(visited, total);
-    return total;
-}
-
-function execute(visited, width, height)
-{
-    let startX = -1;
-    let startY = -1;
-    let SIZE = 0;
-
-    for (let y = 0; y < height; y++)
-    for (let x = 0; x < width; x++)
-    {
-        if (visited[y][x] !== 1)
-        {
-            if (SIZE === 0)
-            {
-                startX = x;
-                startY = y;
-            }
-            SIZE++;
-        }
-    }
-
-    if (SIZE <= 3)
-        return bigInt.zero;
-    
-    let maxCount = 50;
-
-    return inner(startX, startY, 0);
-
-    function inner(x, y, count)
-    {
-        if (count > maxCount)
-        {
-            maxCount = count;
-            console.log(count);
-        }
-
-        if (x < 0 || x >= width || y < 0 || y >= height)
-            return bigInt.zero;
-
-        if (x === startX && y === startY && count > 3)
-        {
-            if (count === SIZE)
-                return bigInt(1);
-
-            return processHoles(visited, width, height);
-        }
-
-        if (visited[y][x] === 1)
-            return bigInt.zero;
-
-        let distance = Math.abs(x - startX) + Math.abs(y - startY);
-
-        if (SIZE-count < distance)
-        {
-            shortcut++;
-            return bigInt.zero; // Won't make it!
-        }
-
-        visited[y][x] = 1;
-
-        let result;
-
-        if (count === 0)
-        {
-            result = inner(x+1, y, count+1).times(2);
-        }
+        if (item === undefined)
+            this.value = [];
         else
-        {
-            let v1 = inner(x, y+1, count+1);
-            let v2 = inner(x, y-1, count+1);
-            let v3 = inner(x+1, y, count+1);
-            let v4 = inner(x-1, y, count+1);
-            
-            result = v1.plus(v2).plus(v3).plus(v4);
-        }
+            this.value = [item];
+    }
 
-        visited[y][x] = 0;
+    clone()
+    {
+        let r = new Row();
+        r.value = Array.from(this.value);
+        return r;
+    }
 
-        return result;
+    isEmpty() 
+    { 
+        return this.value.length === 0; 
+    }
+
+    push(item)
+    {
+        this.value.push(item);
+    }
+
+    pop()
+    {  
+        this.value.pop();
+    }
+
+    get(index)
+    {
+        if (index < 0 || index >= this.value.length)
+            return ' ';
+        else   
+            return this.value[index];
+    }
+
+    contains(item)
+    {
+        return this.value.includes(item);
+    }
+
+    getLength() 
+    {
+        return this.value.length; 
+    }
+
+    valueOf()
+    {
+        return this.value.join('');
     }
 }
 
 function f(size)
 {
-    let visited = [];
-
-    for(let y = 0; y < size; y++)
+    let memoize = {};
+    
+    function makeRows(above, aboveAbove)
     {
-        let r = new Array(size);
-        r.fill(0, 0, size);
-        visited.push(r);
+        if (above === undefined)
+            above = new Row();
+        else if (above.isRow !== true)
+            above = new Row(above);
+
+        if (aboveAbove === undefined)
+            aboveAbove = new Row();
+        else if (aboveAbove.isRow !== true)
+            aboveAbove = new Row(aboveAbove);
+
+        function *inner(row)
+        {
+            if (row === undefined)
+            {
+                if (above.get(1) != DOWN)
+                {
+                    yield *inner(new Row(RIGHT));
+                }
+
+                yield *inner(new Row(DOWN));
+
+                if (above.get(0) != DOWN && above.get(1) != LEFT && aboveAbove.get(0) !== DOWN)
+                {                         
+                    yield *inner(new Row(UP));                    
+                }
+                return;
+            }
+
+            let x = row.getLength();
+
+            if (x >= size)
+            {
+                yield row.clone();          
+                return;
+            }
+
+            let lastX = (x === (size-1));
+                
+            if (row.get(x-1) === LEFT && above.get(x-1) != DOWN)
+            {
+                row.push(LEFT);
+                yield *inner(row);
+                row.pop();
+            }
+            else if (row.get(x-1) === RIGHT)
+            {
+                // Cannot do L
+            }
+            else if (row.get(x-2) != RIGHT && above.get(x-1) != DOWN)
+            {
+                row.push(LEFT);
+                yield *inner(row);
+                row.pop();
+            }
+    
+            if (! lastX && above.get(x+1) != DOWN) // Cannot go right on the right size
+            {
+                row.push(RIGHT);
+                yield *inner(row);
+                row.pop();
+            }
+
+            row.push(DOWN);
+            yield *inner(row);
+            row.pop();
+
+            if (above.get(x) != DOWN && above.get(x-1) !== RIGHT && 
+                above.get(x+1) !== LEFT && aboveAbove.get(x) !== DOWN)
+            {
+                row.push(UP);
+                yield *inner(row);
+                row.pop();
+            }
+        }
+
+        let key    = aboveAbove.valueOf() + '-' + above.valueOf();
+        let result = memoize[key];
+
+        if (result === undefined)
+        {
+            result = [];
+
+            for(let r of inner())
+                result.push(r);
+
+            memoize[key] = result;
+            return result;
+        }
+        else
+        {
+            return result;
+        }
     }
 
-    skipped = 0;
+    function execute(above, aboveAbove, rowCount)
+    {
+        let key = above.valueOf()+'-'+aboveAbove.valueOf()+'-'+rowCount;
 
-    let start = process.hrtime();
-    let total = execute(visited, size, size);
-    let end = process.hrtime(start);
+        let total = memoize[key];
+        if (total !== undefined)
+            return total;
 
-    console.log('f(' + size + ') executed in ' + prettyHrtime(end, {verbose:true}));
-    console.log(skipped + ' calculation skipped - used ' + shortcut + ' shortcut');            
+        total = bigInt.zero;
+
+        let rows = makeRows(above, aboveAbove);
+        let count= rows.length;
+
+        if (rowCount === 1)
+        {
+            while (count > 0 && rows[count-1].get(0) !== RIGHT)
+            {
+                count--;
+            }
+        }
+
+        for (let index = 0; index < count; index++)
+        {
+            let row = rows[index];
+
+            if (rowCount === 1)
+            {
+                // let percent = ((index / count)*100).toFixed(2);
+                // console.log(percent);
+
+                if (! row.contains(UP)) // cannot go up from first row
+                    total = total.plus( execute(row, above, rowCount+1) );
+            }
+            else if (rowCount === size)
+            {
+                if (! row.contains(DOWN)) // cannot go down from last row
+                    total = total.next();
+            }
+            else
+            {
+                total = total.plus( execute(row, above, rowCount+1) );
+            }
+        }
+
+        if (total.isSmall)
+            total = total.valueOf();
+
+        memoize[key] = total;
+        return total;
+    }
+
+    let total = execute(new Row(), new Row(), 1) * 2;
+
+    console.log("f("+size+") = " + total.toString());
     return total;
 }
 
-assert.equal(f(4).valueOf(), 88);
-assert.equal(f(6).valueOf(), 207408);
-// console.log(f(8));
-// console.log(f(10));
+// "112398351350823112"
+
+// console.log(f(2));
+f(4);
+f(6);
+//f(8);
+
+//assert.equal(f(4), 88);
+
+console.log('Done');
