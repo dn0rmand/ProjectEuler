@@ -25,38 +25,36 @@ class Memoize
     constructor()
     {
         this.content = new Map();
-        this.size = 0;
     }
 
     get(key1, key2, key3)
     {
-        let inner = this.content.get(key1.valueOf());
+        let inner = this.content.get(key1);
         if (inner === undefined)
             return undefined;
-        inner = inner.get(key2.valueOf());
+        inner = inner.get(key2);
         if (inner === undefined)
             return undefined;
 
-        let r = inner.get(key3.valueOf());
+        let r = inner.get(key3);
         return r;
     }
 
     set(key1, key2, key3, value)
     {
-        let inner = this.content.get(key1.valueOf());
+        let inner = this.content.get(key1);
         if (inner === undefined)
         {
             inner = new Map();
-            this.content.set(key1.valueOf(), inner);
+            this.content.set(key1, inner);
         }
-        let inner2 = inner.get(key2.valueOf());
+        let inner2 = inner.get(key2);
         if (inner2 === undefined)
         {
             inner2 = new Map();
-            inner.set(key2.valueOf(), inner2);
+            inner.set(key2, inner2);
         }
-        inner2.set(key3.valueOf(), value);
-        this.size++;
+        inner2.set(key3, value);
     }
 }
 
@@ -90,8 +88,8 @@ class Row
         return r;
     }
 
-    isEmpty() 
-    { 
+    isEmpty()
+    {
         return this.value === 0; 
     }
 
@@ -106,7 +104,7 @@ class Row
     }
 
     pop()
-    {  
+    {
         let d = this.value % 10;
         this.value = (this.value - d) / 10;
         if (d === UP)
@@ -122,7 +120,7 @@ class Row
         else   
         {
             index = length - index - 1;
-            let value = this.value; 
+            let value = this.value;
             while (index-- > 0)
             {
                 value = (value - (value % 10)) / 10;
@@ -131,43 +129,42 @@ class Row
         }
     }
 
-    contains(item)
-    {
-        if (item === DOWN)
-            return this.down !== 0;
-        else if (item === UP)
-            return this.up !== 0;
-
-        let v = this.value;
-        while (v > 0)
-        {
-            let d = v % 10;
-            if (d === item)
-                return true;
-            v = (v-d) / 10;
-        }
-        return false;
-    }
-
-    countOf(item)
-    {
-        if (item === UP)
-            return this.up;
-        else if (item === DOWN)
-            return this.down;
-
-        return 0;
-    }
-
     valueOf()
     {
         return this.value;
+    }
+
+    getKey(onlyDown)
+    {
+        let key = 0;
+        let value = this.value;
+
+        while (value > 0)
+        {
+            let d = value % 10;
+            value = (value - d) / 10;
+
+            key *= 10;
+
+            if (onlyDown === true)
+            {
+                if (d === DOWN)
+                    key += d;
+            }
+            else if (d === DOWN || d === LEFT || d === RIGHT)
+                key += d;
+        }
+
+        return key;
     }
 }
 
 function f(size, trace)
 {
     let memoize = new Memoize();
+
+    // above      != DOWN, RIGHT, LEFT
+    // aboveAbove != DOWN
     
     function makeRows(above, aboveAbove)
     {
@@ -183,16 +180,18 @@ function f(size, trace)
                 }
                 else
                 {
-                    if (above.get(1, size) != DOWN)
+                    let a1 = above.get(1, size);
+
+                    if (a1 != DOWN)
                     {
                         inner(new Row(RIGHT), 1);
                     }
 
                     inner(new Row(DOWN), 1);
 
-                    if (above.get(0, size) != DOWN && above.get(1, size) != LEFT && aboveAbove.get(0, size) !== DOWN)
-                    {                         
-                        inner(new Row(UP), 1);                    
+                    if (a1 != LEFT && above.get(0, size) != DOWN && aboveAbove.get(0, size) !== DOWN)
+                    {
+                        inner(new Row(UP), 1);
                     }
                 }
                 return;
@@ -203,41 +202,43 @@ function f(size, trace)
                 // Ensure correct !!!!
                 if (! above.isEmpty())
                 {
-                    // if (above.countOf(UP) != r.countOf(DOWN))
-                    //     continue;
-                    if (above.countOf(DOWN) != row.countOf(UP))
+                    if (above.down != row.up)
                         return; // Invalid row
                 }
                 else // First row so no UP and start with RIGHT
                 {
-                    if (row.get(0, size) !== RIGHT || row.contains(UP))
+                    if (row.get(0, size) !== RIGHT || row.up > 0)
                         return;
                 }
-                
+
                 result.push(row.clone());
                 return;
             }
 
             let lastX = (x === (size-1));
-                
-            if (row.get(x-1, x) === LEFT && above.get(x-1, size) != DOWN)
+
+            let rl  = row.get(x-1, x);
+            let al  = above.get(x-1, size);
+            let ar  = above.get(x+1, size);
+
+            if (rl === LEFT && al != DOWN)
             {
                 row.push(LEFT);
                 inner(row, x+1);
                 row.pop();
             }
-            else if (row.get(x-1, x) === RIGHT)
+            else if (rl === RIGHT)
             {
                 // Cannot do L
             }
-            else if (row.get(x-2, x) != RIGHT && above.get(x-1, size) != DOWN)
+            else if (al != DOWN && row.get(x-2, x) != RIGHT)
             {
                 row.push(LEFT);
                 inner(row, x+1);
                 row.pop();
             }
-    
-            if (! lastX && above.get(x+1, size) != DOWN) // Cannot go right on the right size
+
+            if (! lastX && ar != DOWN) // Cannot go right on the right size
             {
                 row.push(RIGHT);
                 inner(row, x+1);
@@ -247,23 +248,22 @@ function f(size, trace)
             row.push(DOWN);
             inner(row, x+1);
             row.pop();
-
-            if (above.get(x, size) != DOWN && above.get(x-1, size) !== RIGHT && 
-                above.get(x+1, size) !== LEFT && aboveAbove.get(x, size) !== DOWN)
+                        
+            if (al !== RIGHT && ar != LEFT)
             {
-                row.push(UP);
-                inner(row, x+1);
-                row.pop();
+                if (above.get(x, size) != DOWN && aboveAbove.get(x, size) !== DOWN)
+                {
+                    row.push(UP);
+                    inner(row, x+1);
+                    row.pop();
+                }
             }
         }
-
-        result = memoize.get(-1, aboveAbove, above);
 
         if (result === undefined)
         {
             result = [];
             inner();
-            memoize.set(-1, aboveAbove, above, result);
             return result;
         }
         else
@@ -274,7 +274,7 @@ function f(size, trace)
 
     function execute(above, aboveAbove, rowCount)
     {
-        let total = memoize.get(rowCount, aboveAbove, above);
+        let total = memoize.get(rowCount, aboveAbove.getKey(true), above.getKey(false));
         if (total !== undefined)
             return total;
 
@@ -299,7 +299,7 @@ function f(size, trace)
             }
             else if (rowCount === size)
             {
-                if (! row.contains(DOWN)) // cannot go down from last row
+                if (row.down === 0) // cannot go down from last row
                     total = total.next();
             }
             else
@@ -311,7 +311,7 @@ function f(size, trace)
         if (total.isSmall)
             total = total.valueOf();
 
-        memoize.set(rowCount, aboveAbove, above, total);
+        memoize.set(rowCount, aboveAbove.getKey(true), above.getKey(false), total);
 
         return total;
     }
@@ -329,9 +329,8 @@ function f(size, trace)
 
 assert.equal(f(4).valueOf(), 88);
 assert.equal(f(6).valueOf(), 207408);
+assert.equal(f(8).valueOf(), 22902801416);
 
-console.log('f(8)');
-f(8, true); // 22902801416
 console.log('f(10)');
 f(10, true); // "112398351350823112"
 
