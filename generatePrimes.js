@@ -80,4 +80,5 @@ const TARGET = Math.pow(10, 14);
 const db = new sqlite('data/primes.sqlite3', { fileMustExist: true });
 
 loadFromFile(db);
+
 // generate(db, TARGET);
