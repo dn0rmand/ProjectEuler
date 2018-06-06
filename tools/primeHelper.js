@@ -66,6 +66,7 @@ module.exports = function()
         initialize: function(max) {
             generatePrimes(max);
         },
+        allPrimes: function() { return _primes; },
         primes : function *() {
             yield *_primeMap.keys();
         },
