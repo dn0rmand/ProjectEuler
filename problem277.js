@@ -1,4 +1,5 @@
 const assert = require('assert');
+const announce = require('./tools/announce');
 
 function *generateSequence(a)
 {
@@ -112,7 +113,7 @@ while(true)
     let value = reverse(current, SEQUENCE);
     if (value >= TARGET && validate(value, SEQUENCE))
     {
-        console.log("The smallest a1 > 10^15 that begins with the sequence UDDDUdddDDUDDddDdDddDDUDDdUUDd is " + value);
+        announce(277, "The smallest a1 > 10^15 that begins with the sequence UDDDUdddDDUDDddDdDddDDUDDdUUDd is " + value);
         break;
     }
 
