@@ -31,7 +31,7 @@ module.exports = function()
         _primes.push(2);
         _primes.push(3);
 
-        let n = max || Math.ceil(Math.sqrt(MAX));
+        let n = max;
         
         let sieve = []; //new Int32Array(max / 31);
 
