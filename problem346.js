@@ -16,19 +16,23 @@
 const assert = require('assert');
 const bigInt = require('big-integer');
 
-const MAX = 1000000000000;
-const ARRAY_MAX_SIZE = 1000000000;
+const MAX_ARRAY_SIZE = 100000000;
+const SECTION        = 10000000000;
+const MAX            = 1000000000000;
 
 class myArray
 {
-    constructor(size)
+    constructor(min, max)
     {        
-        this.size = size;       
+        this.min  = min;
+        this.size = max-min;    
+        
         this.arrays = [];
-        while (size > ARRAY_MAX_SIZE)
+        let size = this.size;
+        while (size > MAX_ARRAY_SIZE)
         {
-            this.arrays.push(new Int8Array(ARRAY_MAX_SIZE));
-            size -= ARRAY_MAX_SIZE;
+            this.arrays.push(new Int8Array(MAX_ARRAY_SIZE));
+            size -= MAX_ARRAY_SIZE;
         }
         if (size > 0)
             this.arrays.push(new Int8Array(size));
@@ -36,25 +40,45 @@ class myArray
 
     set(index, value)
     {
-        let idx = index % ARRAY_MAX_SIZE;
-        let a   = (index - idx) / ARRAY_MAX_SIZE;
+        if (index < this.min)
+            return;
 
-        let array = this.arrays[a];
-        array[idx] = value;
+        index -= this.min;
+
+        if (index >= 0 && index < this.size)
+        {
+            let idx = index % MAX_ARRAY_SIZE;
+            let a   = (index - idx) / MAX_ARRAY_SIZE;
+            let array = this.arrays[a];
+
+            array[idx] = value;
+        }
     }
 
-    get(index, value)
+    get(index)
     {
-        let idx = index % ARRAY_MAX_SIZE;
-        let a   = (index - idx) / ARRAY_MAX_SIZE;
+        if (index < this.min)
+            return 0;
 
-        let array = this.arrays[a];
-        return array[idx];
+        index -= this.min;
+
+        if (index >= 0 && index < this.size)
+        {
+            let idx = index % MAX_ARRAY_SIZE;
+            let a   = (index - idx) / MAX_ARRAY_SIZE;
+            let array = this.arrays[a];
+
+            return array[idx];
+        }
+        else
+            return 0;
     }
 }
 
 function M(n, b)
 {
+    // M = (b^n - 1) / (b-1)
+    
     let x = b.pow(n).minus(1);
     let y = b.minus(1);
 
@@ -66,7 +90,7 @@ function M(n, b)
     return v.valueOf();
 }
 
-function solve(max, trace)
+function $solve(max, trace)
 {
     function findMaxBase()
     {
@@ -81,115 +105,163 @@ function solve(max, trace)
         }
     }
 
-    function *repunit(b, max)
-    {
-        b = bigInt(b);
-        let n = 1;
-        let m = 0;
-
-        while (m < max)
-        {
-            m = M(n++, b);
-            if (m < max)
-                yield m;
-        }
-    }
-
     const MAXBASE = findMaxBase();
 
-    let total = 0;
+    let extra = bigInt(1); // 1 is one
+    let total = 0; 
 
     function inner(min, max)
     {
         let map = new Map();
 
-        for (let base = 2; base <= MAXBASE; base++)
+        for (let b = bigInt(2); b.leq(MAXBASE); b = b.next())
         {
-            for (let r of repunit(base, max))
+            let n = 2;
+            let m = 0;
+    
+            while (m < max)
             {
-                if (r < min)
+                m = M(n, b);
+
+                if (m >= max)
+                    break;
+
+                n++;
+
+                if (m < min)
                     continue;
 
-                let c = map.get(r);
+                let c = map.get(m);
                 if (c === undefined)
-                    map.set(r, 1);
+                    map.set(m, 1);
                 else if (c === 1)
                 {
-                    total += r;
-                    map.set(r, 2)
+                    if (Number.MAX_SAFE_INTEGER < total + m)
+                    {
+                        extra = extra.plus(total).plus(m);
+                        total = 0;
+                    }
+                    else
+                    {
+                        total += m;
+                    }
+                    map.set(m, 2)
                 }
             }
-
-            if (trace === true)
-            {
-                let percent = ((base * 100) / MAXBASE).toFixed(2);
-                if (percent != $percent)
-                {
-                    $percent = percent;
-                    console.log($percent, '%');
-                }
-            }
+            if (n === 2)
+                break;
         }
     }
 
     let $percent = '';
 
-    const SECTION = 10000000;
+    let mmax = SECTION;
+    let mmin  = 0;
+    if (mmax > max)
+        mmax = max;
+    
+    while (mmin < max)
+    {        
+        inner(mmin, mmax);
+        mmin = mmax;
+        mmax += SECTION;
+        if (trace === true)
+        {
+            let p = ((mmin / max) * 100).toFixed(3);
+            if (p != $percent)
+            {
+                $percent = p;
+                console.log(">> ", p, '%');
+            }
+        }
+    }
+
+    return extra.plus(total).toString();
+}
+
+function solve(max, trace)
+{
+    let MAXBASE = max;
+
+    let extra = bigInt(1);  // 1 is a strong repunit
+    let total = 0;
+
+    function inner(min, max)
+    {
+        let repunits = new myArray(min, max);
+
+        repunits.set(1, 2);
+
+        for(let base = 2; base < MAXBASE; base++)
+        {
+            let value = 1;
+            let gotIn = false;
+            while(true)
+            {
+                value = (value * base) + 1;
+
+                if (value >= max)
+                    break;
+                
+                gotIn = true;
+
+                if (value < min)
+                    continue;
+
+                let c = repunits.get(value);
+                if (! c)
+                    repunits.set(value, 1);
+                else if (c === 1)
+                {
+                    if(Number.MAX_SAFE_INTEGER < (total+value))
+                    {
+                        extra = extra.plus(total).plus(value);
+                        total = 0;
+                    }
+                    else
+                        total += value;
+
+                    repunits.set(value, 2);
+                }
+            }
+            if (!gotIn)
+                break;
+        }
+    }
+
+    let $percent = '';
 
     let mmax = SECTION;
     let mmin  = 0;
     if (mmax > max)
         mmax = max;
-
+    
     while (mmin < max)
-    {
+    {        
         inner(mmin, mmax);
         mmin = mmax;
         mmax += SECTION;
-    }
-
-    return total;
-}
-
-function solve1(max, trace)
-{
-    let MAXBASE = max;
-
-    let total = 1; // 1 is a strong repunit
-    let repunits = new myArray(max);
-
-    repunits.set(1, 2);
-
-    for(let base = 2; base < MAXBASE; base++)
-    {
-        let value = 1;
-        while(true)
+        if (trace === true)
         {
-            value = (value * base) + 1;
-            if (value >= max)
-                break;
-
-            let c = repunits.get(value);
-            if (! c)
-                repunits.set(value, 1);
-            else if (c === 1)
+            let p = ((mmin / max) * 100).toFixed(0);
+            if (p != $percent)
             {
-                total += value;
-                repunits.set(value, 2);
+                $percent = p;
+                console.log(p, '%');
             }
         }
     }
 
-    return total;
+    return extra.plus(total).toString();
 }
  
-assert.equal(solve(1000), 15864);
-assert.equal(solve(10000), 450740);
-assert.equal(solve(100000), 12755696);
-assert.equal(solve(1000000), 372810163);
-assert.equal(solve(10000000), 11302817869);
+assert.equal(solve(1000), "15864");
+assert.equal(solve(10000), "450740");
+assert.equal(solve(100000), "12755696");
+assert.equal(solve(1000000), "372810163");
+assert.equal(solve(10000000), "11302817869");
 
 console.log("Test passed");
 
 let answer = solve(MAX, true);
-console.log("Answer is", answer, 11302817869);
+console.log("Answer is", answer, "336108797689259276");
