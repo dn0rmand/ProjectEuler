@@ -28,17 +28,6 @@ const assert = require('assert');
 const bigInt = require('big-integer');
 const mclm   = require('mlcm');
 
-function streak(n, max)
-{
-    for(let k = 1; k < max; k++)
-    {
-        if ((n+k) % (k+1) !== 0)
-            return k;
-    }
-
-    return max;
-}
-
 function P(s, N)
 {
     let vs = [];
@@ -51,7 +40,7 @@ function P(s, N)
     let v1 = n.divide(lcm1);
     let v2 = n.divide(lcm2);
     let v  = v1.minus(v2);
-    
+
     return v.valueOf();
 }
 
