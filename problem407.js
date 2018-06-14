@@ -17,6 +17,7 @@
 
 const assert = require('assert');
 const primeHelper = require('./tools/primeHelper')();
+const announce = require('./tools/announce');
 
 const MAX = 10000000;
 
@@ -72,4 +73,4 @@ console.timeEnd("T2");
 let answer = solve(MAX, true);
 // console.timeEnd("T3");
 
-console.log("∑M(n) for 1 ≤ n ≤", MAX, "is", answer);
+announce(407, "∑M(n) for 1 ≤ n ≤ " + MAX + " is " + answer);
