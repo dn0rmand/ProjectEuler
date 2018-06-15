@@ -1,0 +1,23 @@
+{
+  "name": "project-euler",
+  "version": "1.0.0",
+  "description": "Project Euler",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "big-integer": "^1.6.31",
+    "bignumber.js": "^7.2.1",
+    "bitbuffer": "^0.1.3",
+    "gcd": "0.0.1",
+    "js-roman-numerals": "^1.1.0",
+    "ml-matrix": "^5.1.1",
+    "mlcm": "0.0.3",
+    "pretty-hrtime": "^1.0.3",
+    "slack-webhook": "^1.0.0",
+    "written-number": "^0.8.1"
+  }
+}
