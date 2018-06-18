@@ -20,6 +20,80 @@ const bigInt = require('big-integer');
 const primeHelper = require('./tools/primeHelper')();
 
 const MODULO = 1000000000;
+const MODULO1= 100000000000000;
+
+if (MODULO1 > Number.MAX_SAFE_INTEGER)
+    throw "Too big";
+
+class Memoize 
+{
+    constructor()
+    {
+        this.memoize = new Array();
+        this.currentK = 0;
+        this.memoizeMaxN = 0;
+        this.entries = 0;
+    }
+
+    clear()
+    {
+        // this.memoize = new Array();
+        // this.memoizeMaxN = 0;
+        // this.entries = 0;
+    }
+
+    get(N, index)
+    {
+        let a = this.memoize[N];
+        if (a === undefined)
+            return a;
+        return a[index];
+    }
+
+    set(N, index, value)
+    {
+        if (this.memoizeMaxN < N)
+        {
+            this.memoizeMaxN = N;
+            process.stdout.write('\r' + this.currentK + ": " + N);
+        }
+
+        let a = this.memoize[N];
+        if (a === undefined)
+        {
+            a = new Array();
+            this.memoize[N] = a;
+        }
+        a[index] = value;
+        this.entries++;
+    }
+
+    size()
+    {
+        let undefined1 = 0;
+        let undefined2 = 0;
+
+        for(let i = 0 ; i < this.memoize.length; i++)
+        {
+            let a = this.memoize[i];
+            if (a === undefined)
+                undefined1++;
+            else
+            {
+                for(let v of a)
+                    if (v === undefined)
+                        undefined2++;
+            }
+        }
+        console.log();
+        console.log(undefined1, "value holes");
+        console.log(undefined2, "index holes");
+
+        return this.entries;
+    }
+}
+
+let memoize = new Memoize();
 
 function Fibonacci(n)
 {
@@ -42,287 +116,61 @@ function Fibonacci(n)
 
 primeHelper.initialize(Fibonacci(25));
 
-function version0()
+function S1(maxK)
 {
-    const memoize = new Map();
+    let primes = primeHelper.allPrimes();
 
-    function get(k, j)
-    {
-        k = k + j * 100000;
-        return memoize.get(k);
-    }
+    let info = -1;
 
-    function set(k, j, v)
+    function inner(value, index)
     {
-        k = k + j * 100000;
-        memoize.set(k, v);
-    }
-
-    // V(k,j) = V(k, j-1) + pj*V(k-pj, j)    
-    function V(k, j)
-    {
-        if (k < 2)
+        if (value > maxK)
             return 0;
 
-        if (k === 2)
-            return 2;
-
-        let total = get(k, j);
-        if (total !== undefined)
-            return total;
-
-        let primes = primeHelper.allPrimes();
-
-        let usedPrimes = [];
-
-        function inner(value, index)
+        if (value === maxK)
         {
-            if (value > k)
-                return 0;
-
-            if (value === k)
-            {
-                let v = usedPrimes.reduce((a, v) => a.times(v), bigInt(1));
-                return v.mod(MODULO).valueOf() ;
-            }
-
-            let total = 0;
-
-            for (let i = index; i < j; i++)
-            {
-                let p = primes[i];
-                let pp= p;
-                let v = value+p;
-                if (v > k)
-                    break;
-
-                let pushed = 0;
-                while (v <= k)
-                {
-                    usedPrimes.push(pp);
-                    total = (total + inner(v, i+1)) % MODULO;
-                    usedPrimes.pop();
-
-                    let ppp = pp * p;
-                    if (ppp > Number.MAX_SAFE_INTEGER)
-                    {
-                        usedPrimes.push(pp);
-                        pushed++;
-                        pp = p;
-                    }
-                    else
-                        pp = ppp;
-                    v  += p;
-                }
-                while (pushed-- > 0)
-                    usedPrimes.pop();
-            }
-
-            return total;
+            return 1;
         }
 
-        let pj = primes[j-1];        
+        let total = memoize.get(value, index);
         
-        total = 0;
-
-        if (j > 1 && pj < k)
+        if (total !== undefined)
         {
-            let t1 = V(k, j-1);
-            let t2 = V(k - pj, j);
-            
-            total = bigInt(t2).times(pj).plus(t1).mod(MODULO).valueOf();
-        }
-        else
-        {
-            total = inner(0, 0);
+            return total;
         }
 
-        set(k, j, total);
-        return total;
-    }
+        total = bigInt.zero;
 
-    function S(k)
-    {
-        if (k < 2)
-            return 0;
-
-        let J = 0;
-        let primes = primeHelper.allPrimes();
-        for (let i = 0; i < primes.length; i++)
+        for (let i = index; i < primes.length; i++)
         {
             let p = primes[i];
-            if (p > k)
-            {
-                J = i;
+            let v = value+p;
+            if (v > maxK)
                 break;
+
+            let pp= bigInt(p);
+            while (v <= maxK)
+            {
+                let t = inner(v, i+1);
+                total = pp.times(t).plus(total).mod(MODULO1).valueOf();
+                pp = bigInt(pp).times(p);
+                v += p;
             }
         }
 
-        if (J === 0)
-            throw "ERROR";
-
-        return V(k, J);
-    }
-
-    function solve()
-    {
-        let total = 0;
-
-        for (let k = 2; k <= 24; k++)
-        {
-            let v = Fibonacci(k);
-            let f = S(v);
-
-            total = (total + f) % MODULO;
-        }
+        memoize.set(value, index, total);
 
         return total;
     }
 
-    return {S:S, solve:undefined};
-}
-
-function version1()
-{
-    function S(targets)
-    {
-        let maxK = -1;
-
-        function init()
-        {
-            let t = new Map();
-            for (let k of targets)
-            {
-                t.set(k, 0);
-                if (k > maxK)
-                    maxK = k;
-            }
-
-            targets = t;
-        }
-
-        init();
-
-        let primes = primeHelper.allPrimes();
-
-        let usedPrimes = [];
-        let info = -1;
-
-        function inner(value, index)
-        {
-            if (value > maxK)
-                return;
-
-            let count = targets.get(value);
-            if (count !== undefined)
-            {
-                let v = usedPrimes.reduce((a, v) => a.times(v), bigInt(1));
-                count = v.add(count).mod(MODULO).valueOf() ;
-                targets.set(value, count);
-            }
-
-            if (value === maxK)
-            {
-                if (usedPrimes.length != info)
-                {
-                    info = usedPrimes.length;
-                    process.stdout.write('\r'+info+'    ');
-                }
-                return;
-            }
-
-            for (let i = index; i < primes.length; i++)
-            {
-                let p = primes[i];
-                let pp= p;
-                let v = value+p;
-                if (v > maxK)
-                    break;
-
-                let pushed = 0;
-                while (v <= maxK)
-                {
-                    usedPrimes.push(pp);
-                    inner(v, i+1);
-                    usedPrimes.pop();
-
-                    let ppp = pp * p;
-                    if (ppp > Number.MAX_SAFE_INTEGER)
-                    {
-                        usedPrimes.push(pp);
-                        pushed++;
-                        pp = p;
-                    }
-                    else
-                        pp = ppp;
-                    v  += p;
-                }
-                while (pushed-- > 0)
-                    usedPrimes.pop();
-            }
-        }
-
-        inner(0, 0);
-
-        let total = 0;
-        for(let k of targets.keys())
-        {
-            total = (total + targets.get(k)) % MODULO;
-        }
-        return total;
-    }
-
-    function solve()
-    {
-        let targets = [];
-
-        for (let k = 2; k <= 24; k++)
-        {
-            let v = Fibonacci(k);
-            targets.push(v);
-        }
-
-        return S(targets);
-    }
-
-    return {S:S, solve:undefined};
+    memoize.clear();
+    let total = inner(0, 0) % MODULO;
+    return total;
 }
 
 function version2()
 {
     let primes = primeHelper.allPrimes();
-    let memoize= new Map();
-
-    memoizeMaxN = 0;
-    currentK = 0;
-
-    function get(N, index)
-    {
-        let k = (index * 100000) + N;
-        return memoize.get(k);        
-    }
-
-    function set(N, index, value)
-    {
-        if (N > 5000)
-        {
-            if ((N & 1) !== 0)
-                return;
-            if (N > 20000)
-            {
-                if ((N & 3) !== 0)
-                    return;
-            }
-        }
-
-        if (memoizeMaxN < N)
-        {
-            memoizeMaxN = N;
-            process.stdout.write('\r' + currentK + ": " + N);
-        }
-        let k = (index * 100000) + N;
-        memoize.set(k, value);
-    }
 
     function getPrimes(N)
     {
@@ -349,6 +197,10 @@ function version2()
         if (index < 0)
             return 0;
 
+        let t = memoize.get(N, index);
+        if (t !== undefined)
+            return t;
+
         let p = primes[index];
 
         while (index > 0 && p > N)
@@ -363,76 +215,78 @@ function version2()
         if (index === 0)
         {
             let factor = N >> 1;
-            let tt = bigInt(2).pow(factor).mod(MODULO).valueOf();
+            let tt = bigInt(2).pow(factor).mod(MODULO1).valueOf();
             return tt;
         }
 
-        let t = get(N, index);
+        t = memoize.get(N, index);
         if (t !== undefined)
             return t;
 
-        let t0 = p === N ? p : 0;
-        let t1 = p * V(N-p, index);
-
+        let t1 = bigInt(p).times(V(N-p, index));
         let t2 = V(N, index-1);
+        let t3 = p === N ? p : 0;
 
-        let total = (t0 + t1 + t2) % MODULO;
+        let total = t1.plus(t2).plus(t3).mod(MODULO1);
 
-        set(N, index, total);
+        memoize.set(N, index, total);
 
         return total;
     }
 
     function S(N)
     {
-        if (N.length === undefined)
-            N = [N];
-
-        let total = 0;
-
-        for (let n of N)
-        {
-            let index = getPrimes(n);
-
-            total = (total + V(n, index)) % MODULO;
-        }
+        memoize.clear();
+        let index = getPrimes(N);
+        let total = V(N, index) % MODULO;
 
         return total;
     }   
     
-    function solve()
-    {
-        let total = 0;
-
-        for (let k = 2; k <= 24; k++)
-        {
-            currentK = k;
-            process.stdout.write('\r' + currentK + ": 0     ");
-            //memoize.clear();
-            memoizeMaxN = 0;
-            let v = Fibonacci(k);
-            let f = S(v);
-
-            total = (total + f) % MODULO;
-        }
-
-        return total;
-    }
-
-    return {S:S, solve:solve};
+    return S;
 }
 
-let S = version2().S;
-let solve = version2().solve;
+function solve(MAX, S)
+{
+    let total = 0;
+    
+    for (let k = 2; k <= MAX; k++)
+    {
+        memoize.currentK = k;
+        process.stdout.write('\r' + memoize.currentK + ": 0     ");
 
-assert.equal(S([5]).valueOf(), 11);
-assert.equal(S([8]).valueOf(), 49);
-assert.equal(S([1]).valueOf(), 0);
-assert.equal(S([2]).valueOf(), 2);
-assert.equal(S([3]).valueOf(), 3);
+        let v = Fibonacci(k);
+        let f = S(v);
 
-//assert.equal(S([1,2,3,5,8]), 0+2+3+11+49);
+        total = (total + f) % MODULO;
+    }
 
-let answer = solve();
+    return total;
+}
 
-announce(618, "last nine digits of ∑k=S(Fk) where 2 <= k <= 24 are " + answer);
+function Test(S)
+{
+    memoize.clear();
+    assert.equal(S(5).valueOf(), 11);
+    memoize.clear();
+    assert.equal(S(8).valueOf(), 49);
+    memoize.clear();
+    assert.equal(S(1).valueOf(), 0);
+    memoize.clear();
+    assert.equal(S(2).valueOf(), 2);
+    memoize.clear();
+    assert.equal(S(3).valueOf(), 3);
+}
+
+let S = version2();
+
+// Test(S);
+
+let MAX = 24;
+
+console.time("S2");
+let answer2 = solve(MAX, S);
+console.timeEnd("S2");
+
+console.log(618, "last nine digits of ∑k=S(Fk) where 2 <= k <= " + MAX + " are " + answer2);
+// console.log(memoize.size())
