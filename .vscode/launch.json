@@ -23,7 +23,7 @@
             "name": "Launch Program",
             "program": "${file}",
             "cwd": "${fileDirname}",
-            "console": "externalTerminal"
+            "__console": "externalTerminal"
         }
     ]
 }
