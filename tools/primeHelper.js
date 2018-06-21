@@ -1,5 +1,6 @@
 module.exports = function()
 {
+    const $isNumberPrime = require('is-number-prime');
     const _primeMap    = new Map();
     let   _primes      = []
     let   _maxPrime    = 0;
@@ -17,11 +18,15 @@ module.exports = function()
         for(let i of _primes)
         {
             if (i > root)
-                break;
+                return true;
             if (p % i === 0)
                 return false;
         }
-        return true;                        
+
+        if (root > _maxPrime)
+            return $isNumberPrime(p);
+        else
+            return true;
     }
 
     function generatePrimes(max) 
@@ -32,7 +37,7 @@ module.exports = function()
         _primes.push(3);
 
         let n = max;
-        
+
         let sieve = []; //new Int32Array(max / 31);
 
         for (let i = 2, j = 3; ; i+=2, j+=3)
