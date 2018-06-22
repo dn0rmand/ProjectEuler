@@ -1,4 +1,4 @@
-module.exports = function()
+module.exports = function(maxPrime)
 {
     const $isNumberPrime = require('is-number-prime');
     const _primeMap    = new Map();
@@ -67,7 +67,7 @@ module.exports = function()
         _maxPrime = max;
     }
 
-    return {
+    let result = {
         initialize: function(max) {
             generatePrimes(max);
         },
@@ -79,4 +79,8 @@ module.exports = function()
             return isPrime(value); 
         }
     }
+
+    if (maxPrime !== undefined)
+        result.initialize(maxPrime);
+    return result;
 }

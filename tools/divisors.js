@@ -1,6 +1,6 @@
-module.exports = function(value)
+module.exports = function(value, isNumberPrime)
 {
-    const isNumberPrime = require('is-number-prime');
+    let $isNumberPrime = require('is-number-prime');
 
     function *getDivisors()
     {
@@ -38,5 +38,8 @@ module.exports = function(value)
         }
     }
 
+    if (isNumberPrime === undefined)
+        isNumberPrime = $isNumberPrime;
+        
     return getDivisors();
 }
