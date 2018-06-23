@@ -10,7 +10,7 @@ function solve(max)
     // a+b+c <= max
     // a <= b <= c => a <= max/3
     // a = 1 => b+c <= max-1 => b <= (max-1)/2 
-    
+
     let maxA = Math.floor(max / 3);
     let maxB = Math.floor(max / 2);
 
@@ -32,10 +32,16 @@ function solve(max)
 
             if (c2 > Number.MAX_SAFE_INTEGER)
                 throw "TOO BIG";
-            
+
             let c = Math.sqrt(c2);
             if (c === Math.floor(c))
             {
+                if (c < b)
+                    continue;
+                let p = a+b+c;
+                if (p > max)
+                    continue;
+
                 total++;
                 if (total > Number.MAX_SAFE_INTEGER)
                     throw "TOO BIG";
@@ -44,6 +50,26 @@ function solve(max)
     }
 
     console.log('.');
+    return total;
+}
+
+function solve2(max)
+{
+    // -2P * (x+y) + 2 xy + 1 + P^2 = 0 
+
+    let total = 0;
+    for (let P = 1; P <= max; P++)
+    {
+        let a = 0;
+        let b = 2;
+        let c = 0;
+        let d = -2*P;
+        let e = (P*P)+1;
+        let f = -2*P;
+
+        if ((e & 1) !== 0)
+            continue;
+    }
     return total;
 }
 
