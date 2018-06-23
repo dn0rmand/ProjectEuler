@@ -21,7 +21,7 @@ function σ2(value)
         let d = (divisor * divisor);
         if (d > Number.MAX_SAFE_INTEGER)
             throw "Need bigint";
-        total += (divisor * divisor);
+        total += d;
         if (total > Number.MAX_SAFE_INTEGER)
             throw "Need bigint";
     }
