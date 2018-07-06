@@ -12,6 +12,7 @@
     "big-integer": "^1.6.31",
     "bignumber.js": "^7.2.1",
     "bitbuffer": "^0.1.3",
+    "compute-lcm": "^1.1.0",
     "gcd": "0.0.1",
     "is-number-prime": "^1.0.1",
     "js-roman-numerals": "^1.1.0",
