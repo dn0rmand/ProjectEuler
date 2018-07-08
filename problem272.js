@@ -7,97 +7,122 @@ const assert = require('assert');
 const bigInt = require('big-integer');
 const primeHelper = require('./tools/primeHelper')();
 
-const MAX = 100000000000;
-const memoizeSolve = new Map();
+const MAX_PRIME = 207300;
+const MAX_TEST = 300000000;
+const MAX_REAL = 100000000000;
 
-primeHelper.initialize(100000000);
+let MAX = MAX_REAL;
 
-// 2 , 3 , 5 , 7 , 11 , 13 , 17 , 19 , 23 , 29 , 31 , 37 , 41 , 43
+primeHelper.initialize(MAX_PRIME); // Max Allowed Prime
 
-function S(max, expected)
+function buildAllowedPrimes()
 {
-    let primes = [];
+    function isAllowed(p)
+    {
+        return (p % 3 === 1);
+    }
 
-    let v = max;
+    const allowedPrimes = [9];
+
     for (let p of primeHelper.primes())
     {
-        if (p >= v)
-        {
-            primes.push(v);
-            break;
-        }
-        if (v % p === 0)
-        {
-            primes.push(p);
-            while (v % p === 0)
-                v /= p;
-            if (v === 1)
-                break;
-            if (primeHelper.isPrime(v))
-            {
-                primes.push(v);
-                break;
-            }
-        }        
+        if (isAllowed(p))
+            allowedPrimes.push(p);
     }
 
-    const MAX_I = 208063;
-
-    function solve(p, max)
-    {
-        let count = memoizeSolve.get(p);
-        if (count !== undefined)
-            return count;
-        
-        count = 1;
-
-        for (let i = 2; i < p; i++)
-        {
-            let i3;
-            if (i <= MAX_I)
-                i3 = (i*i*i) % p;
-            else
-                i3 = bigInt(i3).modPow(3, p).valueOf();
-
-            if (i3 === 1)
-            {
-                count++;
-                if (count > max)
-                    break;
-            }
-        }
-
-        memoizeSolve.set(p, count);
-        return count;
-    }
-
-    let total = ++expected;
-
-    for (let p of primes)
-    {
-        let count = solve(p, expected);
-        total /= count;
-        if (total !== Math.floor(total))
-            return false;
-    }
-
-    return total === 1;
+    return allowedPrimes;
 }
 
-function solve(max)
+function seed(primes, todo)
 {
-    let total = 0;
-    for (let n = max; n > 1; n--)
+    if (todo === undefined)
+        todo = (value) => {};
+
+    function inner(value, index, count)
     {
-        if (S(n, 242))
-            total++;
+        if (value > MAX)
+            return;
+
+        if (count === 5)
+        {
+            todo(value);
+            return;
+        }
+
+        for (let i = index; i < primes.length; i++)
+        {
+            let v = value*primes[i];
+            if (v > MAX)
+                break;
+            inner(value*primes[i], i+1, count+1);
+        }
     }
-    return total;
+
+    inner(1, 0, 0);
 }
 
-// assert.equal(S(91, 8), true);
+function solve()
+{
+    function mapPrimes(primes)
+    {
+        const map = new Set();
+        for (let p of primes)
+            map.add(p);
+        return map;
+    }
 
-let answer = solve(MAX);
+    const   primes = buildAllowedPrimes();    
+    const   allPrimes = primeHelper.allPrimes();
 
-//console.log('answer is (4617456485273129588)', answer);
+    let     extra   = bigInt.zero;
+    let     total   = 0;
+
+    const visited = new Set();
+
+    function moreSeed(value, index)
+    {
+        if (value > MAX)
+            return;
+
+        if (visited.has(value))
+            return;
+
+        visited.add(value);
+        let t = total + value;
+        if (t > Number.MAX_SAFE_INTEGER)
+        {
+            extra = extra.plus(total).plus(value);
+            total = 0;
+        }
+        else   
+            total = t;
+
+        for (let i = index; i < allPrimes.length; i++)
+        {
+            let p = allPrimes[i];
+
+            let v = value * p;
+            while (v <= MAX)
+            {
+                moreSeed(v, i+1);
+                v *= p;
+            }
+        }
+    }
+
+    seed(primes, (value) => {
+        moreSeed(value, 0);
+    });
+
+    return extra.plus(total).toString();
+}
+
+MAX = MAX_TEST;
+let test = +solve();
+console.log(test, 19543219365706);
+
+MAX = MAX_REAL;
+// let answer = solve();
+// console.log('Answer is', answer);
+// 8495585919506151122
 console.log('Done');
