@@ -7,87 +7,88 @@ const assert = require('assert');
 const bigInt = require('big-integer');
 const primeHelper = require('./tools/primeHelper')();
 
-const MAX_PRIME = 207300;
+const MAX_PRIME = 6426323;
 const MAX_TEST = 300000000;
 const MAX_REAL = 100000000000;
 
-let MAX = MAX_REAL;
-
 primeHelper.initialize(MAX_PRIME); // Max Allowed Prime
 
-function buildAllowedPrimes()
+function solve(MAX)
 {
-    function isAllowed(p)
+    function buildAllowedPrimes()
     {
-        return (p % 3 === 1);
-    }
-
-    const allowedPrimes = [9];
-
-    for (let p of primeHelper.primes())
-    {
-        if (isAllowed(p))
-            allowedPrimes.push(p);
-    }
-
-    return allowedPrimes;
-}
-
-function seed(primes, todo)
-{
-    if (todo === undefined)
-        todo = (value) => {};
-
-    function inner(value, index, count)
-    {
-        if (value > MAX)
-            return;
-
-        if (count === 5)
+        function isAllowed(p)
         {
-            todo(value);
-            return;
+            return (p % 3 === 1);
         }
 
-        for (let i = index; i < primes.length; i++)
+        const allowedPrimes = [9];
+
+        for (let p of primeHelper.primes())
         {
-            let v = value*primes[i];
-            if (v > MAX)
-                break;
-            inner(value*primes[i], i+1, count+1);
+            if (isAllowed(p))
+                allowedPrimes.push(p);
         }
+
+        return allowedPrimes;
     }
 
-    inner(1, 0, 0);
-}
+    function seed(primes, todo)
+    {
+        if (todo === undefined)
+            todo = (value) => {};
 
-function solve()
-{
+        let usedPrimes = [];
+
+        function inner(value, index, count)
+        {
+            if (value > MAX)
+                return;
+
+            if (count === 5)
+            {
+                todo(value, usedPrimes);
+                return;
+            }
+
+            for (let i = index; i < primes.length; i++)
+            {
+                let p = primes[i];
+                let v = value * p;
+                if (v > MAX)
+                    break;
+                usedPrimes.push(p);
+                inner(v, i+1, count+1);
+                usedPrimes.pop(p);
+            }
+        }
+
+        inner(1, 0, 0);
+    }
+
     function mapPrimes(primes)
     {
-        const map = new Set();
+        let map = new Set();
+
         for (let p of primes)
+        {
             map.add(p);
+        }
         return map;
     }
 
-    const   primes = buildAllowedPrimes();    
+    const   allowedPrimes = buildAllowedPrimes();    
     const   allPrimes = primeHelper.allPrimes();
+    const   specialPrimes = mapPrimes(allowedPrimes);
 
     let     extra   = bigInt.zero;
     let     total   = 0;
 
-    const visited = new Set();
-
-    function moreSeed(value, index)
+    function moreSeed(value, index, usedPrimes)
     {
         if (value > MAX)
             return;
 
-        if (visited.has(value))
-            return;
-
-        visited.add(value);
         let t = total + value;
         if (t > Number.MAX_SAFE_INTEGER)
         {
@@ -102,27 +103,38 @@ function solve()
             let p = allPrimes[i];
 
             let v = value * p;
+            if (v > MAX)
+                break;
+
+            let multiple = true;
+
+            if (p === 3 && ! usedPrimes.includes(9))
+            {
+                moreSeed(v, i+1, usedPrimes);
+                continue;
+            }
+
+            if (specialPrimes.has(p) && ! usedPrimes.includes(p))
+                continue; // That would cause it to become bad
+            
             while (v <= MAX)
             {
-                moreSeed(v, i+1);
+                moreSeed(v, i+1, usedPrimes);
                 v *= p;
             }
         }
     }
 
-    seed(primes, (value) => {
-        moreSeed(value, 0);
+    seed(allowedPrimes, (value, usedPrimes) => {        
+        moreSeed(value, 0, usedPrimes);
     });
 
     return extra.plus(total).toString();
 }
 
-MAX = MAX_TEST;
-let test = +solve();
-console.log(test, 19543219365706);
+let test = solve(MAX_TEST);
+assert.equal(test, "19543219365706");
 
-MAX = MAX_REAL;
-// let answer = solve();
-// console.log('Answer is', answer);
-// 8495585919506151122
+let answer = solve(MAX_REAL);
+console.log('Answer is', answer);
 console.log('Done');
