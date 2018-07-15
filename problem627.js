@@ -11,31 +11,85 @@
 // Find F(30,10001) mod 1000000007.
 
 const assert = require('assert');
+const primeHelper = require('./tools/primeHelper')();
 const bigInt = require('big-integer');
+
+primeHelper.initialize(300);
 
 function F(m, n)
 {
-    let visited = new Map();
+    let factors = [];
+    let visited = new Set();
+    let values  = [];
+    let total    = 0;
 
-    function inner(value, start, count)
+    function factorize(value)
+    {
+        if (factors[value] !== undefined)
+            return factors[value];
+
+        let facts = [];
+        let v = value;
+        for (let p of primeHelper.primes())
+        {
+            if (p > v)
+                break;
+
+            if (v % p === 0)
+            {
+                while (v % p === 0)
+                {
+                    facts.push(p);
+                    v /= p;
+                }
+            }
+        }
+        if (v !== 1)
+            throw error;
+                
+        factors[value] = facts;
+
+        return facts;
+    }
+
+    function inner(start, count)
     {
         if (count === n)
         {
-            if (value > Number.MAX_SAFE_INTEGER)
-                throw "Too big";
-            if (! visited.has(value))
-                visited.set(value);
+            if (values.length > 0)
+            {
+                let a = Array.from(values);
+                let k = a.sort((a,b) => a-b).join('-');
+
+                if (! visited.has(k))
+                {
+                    visited.add(k);
+                    total++;
+                }
+            }
             return;
         }
 
-        for (let x = start; x >= 1 ; x--)
+        for (let x = start; x <= m ; x++)
         {
-            inner(value * x, x, count+1);
+            if (x === 1)
+            {
+                inner(x, count+1);
+            }
+            else
+            {
+                let size = values.length;
+                let f = factorize(x);
+                values.push(...f);
+                inner(x, count+1);
+                while (values.length !== size)
+                    values.pop();
+            }
         }
     }
 
-    inner(1, m, 0);
-    return visited.size;
+    inner(1, 0);
+    return total+1;
 }
 
 function test()
@@ -45,55 +99,18 @@ function test()
     console.log("Tests passed");
 }
 
-function test1()
-{
-    let previous = F(9, 1);
-    let a = 2;
-
-    for (let i = 2; i < 10; i++)
-    {
-        a++;
-        let v = F(9, i);
-        let expected = previous + Math.pow(a, 3);
-        console.log("F(9, " + i + ") = " + v + " ?= " + expected);
-        previous = v;    
-    }
-}
-
-function test2()
-{
-    // 308 -> 1909 -> 8679 -> 31856 -> 99814
-    //    1601    6770   23177
-    // 
-
-    // 1601 = 6^4 + 6^3 + 6^2 +6^1 + 47
-    // 8679 = 4*1909 + 3*347 + 2*1
-
-    let prev = F(30, 1);
-    console.log("F(30, 1) = " + prev); 
-    for (let i = 2; i <= 5; i++)
-    {
-        let v = F(30, i);
-        let d = v - prev;
-        console.log("F(30, " + i + ") = " + v + " => " + d);
-        prev = v;
-    }    
-}
-
 function test3()
 {
-    console.log("F(30, 2) = "  + F(30,2));
-    console.log("F(30, 3) = "  + F(30,3));
-    console.log("F(30, 5) = "  + F(30,5));
-    console.log("F(30, 7) = "  + F(30,7));
-    console.log("F(30, 13) = " + F(30,11));
-    console.log("F(30, 17) = " + F(30,13));
+    for (let p of primeHelper.primes())
+    {
+        let v = F(p,2);
+        let x = (v - (v % p))/p;
+        console.log("F(" + p + ", 2) =", v, x);
+    }
 }
 
 test();
 test3();
-// assert.equal(F(9, 2), 36);
-// assert.equal(F(30,2), 308);
 
 //let result = F(30,10001);
 
