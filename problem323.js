@@ -40,11 +40,11 @@ function bruteForce()
     while(++i)
     {
         total = total + N();
+        if (total > Number.MAX_SAFE_INTEGER)
+            throw "NEED BIGINT";
         let v = Math.floor((total / i)*10000000000);
         if (old === v)
         {
-            if (total > Number.MAX_SAFE_INTEGER)
-                throw "NEED BIGINT";
             stable--;
             if (stable === 0)
                 return v / 10000000000;
@@ -61,4 +61,4 @@ function bruteForce()
 
 let v1 = bruteForce();
 console.log('\n');
-console.log('Anser is', v1);
+console.log('Answer is', v1);
