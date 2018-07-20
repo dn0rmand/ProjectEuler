@@ -10,24 +10,102 @@
 
 // Find S(100000000!) modulo 1 000 000 009.
 
+const assert = require('assert');
 const bigInt = require('big-integer');
+const primeHelper = require('./tools/primeHelper')();
+const MAX    = 100000000;
+const MODULO = 1000000009;
 
-function factorial(n)
+primeHelper.initialize( MAX );
+
+function unfactorize(max, callback)
 {
-    let extra = bigInt(1);
-    let t = 1;
-    for (let i = 2; i <= n; i++)
+    let usedPrimes = [];
+    let allPrimes = primeHelper.allPrimes();
+    let count = max;
+
+    function inner(value, index)
     {
-        let t2 = t * i;
-        if (t2 > Number.MAX_SAFE_INTEGER)
+        if (value > max)
+            return;
+        if (count > 0)
         {
-            extra = extra.times(t).times(i);
-            t = 1;
+            if (value > 1)
+            {
+                let previous = 0, times = 0;
+
+                for (let p of usedPrimes)
+                {
+                    if (p === previous)
+                        times++;
+                    else
+                    {
+                        if (times > 0)
+                            callback(previous, times);
+                        times = 1;
+                        previous = p;
+                    }
+                }
+                if (times > 0)
+                    callback(previous, times);
+            }
+            count--;
         }
-        else
-            t = t2;
+        if (count <= 0)
+            return;
+
+        for (let i = index; i < allPrimes.length; i++)
+        {  
+            if (count <= 0)
+                break;
+            let p = allPrimes[i];
+            let v = value * p;
+            if (v > max)
+                break;
+            usedPrimes.push(p);
+            inner(v, i);
+            usedPrimes.pop(p);
+        }
     }
-    return t;
+
+    inner(1, 0);
+
+    if (count !== 0)
+        throw "ERROR";
 }
 
-factorial(100000000);
+function solve(n)
+{
+    let factors = new Map();
+
+    unfactorize(n, (p, count) => {
+        if (count > 0)
+        {
+            let o = (factors.get(p) || 0) + count;
+            factors.set(p, o);
+        }
+    });
+
+    let result = 1;
+    for (let p of factors.entries())
+    {
+        let prime = p[0];
+        let power = p[1] * 2;
+        let value = bigInt(prime).modPow(power, MODULO).valueOf() + 1;
+
+        let r = result * value;
+        if (r > Number.MAX_SAFE_INTEGER)
+            result = bigInt(result).times(value).mod(MODULO).valueOf();
+        else
+            result = r % MODULO;
+    }
+
+    return result;
+}
+
+assert.equal(solve(4), 650);
+
+console.time('429');
+let answer = solve(MAX);
+console.timeEnd('429');
+console.log('Answer is', answer);
