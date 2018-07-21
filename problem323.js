@@ -27,9 +27,11 @@ function bruteForce()
 
     function solve()
     {
+        let precision = 100000000;
+        let stableCount = 1000;
         let total  = 0;
         let old    = 0;
-        let stable = 100;
+        let stable = stableCount;
         let i      = 0;
 
         let input = fs.readFileSync("323.data");
@@ -47,18 +49,18 @@ function bruteForce()
                 announce(323, "Need Big-Integer :(" );
                 throw "NEED BIGINT";
             }
-            let v = Math.floor((total / i)*10000000000);
+            let v = Math.floor((total / i)*precision);
             if (old === v)
             {
                 stable--;
                 if (stable === 0)
-                    return v / 10000000000;
+                    return v / precision;
             }
             else
             {
-                stable = 100;
+                stable = stableCount;
                 old    = v;
-                if ((i % 2000000) === 0)
+                if ((i % 1000000) === 0)
                 {
                     fs.writeFileSync("323.data", JSON.stringify({ total: total, count: i}));                    
                     process.stdout.write('\r' + v);
@@ -69,46 +71,35 @@ function bruteForce()
 
     let v1 = solve();
     console.log('\n');
-    announce(323, 'Answer is' + v1);
+    announce(323, 'Answer is ' + v1);
 }
-
-bruteForce();
 
 function smartVersion()
 {
-    function process() 
-    {    
-        function extendDistribution(d) 
-        {
-            const r = [];
-            d.forEach((v, i) => {
-                r[i]      = (r[i] || 0) + (v / 2);
-                r[i + 1]  = (r[i + 1] || 0) + (v / 2);
-            })
-            return r;
+    function process()
+    {
+        let total = 0;
+        let min = Math.pow(10,-11);
+
+        for (let turn = 0, x = 1 ; x >= min ; turn++)
+        {           
+            x = Math.pow(0.5, turn);
+            x = 1 - Math.pow(1-x, 32);
+
+            if (x < min)
+                break;
+
+            total += x;
         }
-        
-        let distribution = [1];
-        const lengths    = [];
-        
-        for (let i = 1; i <= 32; ++i) 
-        {
-            distribution = extendDistribution(distribution);
-            let c = 0;
-            for (let j = i; j > 0; --j) 
-            {
-                let d = distribution[j];
-                let t = i - j;
-                let l = lengths[t] || 0;
-                c += d * (l + 1);
-            }
-            lengths[i] = (c + distribution[0]) / (1 - distribution[0]);
-        }
-        return lengths[32].toFixed(10);
+
+        return total.toFixed(10);
     }
 
     let result = process();
+
     console.log('Answer is', result);
 }
 
-//smartVersion();
+//bruteForce();
+
+smartVersion();
