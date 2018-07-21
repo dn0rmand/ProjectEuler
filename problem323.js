@@ -9,28 +9,17 @@ function bruteForce()
     const BIT16 = Math.pow(2, 16);
     const BIT15 = BIT16-1;
 
-    function *Y()
-    {
-        while (true)
-        {
-            let y1  = chance.integer({min:0, max:BIT15});
-            let y2  = chance.integer({min:0, max:BIT15});
-            
-            yield { y1:y1, y2:y2 };
-        }
-    }
-
     function N()
     {
         let i = 0
         let x1 = 0;
         let x2 = 0;
 
-        for (let y of Y())
+        while (true)
         {
             i++;
-            x1 |= y.y1;
-            x2 |= y.y2;
+            x1 |= chance.integer({min:0, max:BIT15});
+            x2 |= chance.integer({min:0, max:BIT15});
             if (x1 === BIT15 && x2 === BIT15)
                 return i;
         }
@@ -50,7 +39,9 @@ function bruteForce()
 
         while(++i)
         {
-            total = total + N();
+            let n = N();
+
+            total = total + n;
             if (total > Number.MAX_SAFE_INTEGER)
             {
                 announce(323, "Need Big-Integer :(" );
@@ -67,10 +58,10 @@ function bruteForce()
             {
                 stable = 100;
                 old    = v;
-                if ((i % 1000000) === 0)
+                if ((i % 2000000) === 0)
                 {
                     fs.writeFileSync("323.data", JSON.stringify({ total: total, count: i}));                    
-                    process.stdout.write('\r' + total + '/' + i + ' - ' + v);
+                    process.stdout.write('\r' + v);
                 }
             }
         }
