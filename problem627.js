@@ -110,7 +110,13 @@ function test3()
 }
 
 test();
-test3();
+
+console.time('F');
+let result = F(30, 8);
+console.timeEnd('F');
+
+console.log(result)
+//test3();
 
 //let result = F(30,10001);
 
