@@ -1,12 +1,15 @@
 module.exports = function(maxPrime)
 {
     const $isNumberPrime = require('is-number-prime');
-    const _primeMap    = new Map();
+    let   _primeMap    = new Set();
     let   _primes      = []
     let   _maxPrime    = 0;
 
     function isPrime(p)
     {
+        if (_primeMap === undefined)
+            throw "Prime Map not enabled";
+
         if (_primeMap.has(p))
             return true;
         if (p <= _maxPrime)
@@ -65,7 +68,8 @@ module.exports = function(maxPrime)
 
             sieve[i-maxPrime] = 1;
             _primes.push(i);
-            _primeMap.set(i);
+            if (_primeMap !== undefined)
+                _primeMap.add(i);
             _maxPrime = i;
 
             for(let j = i+i; j <= n; j += i)
@@ -80,10 +84,13 @@ module.exports = function(maxPrime)
 
     function generatePrimes(max) 
     {
-        _primeMap.set(2);
-        _primeMap.set(3);
-        _primeMap.set(5);
-        _primeMap.set(7);
+        if (_primeMap !== undefined)
+        {
+            _primeMap.add(2);
+            _primeMap.add(3);
+            _primeMap.add(5);
+            _primeMap.add(7);
+        }
         _primes.push(2);
         _primes.push(3);
         _primes.push(5);
@@ -113,7 +120,8 @@ module.exports = function(maxPrime)
 
             sieve[i] = 1;
             _primes.push(i);
-            _primeMap.set(i);
+            if (_primeMap !== undefined)
+                _primeMap.add(i);
             _maxPrime = i;
 
             for(let j = i+i; j <= n; j += i)
@@ -129,14 +137,21 @@ module.exports = function(maxPrime)
     let $init = generatePrimes;
 
     let result = {
-        initialize: function(max) {
+        maxPrime: function() { return _maxPrime; },
+        initialize: function(max, noMap) {
+            if (noMap === true)
+                _primeMap = undefined;
             let v = $init(max);
             $init = generateMorePrimes;
             return v;
         },
         allPrimes: function() { return _primes; },
         primes : function *() {
-            yield *_primeMap.keys();
+            if (_primeMap !== undefined)
+                yield *_primeMap.keys();
+            else
+                for (p of _primes)
+                    yield p;
         },
         isPrime: function(value) { 
             return isPrime(value); 
