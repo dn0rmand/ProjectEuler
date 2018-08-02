@@ -125,6 +125,7 @@ function buildConstraints(kakuro)
     let size = kakuro.size;
     let constraints = [];
     let maxLetters  = [9, 9, 9, 9, 9, 9, 9, 9, 9, 9];
+    let minLetters  = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
     function process(s, r, c, rr, cc)
     {
@@ -142,6 +143,8 @@ function buildConstraints(kakuro)
             let x = kakuro[r][c];
             if (x === 'X' || x.type === 'sum')
                 break;
+            if (x >= 'A' && x <= 'J')
+                minLetters[x.charCodeAt(0)-letterA] = 1;
             total += max;
             max--;
         }
@@ -195,6 +198,7 @@ function buildConstraints(kakuro)
     }
     kakuro.constraints = constraints;
     kakuro.maxLetters  = maxLetters;
+    kakuro.minLetters  = minLetters;
 }
 
 function evaluate(s, letters)
@@ -343,7 +347,7 @@ function solveConstraints(kakuro, horizontal)
 
             let cc = cells[0];
 
-            for (let x = 0; x < 10; x++)
+            for (let x = 1; x < 10; x++)
             {
                 if (used[x] !== 1 && x < max)
                 {
@@ -369,6 +373,7 @@ function solve(kakuro)
     let values     = [];
     let letters    = [];
     let maxLetters = kakuro.maxLetters;
+    let minLetters = kakuro.minLetters;
 
     function inner(index)
     {
@@ -386,11 +391,8 @@ function solve(kakuro)
             return true;
         }
 
-        for (let i = 0; i < 10; i++)
+        for (let i = minLetters[index]; i <= maxLetters[index]; i++)
         {
-            if (i > maxLetters[index])
-                break;
-
             if (values[i] !== 1)
             {
                 values[i] = 1;

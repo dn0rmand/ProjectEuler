@@ -231,11 +231,11 @@ class Kakuro
     // Use this to prevent creating multiple cells for the same location
     createCell(col, row, value)
     {
-        let r = this.cell[row];
+        let r = this.cells[row];
         if (r === undefined)
         {
             r = [];
-            this.cell[row] = r;
+            this.cells[row] = r;
         }
         let c = r[col];
         if (c === undefined)
