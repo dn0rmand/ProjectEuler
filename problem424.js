@@ -197,7 +197,7 @@ function updateConstraints(kakuro)
             let l1 = s.charCodeAt(0) - letterA;
             let l2 = s.charCodeAt(1) - letterA;
             let m1  = maxLetters[l1] = Math.min(maxLetters[l1], Math.floor(totalMax/10));
-            let m2  = minLetters[l1] = Math.max(minLetters[l1], Math.floor(totalMin/10));
+            // let m2  = minLetters[l1] = Math.max(minLetters[l1], Math.floor(totalMin/10));
             if (l1 === l2)
             {
                 let mm = m1*10 + m1;
@@ -209,14 +209,14 @@ function updateConstraints(kakuro)
                 else
                     totalMax = mm;
 
-                mm = m2*10 + m2;
-                if (mm < totalMin)
-                {
-                    maxLetters[l1]  = ++m2;
-                    totalMin = m1*10 + m2;
-                }
-                else
-                    totalMin = mm;
+                // mm = m2*10 + m2;
+                // if (mm < totalMin)
+                // {
+                //     maxLetters[l1]  = ++m2;
+                //     totalMin = m1*10 + m2;
+                // }
+                // else
+                //     totalMin = mm;
             }
         }
 
@@ -225,14 +225,7 @@ function updateConstraints(kakuro)
 
     for (let constraint of kakuro.constraints)
     {
-        let cc = 0;
-        let rr = 0;
-        if (constraint.vertical)
-            rr = 1;
-        else if (constraint.horizontal)
-            cc = 1;
-
-        let info = process(constraint.value, constraint.row, constraint.col, rr, cc);
+        let info = process(constraint);
 
         constraint.max = info.max;
         constraint.min = info.min;
@@ -242,8 +235,25 @@ function updateConstraints(kakuro)
 
         minLetters[l] = Math.max(minLetters[l], 1);    
     }
+
     kakuro.maxLetters  = maxLetters;
     kakuro.minLetters  = minLetters;
+
+    kakuro.constraints.sort( (c1, c2) => {
+        let s1 = c1.cells.size;
+        let s2 = c2.cells.size;
+
+        for (let c of c1.cells)
+        {
+            if (c2.cells.has(c))
+                return 0;
+        }
+
+        if (s1 === s2)
+            return 1;
+        else
+            return s1-s2;
+    });
 }
 
 function evaluate(s, letters)
@@ -265,8 +275,8 @@ function validateConstraints(kakuro, letters)
         let v = evaluate(o.value, letters);
         if (v > o.max)
             return false;
-        if (v < o.min)
-            return false;
+        // if (v < o.min)
+        //     return false;
     }
     return true;
 }
@@ -364,6 +374,7 @@ function solveConstraints(kakuro, index)
         let r   = constraint.row;
         let c   = constraint.col;
         let max = constraint.max;
+        // let min = constraint.min;
 
         if (constraint.horizontal)
             c++;
@@ -379,6 +390,9 @@ function solveConstraints(kakuro, index)
             {
                 used[o]=1;
                 max -= o;
+                // min -= o;
+                if (max < 0) // || min < 0)
+                    break;
             }
             else
                 cells.push({c:c, r:r});
@@ -388,6 +402,17 @@ function solveConstraints(kakuro, index)
             else
                 r++;
         }
+
+        if (cells.length === 0)
+        {
+            if (max !== 0) // || min !== 0)
+                return -1;
+        }
+        // else if (cells.length === 1)
+        // {
+        //     if (max !== min)
+        //         return -1;
+        // }
 
         return max;
     }
@@ -409,7 +434,7 @@ function solveConstraints(kakuro, index)
     }
     else if (cells.length === 1)
     {                    
-        if (max < 0 || max >= 10 || used[max] === 1)
+        if (max < 1 || max >= 10 || used[max] === 1)
             return false;
 
         let cell = cells[0];
@@ -420,6 +445,20 @@ function solveConstraints(kakuro, index)
     }
     else
     {
+        let cell = cells[0];
+
+        assert.equal(kakuro[cell.r][cell.c], ' ');
+        for (let ll = 1; ll < 10; ll++)
+        {
+            if (used[ll] !== 1)
+            {
+                kakuro[cell.r][cell.c] = ll;
+                if (solveConstraints(kakuro, index))
+                    return true;
+            }
+        }
+        kakuro[cell.r][cell.c] = ' ';
+        /*
         for (let vs of possible(cells.length, max, used))
         {
             for (let x = 0; x < cells.length; x++)
@@ -436,6 +475,7 @@ function solveConstraints(kakuro, index)
             let cc = cells[x];
             kakuro[cc.r][cc.c] = ' ';
         }
+        */
     }
 
     return false;
