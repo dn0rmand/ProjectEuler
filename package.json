@@ -9,7 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "big-integer": "^1.6.31",
+    "big-integer": "^1.6.34",
     "bignumber.js": "^7.2.1",
     "bitbuffer": "^0.1.3",
     "chance": "^1.0.16",
