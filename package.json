@@ -19,6 +19,7 @@
     "js-roman-numerals": "^1.1.0",
     "ml-matrix": "^5.1.1",
     "mlcm": "0.0.3",
+    "pixels-please": "^1.0.1",
     "pretty-hrtime": "^1.0.3",
     "slack-webhook": "^1.0.0",
     "written-number": "^0.8.1"

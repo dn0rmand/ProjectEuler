@@ -1,5 +1,5 @@
 const bigInt = require('big-integer');
-const primeHelper = require('./tools/primeHelper')();
+const primeHelper = require('../tools/primeHelper')();
 
 const MAX = bigInt(10).pow(16);
 const MAX_PRIME = 100000000;

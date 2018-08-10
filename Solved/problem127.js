@@ -24,7 +24,7 @@
 const MAX = 120000;
 
 const assert = require('assert');
-const primeHelper = require('./tools/primeHelper')(120000);
+const primeHelper = require('../tools/primeHelper')(120000);
 const allPrimes = primeHelper.allPrimes();
 
 function solve(max)

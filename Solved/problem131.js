@@ -24,7 +24,7 @@
 // n is Prime and (x^3/n^3 - 1) = 1 => (x^3 - n^3) = n^3 => x^3 = 2*n^3
 // => 2*n^3 is a CUBE
 
-const primes = require("./tools/primes.js");
+const primes = require("../tools/primes.js");
 const bigInt = require('big-integer');
 const assert = require('assert');
 

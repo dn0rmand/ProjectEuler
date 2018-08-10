@@ -8,7 +8,7 @@
 const MAX = 25000000;
 
 const assert = require('assert');
-// const primeHelper = require('./tools/primeHelper')(MAX);
+// const primeHelper = require('../tools/primeHelper')(MAX);
 
 function $solve(max)
 {

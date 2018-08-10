@@ -16,8 +16,8 @@
 // a % n = 0 || (a-1) % n = 0
 
 const assert = require('assert');
-const primeHelper = require('./tools/primeHelper')();
-const announce = require('./tools/announce');
+const primeHelper = require('../tools/primeHelper')();
+const announce = require('../tools/announce');
 
 const MAX = 10000000;
 

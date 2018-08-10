@@ -1,5 +1,5 @@
 
-const announce = require('./tools/announce');
+const announce = require('../tools/announce');
 const fs = require('fs');
 const Chance = require('chance');
 const chance = new Chance();

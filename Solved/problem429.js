@@ -12,7 +12,7 @@
 
 const assert = require('assert');
 const bigInt = require('big-integer');
-const primeHelper = require('./tools/primeHelper')();
+const primeHelper = require('../tools/primeHelper')();
 const MAX    = 100000000;
 const MODULO = 1000000009;
 

@@ -34,7 +34,7 @@
 
 const assert = require('assert');
 const bigInt = require('big-integer');
-const $isPrime= require('./tools/isPrime.js');
+const $isPrime= require('../tools/isPrime.js');
 
 let memoize = new Map();
 

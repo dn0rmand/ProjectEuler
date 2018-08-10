@@ -1,4 +1,4 @@
-const isPrime = require('./tools/isPrime.js');
+const isPrime = require('../tools/isPrime.js');
 const assert  = require('assert');
 const primeMemoize = new Map();
 

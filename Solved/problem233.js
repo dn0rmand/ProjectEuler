@@ -1,6 +1,6 @@
 const assert = require('assert');
 const bigInt = require('big-integer');
-const primes = require('./tools/primes.js');
+const primes = require('../tools/primes.js');
 
 const primes41    = [];
 const primes43    = [];

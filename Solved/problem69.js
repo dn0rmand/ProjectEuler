@@ -19,7 +19,7 @@
 // Find the value of n ≤ 1,000,000 for which n/φ(n) is a maximum.
 
 const assert  = require("assert");
-const totient = require("./tools/totient.js");
+const totient = require("../tools/totient.js");
 const maximum = 1000000;
 
 function Test()

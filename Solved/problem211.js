@@ -10,8 +10,8 @@
 const MAX = 64000000;
 
 const assert = require('assert');
-const primeHelper = require('./tools/primeHelper')(MAX);
-const divisors = require('./tools/divisors');
+const primeHelper = require('../tools/primeHelper')(MAX);
+const divisors = require('../tools/divisors');
 
 function σ2(value)
 {

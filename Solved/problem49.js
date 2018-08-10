@@ -9,7 +9,7 @@
 
 // What 12-digit number do you form by concatenating the three terms in this sequence?
 
-const isPrime = require('./tools/isPrime.js');
+const isPrime = require('../tools/isPrime.js');
 
 function sameDigits(v1, v2, v3)
 {

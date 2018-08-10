@@ -11,7 +11,7 @@
 
 const assert  = require("assert");
 const bigInt  = require('big-integer');
-const totient = require("./tools/totient.js");
+const totient = require("../tools/totient.js");
 const maximum = Math.pow(10, 7);
 
 totient.initialize(maximum);

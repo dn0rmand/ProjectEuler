@@ -14,7 +14,7 @@
 
 // Find S(10 000 000).
 
-const primeHelper = require('./tools/primeHelper')();
+const primeHelper = require('../tools/primeHelper')();
 const assert = require("assert");
 
 const MAX = 10000000

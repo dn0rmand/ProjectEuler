@@ -13,7 +13,7 @@
 
 // Find the first four consecutive integers to have four distinct prime factors each. What is the first of these numbers?
 
-const isPrime = require("./tools/isPrime.js");
+const isPrime = require("../tools/isPrime.js");
 
 // 2, 3, 5, 7, 11
 

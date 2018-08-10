@@ -25,7 +25,7 @@
 
 // If rad(n) is sorted for 1 ≤ n ≤ 100000, find E(10000).
 
-const primeHelper = require('./tools/primeHelper')(100000);
+const primeHelper = require('../tools/primeHelper')(100000);
 const assert = require('assert');
 
 function rad(n)

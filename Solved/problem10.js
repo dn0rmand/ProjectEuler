@@ -1,5 +1,5 @@
 const isNumberPrime = require('is-number-prime');
-const primes = require('./tools/primes.js')
+const primes = require('../tools/primes.js')
 
 function solve(maxValue)
 {

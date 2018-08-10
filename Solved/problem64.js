@@ -1,5 +1,5 @@
 const assert = require('assert');
-const squareRoot = require('./tools/squareRoot.js');
+const squareRoot = require('../tools/squareRoot.js');
 
 function getPeriod(n, length)
 {

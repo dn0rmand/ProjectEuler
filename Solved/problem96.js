@@ -1,6 +1,6 @@
 const sudokus = require("./problem96+data.js");
-const Grid = require("./tools/sudoku/grid.js");
-const sudokuSolver = require("./tools/sudoku/solver.js");
+const Grid = require("../tools/sudoku/grid.js");
+const sudokuSolver = require("../tools/sudoku/solver.js");
 
 function SolveSudoku(sudoku, allowBruteForce)
 {    

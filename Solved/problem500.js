@@ -7,7 +7,7 @@
 // Give your answer modulo 500500507.
 
 const assert = require('assert');
-const $primes = require('./tools/primes.js');
+const $primes = require('../tools/primes.js');
 
 const MODULO = 500500507;
 
