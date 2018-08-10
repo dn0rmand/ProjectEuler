@@ -17,7 +17,7 @@
 // Find the sum of all distinct pseudo-Fortunate numbers for admissible numbers N less than 1000000000.
 
 const assert = require('assert');
-const primeHelper = require('../tools/primeHelper.js')();
+const primeHelper = require('tools/primeHelper.js')();
 
 const MAX = 1000000000;
 

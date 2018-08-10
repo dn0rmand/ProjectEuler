@@ -1,5 +1,5 @@
 const assert = require('assert');
-const $isPrime= require('../tools/isPrime.js');
+const $isPrime= require('tools/isPrime.js');
 
 function memoizeIt(fn)
 {

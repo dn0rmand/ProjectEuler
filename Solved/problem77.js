@@ -1,4 +1,4 @@
-const primes = require('../tools/primes.js')();
+const primes = require('tools/primes.js')();
 const assert = require('assert');
 
 const allPrimes = [];

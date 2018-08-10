@@ -12,7 +12,7 @@
 // How many generalised Hamming numbers of type 100 are there which don't exceed 10^9?
 
 const assert = require('assert');
-const primeHelper = require('../tools/primeHelper')();
+const primeHelper = require('tools/primeHelper')();
 
 primeHelper.initialize(100);
 

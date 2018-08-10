@@ -8,8 +8,8 @@
 // How many composite integers, n < 10^8, have precisely two, not necessarily distinct, prime factors?
 
 const assert = require('assert');
-const $primes = require('../tools/primes.js');
-const isPrime= require('../tools/isPrime.js');
+const $primes = require('tools/primes.js');
+const isPrime= require('tools/isPrime.js');
 
 const primeEnumerator = $primes();
 const primeCache      = [];

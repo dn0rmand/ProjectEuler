@@ -1,5 +1,5 @@
 const assert = require('assert');
-const isPrime= require('../tools/isPrime.js');
+const isPrime= require('tools/isPrime.js');
 
 let MILLION = 1000000;
 let memoize = new Map();

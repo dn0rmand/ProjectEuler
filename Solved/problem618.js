@@ -14,10 +14,10 @@
 // The Fibonacci sequence is F1=1,F2=1,F3=2,F4=3,F5=5, ....
 // Find the last nine digits of ∑k=S(Fk) where 2 <= k <= 24
 
-const announce = require('../tools/announce');
+const announce = require('tools/announce');
 const assert = require('assert');
 const bigInt = require('big-integer');
-const primeHelper = require('../tools/primeHelper')();
+const primeHelper = require('tools/primeHelper')();
 
 const MODULO = 1000000000;
 const MODULO1= 100000000000000;

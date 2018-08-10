@@ -15,7 +15,7 @@
 
 // What is the smallest odd composite that cannot be written as the sum of a prime and twice a square?
 
-const isPrime = require('../tools/isPrime.js');
+const isPrime = require('tools/isPrime.js');
 
 let primes= [];
 

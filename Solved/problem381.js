@@ -37,9 +37,9 @@ a^-1 EQ = a^(p-2) mod p2
 const MAX = 100000000;
 
 const assert = require('assert');
-const announce = require('../tools/announce');
+const announce = require('tools/announce');
 const bigInt = require('big-integer');
-const primeHelper = require('../tools/primeHelper')();
+const primeHelper = require('tools/primeHelper')();
 
 primeHelper.initialize(MAX);
 

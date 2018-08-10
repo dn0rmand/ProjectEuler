@@ -1,4 +1,4 @@
-const primes = require('../tools/primes.js');
+const primes = require('tools/primes.js');
 
 let primeIterator = primes();
 

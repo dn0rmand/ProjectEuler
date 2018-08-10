@@ -12,8 +12,8 @@
 
 const bigInt        = require('big-integer');
 const assert        = require('assert');
-const primes        = require('../tools/primes.js');
-const isNumberPrime = require('../tools/isPrime.js');
+const primes        = require('tools/primes.js');
+const isNumberPrime = require('tools/isPrime.js');
 
 const primeCache    = new Map();
 const primeLookup   = primes();

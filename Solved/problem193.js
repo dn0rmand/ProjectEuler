@@ -6,7 +6,7 @@
 // thus 1, 2, 3, 5, 6, 7, 10, 11 are squarefree, but not 4, 8, 9, 12.
 // How many squarefree numbers are there below 2^50?
 
-const primeHelper = require('../tools/primeHelper.js')();
+const primeHelper = require('tools/primeHelper.js')();
 
 let MAX = Math.pow(2, 50);
 let MAX_ROOT = Math.pow(2, 25);

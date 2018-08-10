@@ -1,5 +1,5 @@
 const sqlite = require('better-sqlite3');
-const primes = require('./tools/primes.js');
+const primes = require('tools/primes');
 
 function getMaxPrime(db)
 {

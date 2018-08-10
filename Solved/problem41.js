@@ -8,7 +8,7 @@
 
 // What is the largest n-digit pandigital prime that exists?
 
-const isPrime = require('../tools/isPrime.js');
+const isPrime = require('tools/isPrime.js');
 
 function combinaisons(max)
 {

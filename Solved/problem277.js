@@ -1,5 +1,5 @@
 const assert = require('assert');
-const announce = require('../tools/announce');
+const announce = require('tools/announce');
 
 function *generateSequence(a)
 {

@@ -11,7 +11,7 @@
 // Find F(30,10001) mod 1000000007.
 
 const assert = require('assert');
-const primeHelper = require('./tools/primeHelper')();
+const primeHelper = require('tools/primeHelper')();
 const bigInt = require('big-integer');
 
 primeHelper.initialize(300);

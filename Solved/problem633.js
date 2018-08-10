@@ -1,4 +1,4 @@
-const primeHelper = require('../tools/primeHelper')();
+const primeHelper = require('tools/primeHelper')();
 
 const MAX = 10e24;
 const MIN_7 = 4*9*25*49*121*169;

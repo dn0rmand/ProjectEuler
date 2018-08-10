@@ -1,5 +1,5 @@
 const assert = require('assert');
-const helper = require('../tools/primeHelper.js')();
+const helper = require('tools/primeHelper.js')();
 
 const MAX = 1000000
 const MAX_2 = 20
