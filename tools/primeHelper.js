@@ -2,8 +2,62 @@ module.exports = function(maxPrime)
 {
     const $isNumberPrime = require('is-number-prime');
     let   _primeMap    = new Set();
-    let   _primes      = []
+    let   _primes      = [];
+    let   _extraPrimes = [];
     let   _maxPrime    = 0;
+    let   _memoizePrimeCount = new Map();
+
+    function reset()
+    {
+        _primeMap = new Set();
+        _primes   = [];
+        _maxPrime = 0;
+        _memoizePrimeCount = new Map();
+    }
+
+    function countPrimes(num) 
+    {
+        let count = _memoizePrimeCount.get(num);
+        if (count !== undefined)
+            return count;
+    
+        let r = Math.floor(Math.sqrt(num));
+        let v = [];
+    
+        for (let i = 1; i <= r + 1; i++)
+            v.push(Math.floor(num / i));
+    
+        for (let i = v[v.length - 1] - 1; i >= 0; i--)
+            v.push(i);
+    
+        let s = {};
+    
+        for (let i = 0; i < v.length; i++)
+        {
+            let idx = v[i];
+            s[idx] = idx - 1;
+        }
+    
+        for (let p = 2; p <= r + 1; p++) 
+        {
+            let sp = s[p - 1];
+            if (s[p] > sp) 
+            {
+                let p2 = p * p;
+                for (let i = 0; i < v.length; i++) 
+                {
+                    let idx = v[i];
+                    if (idx < p2)
+                        break;
+                    s[idx] = s[idx] - (s[Math.floor(idx / p)] - sp);
+                }
+            }
+        }
+        
+        count = s[num];
+        _memoizePrimeCount.set(num, count);
+        return count;
+    }
 
     function isPrime(p)
     {
@@ -18,7 +72,16 @@ module.exports = function(maxPrime)
         if ((p & 1)  === 0 || (p % 3) === 0)
             return false;
         let root = Math.floor(Math.sqrt(p));
+
         for(let i of _primes)
+        {
+            if (i > root)
+                return true;
+            if (p % i === 0)
+                return false;
+        }
+
+        for(let i of _extraPrimes)
         {
             if (i > root)
                 return true;
@@ -134,9 +197,59 @@ module.exports = function(maxPrime)
         return _maxPrime;
     }
 
+    function next(p)
+    {
+        while (true)
+        {
+            p += 2;
+            if (isPrime(p))
+            {
+                _extraPrimes.push(p);
+                return p;
+            }
+        }
+    }
+
+    function *primes(limitless)
+    {
+        let last = undefined;
+        for (let p of _primes)
+        {
+            last = p;
+            yield p;
+        }
+        if (limitless)
+        {
+            for (let p of _extraPrimes)
+            {
+                last = p;
+                yield p;
+            }
+
+            if (last === undefined)
+            {
+                yield 2;
+                yield 3;
+                yield 5;
+                yield 7;
+                yield 11;
+                last = 11;
+            }
+            while (true)
+            {
+                last += 2;
+                if (isPrime(last))
+                    yield last;
+            }
+        }
+    }
+
     let $init = generatePrimes;
 
     let result = {
+        reset: function() {
+            reset();
+        },
         maxPrime: function() { return _maxPrime; },
         initialize: function(max, noMap) {
             if (noMap === true)
@@ -146,16 +259,15 @@ module.exports = function(maxPrime)
             return v;
         },
         allPrimes: function() { return _primes; },
-        primes : function *() {
-            if (_primeMap !== undefined)
-                yield *_primeMap.keys();
-            else
-                for (p of _primes)
-                    yield p;
+        extraPrimes: function() { return _extraPrimes; },
+        primes : function *(limitless) {
+            yield *primes(limitless);
         },
         isPrime: function(value) { 
             return isPrime(value); 
-        }        
+        },
+        next: function(p) { return next(p); },
+        countPrimes: function(to) { return countPrimes(to); }        
     }
 
     if (maxPrime !== undefined)
