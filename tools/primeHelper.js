@@ -1,6 +1,8 @@
 module.exports = function(maxPrime)
 {
     const $isNumberPrime = require('is-number-prime');
+    const BitArray = require('tools/bitArray');
+
     let   _primeMap    = new Set();
     let   _primes      = [];
     let   _extraPrimes = [];
@@ -161,27 +163,27 @@ module.exports = function(maxPrime)
 
         let n = max;
 
-        let sieve = []; //new Int32Array(max / 31);
+        let sieve = BitArray(max);
 
         for (let i = 2, j = 3, k = 5, l = 7; ; i+=2, j+=3, k+=5, l+=7)
         {
             if (i > n)
                 break;
-            sieve[i] = 0;
+            sieve.set(i, 1);
             if (j <= n)
-                sieve[j] = 0;
+                sieve.set(j, 1);
             if (k <= n)
-                sieve[k] = 0;
+                sieve.set(k, 1);
             if (l <= n)
-                sieve[l] = 0;
+                sieve.set(l, 1);
         }
 
         for (let i = 11; i <= n; i += 2) 
         {
-            if (sieve[i] === 0)
+            if (sieve.get(i))
                 continue;
 
-            sieve[i] = 1;
+            sieve.set(i, 1);
             _primes.push(i);
             if (_primeMap !== undefined)
                 _primeMap.add(i);
@@ -189,7 +191,7 @@ module.exports = function(maxPrime)
 
             for(let j = i+i; j <= n; j += i)
             {
-                sieve[j] = 0;
+                sieve.set(j, 1);
             }
         }
 
