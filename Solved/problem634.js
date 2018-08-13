@@ -173,6 +173,6 @@ log("Testing", () => {
 
 log("Solving", () => { 
     let answer = F(MAX); 
-    announce(634, 'Answer is ' + answer + ' FYI, 3161575508 is incorrect');
+    announce(634, 'Answer is ' + answer );
 });
 
