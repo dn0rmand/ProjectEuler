@@ -33,6 +33,21 @@ const allFactors = {};
 
 function analyze(factor)
 {
+    switch (factor)
+    {
+        case 2:
+        case 4: 
+            return { square:true };
+        case 3:
+            return { cube:true };
+        case 5:
+            return { both:true };
+        case 6:
+            return { square:true, cube:true };
+        default:
+            return { both:true};
+    }
+    /*
     let value   = Math.pow(2, factor);
     let cube    = false;
     let square  = false;
@@ -79,6 +94,7 @@ function analyze(factor)
         }
     }
     return { square: square, cube: cube };
+    */
 }
 
 function F(max)
