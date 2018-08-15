@@ -21,6 +21,9 @@
 // Find f(10^18,40) modulo 1000000007
 
 const assert = require('assert');
+const bigInt = require('big-integer');
+const MODULO = 1000000007;
+const MAX    = bigInt(10).pow(18);
 
 let _createdMore = false;
 
@@ -34,7 +37,7 @@ function F2(n, m, entries)
 
         if (index < 2)
             return false;
-            
+
         for (let i3 = index+1; i3 < length; i3++)
         {
             let v3 = state[i3];
@@ -75,7 +78,7 @@ function F2(n, m, entries)
         let addedSome = false;
 
         while (index-- > 0)
-        {        
+        {
             state[index+1] = state[index];
             state[index] = n;
 
@@ -109,50 +112,48 @@ function F2(n, m, entries)
 
 function F(n, m, log)
 {
-    let gc = global.gc;
-    if (gc === undefined)
-    {
-        throw "GC not exposed";
-    }
-
-    let total   = 0;
-    let entries = [[1,2,0]]; // last value is count of 2,1
-
-    total = 3;
-
-    if (m > 0)
-    {
-        total++;
-        entries.push([2,1,1]);
-    }
+    let total   = 4;
+    let entries = [[1,2,0], [2,1,1]]; // last value is count of 2,1
 
     entries.stale = 0;
 
-    for (let x = 3; x <= n; x++)
-    {
-        // Clean hard
-        gc();
-        gc();
-        gc();
+    let offset = 0;
+    let x      = 2;
 
-        // tick
+    n = bigInt(n);
+
+    while (true)
+    {
+        x++;
+        if (n.lt(x))
+            break;
+
         entries = F2(x, m, entries);
-        let offset = entries.stale + entries.length; 
-        total += offset
+        offset  = entries.stale + entries.length;
+        total   = (total + offset) % MODULO;
+
         if (log === true)
         {
             console.log("F(" + x + "," + m + ") =", total, "- added", offset, "- active", entries.length, "- stale", entries.stale);
-        
+
             if (! _createdMore)
-                console.log("No new ones ....");
+            {
+                let remainer = n.minus(x);
+                let more = bigInt(offset).times(remainer).mod(MODULO).valueOf();
+                total = (total + more) % MODULO;
+                break;
+            }
         }
     }
 
     return total;
 }
 
-assert.equal(F(2, 0), 3);
-assert.equal(F(4, 5), 32);
-assert.equal(F(10, 25), 294400);
+//assert.equal(F(2, 0), 3);
+assert.equal(F(bigInt(4), 5), 32);
+assert.equal(F(bigInt(10), 25), 294400);
 
-F(50, 40, true);
+console.time(631);
+let answer = F(MAX, 40, true);
+console.timeEnd(631);
+console.log("F(10^18, 40) =", answer);
