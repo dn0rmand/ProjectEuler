@@ -183,10 +183,16 @@ function solve(size, dump)
 
 // loadPrimes();
 
-assert.equal(solve(4, true), 273700);
-announce(111, "Answer for 4 is 273700");
+async function problem111()
+{
+    assert.equal(solve(4, true), 273700);
+    await announce(111, "Answer for 4 is 273700");
 
-let answer = solve(MAX_SIZE, true);
-announce(111, "Answer for 10 is "+answer);
+    let answer = solve(MAX_SIZE, true);
+    await announce(111, "Answer for 10 is "+answer);
 
-console.log('Done');
+    console.log('Done');
+    process.exit(0);
+}
+
+problem111();
