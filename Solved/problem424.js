@@ -4,7 +4,7 @@ const readline  = require('readline');
 const prettyHrtime = require('pretty-hrtime');
 
 const readInput = readline.createInterface({
-    input: fs.createReadStream('data/p424_kakuro200.txt')
+    input: fs.createReadStream('../data/p424_kakuro200.txt')
 });
 
 let TOTAL = 0;

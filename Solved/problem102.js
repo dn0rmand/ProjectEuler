@@ -24,7 +24,7 @@ const fs = require('fs');
 const readline = require('readline');
 
 const readInput = readline.createInterface({
-    input: fs.createReadStream('data/p102_triangles.txt')
+    input: fs.createReadStream('../data/p102_triangles.txt')
 });
 
 let count = 0;

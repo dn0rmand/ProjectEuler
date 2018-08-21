@@ -2,7 +2,7 @@ const fs = require('fs');
 const readline = require('readline');
 const prettyHrtime = require('pretty-hrtime');
 const readInput = readline.createInterface({
-    input: fs.createReadStream('data/p089_roman.txt')
+    input: fs.createReadStream('../data/p089_roman.txt')
 });
 
 const romanNumeral = require("romans");

@@ -2,7 +2,7 @@ const fs = require('fs');
 const readline = require('readline');
 const prettyHrtime = require('pretty-hrtime');
 const readInput = readline.createInterface({
-    input: fs.createReadStream('data/p079_keylog.txt')
+    input: fs.createReadStream('../data/p079_keylog.txt')
 });
 
 let digits = [];

@@ -21,7 +21,7 @@ const fs        = require('fs');
 const readline  = require('readline');
 
 const readInput = readline.createInterface({
-    input: fs.createReadStream('data/p105_sets.txt')
+    input: fs.createReadStream('../data/p105_sets.txt')
 });
 
 let total = 0;

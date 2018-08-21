@@ -333,7 +333,7 @@ const prettyHrtime = require('pretty-hrtime');
 let startTime = process.hrtime();
 
 const readInput = readline.createInterface({
-    input: fs.createReadStream('data/p054_poker.txt')
+    input: fs.createReadStream('../data/p054_poker.txt')
 });
 
 let hands = 0;

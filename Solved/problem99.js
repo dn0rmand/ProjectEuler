@@ -18,7 +18,7 @@ const fs = require('fs');
 const readline = require('readline');
 
 const readInput = readline.createInterface({
-    input: fs.createReadStream('data/p099_base_exp.txt')
+    input: fs.createReadStream('../data/p099_base_exp.txt')
 });
 
 let line = 0;

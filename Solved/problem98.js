@@ -3,7 +3,7 @@ const fs = require('fs');
 const readline = require('readline');
 
 const readInput = readline.createInterface({
-    input: fs.createReadStream('data/p098_words.txt')
+    input: fs.createReadStream('../data/p098_words.txt')
 });
 
 const anagrams = {};

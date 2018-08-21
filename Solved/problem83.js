@@ -2,7 +2,7 @@ const fs = require('fs');
 const readline = require('readline');
 const prettyHrtime = require('pretty-hrtime');
 const readInput = readline.createInterface({
-    input: fs.createReadStream('data/p083_matrix.txt')
+    input: fs.createReadStream('../data/p083_matrix.txt')
 });
 
 let matrix  = [];

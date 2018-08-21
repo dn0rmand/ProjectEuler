@@ -17,7 +17,7 @@ const fs        = require('fs');
 const readline  = require('readline');
 
 const readInput = readline.createInterface({
-    input: fs.createReadStream('data/p107_network.txt')
+    input: fs.createReadStream('../data/p107_network.txt')
 });
 
 const network = {
