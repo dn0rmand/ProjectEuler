@@ -111,6 +111,7 @@ function *getPrimes(MIN, MAX)
             yield p;
         }
     }
+    process.stdout.write('\r');
 }
 
 function solve(size, dump)
