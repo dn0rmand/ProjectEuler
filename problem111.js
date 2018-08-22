@@ -103,12 +103,15 @@ function *getPrimes(MIN, MAX)
     if ((MIN & 1) === 0)
         MIN++;
 
+    let count = 0;
     for (let p = MIN; p <= MAX; p+=2)
     {
         if (primeHelper.isPrime(p))
         {
-            process.stdout.write('\r'+p);
+            if ((count % 100000) === 0)
+                process.stdout.write('\r'+p);
             yield p;
+            count++;
         }
     }
     process.stdout.write('\r');
