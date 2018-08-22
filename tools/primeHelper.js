@@ -102,7 +102,7 @@ module.exports = function(maxPrime)
         let newMax = _maxPrime + count;
         let n = newMax;
 
-        let sieve = []; //new Int32Array(max / 31);
+        let sieve =  BitArray(count);
         let start;
         let maxPrime = _maxPrime;
 
@@ -118,7 +118,7 @@ module.exports = function(maxPrime)
                 if (i > n)
                     break;
 
-                sieve[i - maxPrime] = 0;
+                sieve[i - maxPrime] = 1;
             }
         }
 
@@ -128,7 +128,7 @@ module.exports = function(maxPrime)
 
         for (let i = start; i <= n; i += 2) 
         {
-            if (sieve[i-maxPrime] === 0)
+            if (sieve[i-maxPrime] === 1)
                 continue;
 
             sieve[i-maxPrime] = 1;
@@ -139,7 +139,7 @@ module.exports = function(maxPrime)
 
             for(let j = i+i; j <= n; j += i)
             {
-                sieve[j-maxPrime] = 0;
+                sieve[j-maxPrime] = 1;
             }
         }
 
@@ -178,7 +178,7 @@ module.exports = function(maxPrime)
                 sieve.set(l, 1);
         }
 
-        for (let i = 11; i <= n; i += 2) 
+        for (let i = 11; i <= n; i += 2)
         {
             if (sieve.get(i))
                 continue;
