@@ -40,6 +40,8 @@ const announce = require('tools/announce');
 
 const MAX_SIZE = 10;
 
+primeHelper.initialize(Math.sqrt(Math.pow(10, MAX_SIZE)));
+
 function loadPrimes()
 {
     console.log('Loading prime ...');
@@ -98,9 +100,6 @@ function findIndex(primes, MIN)
 
 function *getPrimes(MIN, MAX)
 {
-    primeHelper.reset();
-    primeHelper.initialize(Math.sqrt(MAX));
-
     if ((MIN & 1) === 0)
         MIN++;
 
@@ -108,6 +107,7 @@ function *getPrimes(MIN, MAX)
     {
         if (primeHelper.isPrime(p))
         {
+            process.stdout.write('\r'+p);
             yield p;
         }
     }
@@ -183,16 +183,12 @@ function solve(size, dump)
 
 // loadPrimes();
 
-async function problem111()
+function problem111()
 {
     assert.equal(solve(4, true), 273700);
-    await announce(111, "Answer for 4 is 273700");
 
     let answer = solve(MAX_SIZE, true);
-    await announce(111, "Answer for 10 is "+answer);
-
-    console.log('Done');
-    process.exit(0);
+    announce(111, "Answer for 10 is "+answer);
 }
 
 problem111();
