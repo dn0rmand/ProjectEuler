@@ -138,54 +138,23 @@ function S(q, L)
         if (prime > L)
             break;
 
-        total = (total + A(q, prime)) % MODULO;
+        let v = A(q, prime);
+
+        console.log("A(",q,',',prime,') =', v);
+        total = (total + v) % MODULO;
     }
 
     return total;
 }
 
-function getSummingItems(a, t)
-{
-    let accumulator = {0:[[]]};
-
-    let reducer = (h,n) =>
-    {
-        let innerReducer = (m,k) =>
-        {
-            return (
-            +k+n <= t ? (m[+k+n] = m[+k+n] ? m[+k+n].concat(m[k].map(sa => sa.concat(n)))
-                                           : m[k].map(sa => sa.concat(n)),m)
-                      : m);
-        };
-
-        return Object.keys(h).reduceRight(innerReducer, h);
-    };
-
-    let result = a.reduce(reducer, accumulator);
-
-    result = result[t];
-
-    result = result.reduce((a, i) => {
-        if (i.length === 100)
-            return a+1;
-    }, 0);
-    return result;
-}
-
-var arr = Array(200).fill().map((_,i) => i+1), // [1,2,..,200]
-    tgt = 5100,
-    res = [];
-
-console.time("test");
-res = getSummingItems(arr,tgt);
-console.timeEnd("test");
-// 204226
-console.log("found",res.length,"subsequences summing to",tgt);
-console.log(JSON.stringify(res));
-
 assert.equal(A(2, 5), 52);
 assert.equal(A(3, 5), 603);
 
+assert.equal(A(2,2), 2);
+assert.equal(A(2,3), 8);
+assert.equal(A(2,5), 52);
+assert.equal(A(2,7), 492);
+
 assert.equal(S(2, 10), 554);
-assert.equal(S(2, 100), 100433628);
-assert.equal(S(3, 100), 855618282);
+// assert.equal(S(2, 100), 100433628);
+// assert.equal(S(3, 100), 855618282);
