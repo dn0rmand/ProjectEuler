@@ -38,20 +38,34 @@ function solve()
     }
 
     let current = 2;
-    while(found.length < 30)
+    let lastProcessed = 0;
+
+    while(true)
     {
+        if (current === lastProcessed)
+            break; // All too big
         let v = values[current] = values[current] * current;
 
+        if (v > Number.MAX_SAFE_INTEGER)
+        {
+            current++;
+            continue;
+        }
+
+        lastProcessed = current;
         if (v > 9 && digitSum(v) === current)
             found.push(v);
+
         current++;
 
         if (current >= 100)
             current = 2;
     }
-    found.sort((a, b)=>b-a);
-    return found[0];
+    found.sort((a, b)=>a-b);
+    return found[29];
 }
 
+console.time(119);
 let answer = solve();
+console.timeEnd(119);
 console.log("Answer is", answer);
