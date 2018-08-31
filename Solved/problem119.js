@@ -44,17 +44,20 @@ function solve()
     {
         if (current === lastProcessed)
             break; // All too big
-        let v = values[current] = values[current] * current;
 
-        if (v > Number.MAX_SAFE_INTEGER)
+        let v = values[current];
+
+        if (v <= Number.MAX_SAFE_INTEGER)
         {
-            current++;
-            continue;
-        }
+            values[current] = v = v * current;
 
-        lastProcessed = current;
-        if (v > 9 && digitSum(v) === current)
-            found.push(v);
+            if (v <= Number.MAX_SAFE_INTEGER)
+            {
+                lastProcessed = current;
+                if (v > 9 && digitSum(v) === current)
+                    found.push(v);
+            }
+        }
 
         current++;
 
