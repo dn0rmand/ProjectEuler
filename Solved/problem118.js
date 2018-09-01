@@ -10,9 +10,11 @@
 
 const primeHelper = require('tools/primeHelper')();
 
+const MAX = 987654321;
+
 console.log('Loading primes ...');
-// primeHelper.initialize(987654322, true);
-primeHelper.initialize(1E5, true);
+primeHelper.initialize(MAX+1, true);
+// primeHelper.initialize(1E4, true);
 console.log('Primes loaded.');
 let primes = primeHelper.allPrimes();
 
@@ -22,61 +24,70 @@ function solve()
     let digitCount = 0;
     let total = 0;
 
-    function isAllowed(prime)
+    function isAllowed(prime, digits)
     {
+        let di = [];
+        let count = digitCount;
         while (prime > 0)
         {
             let d = prime % 10;
             if (d === 0) // digit 0 not allowed
                 return false;
 
-            if (digitCount === 9 || usedDigits[d])
+            if (count === 9 || usedDigits[d] || di[d])
                 return false;
 
-            digitCount++;
-            usedDigits[d] = 1;
+            count++;
+            digits.push(d);
+            di[d] = 1;
             prime = (prime - d) / 10;
         }
         return true;
     }
 
     let set = [];
-    function inner(index, max)
+    function inner(index)
     {
         if (digitCount === 9)
         {
-            // process.stdout.write('\r' + total + ' : ' + set.toString() + "       ");
+            process.stdout.write('\r' + total + ': ' + set.toString() + '  ');
             total++;
             return;
         }
 
-        let oldCount = digitCount;
-        let oldDigits= Array.from(usedDigits);
-
+        let max = Math.pow(10, 9-digitCount);
         for (let i = index ; i < primes.length; i++)
         {
             let p = primes[i];
             if (p >= max)
                 break;
 
-            if (isAllowed(p))
-            {
-                // set.push(p);
-                inner(i+1, max / 10);
-                // set.pop();
-            }
+            let digits = [];
 
-            usedDigits = Array.from(oldDigits);
-            digitCount = oldCount;
+            if (isAllowed(p, digits))
+            {
+                // Apply
+                for (let d of digits)
+                    usedDigits[d] = 1;
+                digitCount += digits.length;
+                // Keep going
+                set.push(p);
+                inner(i+1);
+                set.pop();
+                // Restore
+                digitCount -= digits.length;
+                for (let d of digits)
+                    usedDigits[d] = 0;
+            }
         }
     }
 
-    inner(0, 1E9);
+    inner(0);
 
     return total;
 }
 
 let answer = solve();
-console.log("\n");
+console.log('');
 console.log("Answer", answer);
 console.log('Done');
