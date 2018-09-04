@@ -26,35 +26,6 @@ function buildPrimeStack(count)
     return primes;
 }
 
-function insert(stack, value)
-{
-    let current = stack;
-    let previous= undefined;
-
-    while (current !== undefined && current.value < value)
-    {
-        previous = current;
-        current = current.next;
-    }
-
-    if (previous === undefined)
-    {
-        return {
-            value: value,
-            next: stack
-        }
-    }
-    else
-    {
-        let x = {
-            value: value,
-            next: previous.next
-        };
-        previous.next = x;
-        return stack;
-    }
-}
-
 function solve(steps)
 {
     let primes = buildPrimeStack(steps);
