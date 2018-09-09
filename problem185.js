@@ -84,74 +84,51 @@ const problemInput = [
     { values: "2659862637316867", correct: 2 }
 ];
 
-function $solve(inputs)
+function convertNumber(number)
 {
-    inputs.sort((a, b) => a.correct - b.correct);
-
-    let solution = [];
-    let count    = inputs[0].values.length;
-
-    for (let i = 0; i < count; i++)
+    if (typeof(number) === 'string')
     {
-        solution[i] = { notPossible: [], possible: [] };
+        let values = number.split('');
+        for (let i = 0; i < values.length; i++)
+            values[i] = +(values[i]);
+
+        return values;
     }
-
-    for (let input of inputs)
-    {
-        if (input.correct === 0)
-        {
-            for (let i = 0; i < count; i++)
-            {
-                let s = solution[i];
-                let d = input.values[i];
-
-                s.notPossible[d] = 1;
-            }
-        }
-        else
-        {
-            for (let i = 0; i < count; i++)
-            {
-                let s = solution[i];
-                let d = input.values[i];
-
-                if (s.notPossible[d] !== 1)
-                {
-                    s.possible[d] = 1;
-                }
-            }
-        }
-    }
-
-    console.log(solution);
+    else
+        return number;
 }
 
-function solve(inputs)
+function convertInputs(inputs)
 {
     let count = inputs[0].values.length;
 
     for (let input of inputs)
     {
-        if (typeof(input.values) === 'string')
-        {
-            input.values = input.values.split('');
-            for (let i = 0; i < count; i++)
-                input.values[i] = +(input.values[i]);
-        }
+        input.values = convertNumber(input.values);
     }
+
+    inputs.sort((a, b) => a.correct-b.correct);
+
+    return count;
+}
+
+function solve(inputs)
+{
+    let count = convertInputs(inputs);
 
     let $isValid = {};
 
     function isValid(data, final)
     {
-        let key;
-        if (! final)
-        {
-            key = data.join(',');
-            let result = $isValid[key];
-            if (result !== undefined)
-                return result;
-        }
+        // if (! final)
+        //     return true;
+
+        data = convertNumber(data);
+
+        let key = (final ? "1:" : "0:") + data.join(',');
+        let result = $isValid[key];
+        if (result !== undefined)
+            return result;
 
         for (let input of inputs)
         {
@@ -167,7 +144,14 @@ function solve(inputs)
                 }
                 let d2 = input.values[i];
                 if (d === d2)
+                {
                     correct++;
+                    if (correct > input.correct)
+                    {
+                        $isValid[key] = false;
+                        return false;
+                    }
+                }
             }
             if (correct > input.correct)
             {
@@ -176,81 +160,203 @@ function solve(inputs)
             }
 
             if (final && correct !== input.correct)
+            {
+                $isValid[key] = false;
                 return false;
+            }
         }
-        if (! final)
-            $isValid[key] = true;
+        $isValid[key] = true;
         return true;
     }
 
-    function *innerSolve(start, end)
+    let solution  = [];
+    let exclusions = [];
+
+    function getExclusion(pos, digit)
     {
-        let solution = [];
-        solution[count-1] = undefined; // Force allocation
+        let ex = exclusions[pos];
+        if (ex === undefined)
+            return 0;
 
-        function *inner(index, count)
+        return ex[digit] || 0;
+    }
+
+    function unExclude(pos, digit)
+    {
+        let ex = exclusions[pos];
+        if (ex === undefined)
+            throw "Error";
+
+        let c = ex[digit] || 0;
+        if (c <= 0)
+            throw "Error";
+        ex[digit] = c-1;
+    }
+
+    function reExclude(pos, digit)
+    {
+        let ex = exclusions[pos];
+        if (ex === undefined)
+            throw "Error";
+
+        ex[digit] = (ex[digit] || 0)+1;
+    }
+
+    function addExclusions(input)
+    {
+        for (let i = 0; i < count; i++)
         {
-            if (index >= inputs.length)
+            let ex = exclusions[i];
+            if (ex === undefined)
+                ex = exclusions[i] = [];
+
+            let d = input.values[i];
+            ex[d] = (ex[d] || 0) + 1;
+        }
+    }
+
+    function removeExclusions(input)
+    {
+        for (let i = 0; i < count; i++)
+        {
+            let ex = exclusions[i];
+            if (ex === undefined)
+                throw "Wasn't added";
+
+            let d = input.values[i];
+            let c = (ex[d] || 0) - 1;
+            if (c < 0)
+                throw "Wasn't added";
+            ex[d] = c;
+        }
+    }
+
+    function check()
+    {
+        for (let p = 0; p < count; p++)
+        {
+            let d = solution[p];
+            let e = getExclusion(p, d);
+            if (e !== 0)
+                throw "ERROR";
+        }
+    }
+
+    function solve(index, length, pos, correct)
+    {
+        if (length === count)
+            return isValid(solution, true);
+
+        if (index < 0)
+            return false;
+
+        let input;
+        do
+        {
+            if (correct === 0)
             {
-                if (count === end-start)
-                    yield solution.join('');
-                return ;
+                index--;
+                if (index < 0)
+                {
+                    if (length === count)
+                        return isValid(solution, true);
+                    else
+                        return false;
+                }
+                pos = undefined;
+                correct = undefined;
             }
 
-            let input = inputs[index];
+            input = inputs[index];
 
-            function *inner2(pos, correct, count)
-            {
-                if (correct === 0)
-                {
-                    yield *inner(index+1, count);
-                }
-                else
-                {
-                    for (let p = pos; p < end; p++)
-                    {
-                        let d = input.values[p];
+            if (pos === undefined)
+                pos = 0;
+            if (correct === undefined)
+                correct = input.correct;
+        }
+        while (correct === 0);
 
-                        if (solution[p] === undefined)
-                        {
-                            solution[p] = d;
+        let previous = undefined;
 
-                            if (isValid(solution))
-                                yield *inner2(pos+1, correct-1, count+1);
-
-                            solution[p] = undefined;
-                        }
-                        else if (solution[p] === d)
-                        {
-                            yield *inner2(pos+1, correct-1, count);
-                        }
-                    }
-                }
-            }
-
-            yield *inner2(start, input.correct, count);
+        if (pos === 0 && index < inputs.length-1)
+        {
+            previous = inputs[index+1];
+            addExclusions(previous);
         }
 
-        yield *inner(0, 0);
-    }
-
-    if (count === 16)
-    {
-        if (! inner(0, 0, 0, 8))
-            return 'No Solutions';
-    }
-    else
-    {
-        for (let sol in innerSolve(0, count))
+        for (let p = pos; p < count-correct+1; p++)
         {
-            if (isValid(sol, true))
+            let d = input.values[p];
+
+            if (solution[p] === undefined)
             {
-                return sol;
+                let ex = getExclusion(p, d);
+                if (ex > 0)
+                    continue;
+
+                solution[p] = d;
+
+                if (length+1 === count) // full!
+                {
+                    if (isValid(solution, true))
+                        return true;
+                }
+                else if (isValid(solution))
+                {
+                    if (solve(index, length+1, p+1, correct-1))
+                        return true;
+                }
+
+                solution[p] = undefined;
+            }
+            else if (solution[p] === d)
+            {
+                if (solve(index, length, p+1, correct-1))
+                {
+                    return true;
+                }
             }
         }
 
-        return 'No solutions';
+        if (previous !== undefined)
+            removeExclusions(previous);
+
+        return false;
     }
+
+    // add well know exclusion
+    for (let input of inputs)
+    {
+        if (input.correct === 0)
+            addExclusions(input);
+    }
+
+    for (let input of inputs)
+    {
+        input.excluded = 0;
+        input.other    = Array.from(input.values);
+        for (let pos = 0; pos < count; pos++)
+        {
+            let d = input.values[pos];
+            if (getExclusion(pos, d) > 0)
+            {
+                input.other[pos] = '*';
+                input.excluded++;
+            }
+        }
+    }
+
+    inputs.sort((a, b) => a.excluded-b.excluded);
+
+    // solve
+    let l = inputs.length-1;
+    while (l > 0 && inputs[l].correct === 0)
+        l--;
+
+    if (solve(l, 0))
+        return solution.join('');
+
+    return 'No Solutions';
 }
 
 assert.equal(solve(sampleInput), "39542") ;
