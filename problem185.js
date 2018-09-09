@@ -48,7 +48,11 @@
 
 // Find the unique 16-digit secret sequence.
 
+if (global.gc === undefined)
+    global.gc = () => {};
+
 const assert = require('assert');
+const DIGITS = "4602157893"; // "0123456789"; // 4640261571849533
 
 const sampleInput = [
     { correct: 2, values: "90342" },
@@ -84,282 +88,176 @@ const problemInput = [
     { values: "2659862637316867", correct: 2 }
 ];
 
-function convertNumber(number)
-{
-    if (typeof(number) === 'string')
-    {
-        let values = number.split('');
-        for (let i = 0; i < values.length; i++)
-            values[i] = +(values[i]);
+let memoize;
 
-        return values;
-    }
-    else
-        return number;
-}
-
-function convertInputs(inputs)
+function makeKey(inputs)
 {
-    let count = inputs[0].values.length;
+    let key;
 
     for (let input of inputs)
     {
-        input.values = convertNumber(input.values);
+        if (key === undefined)
+        {
+            key = input.correct + ":" + input.values;
+        }
+        else
+        {
+            key = key + ';' + input.correct + ":" + input.values;
+        }
     }
 
-    inputs.sort((a, b) => a.correct-b.correct);
+    return key;
+}
 
-    return count;
+function alreadyProcessed(inputs)
+{
+    if (memoize === undefined)
+        memoize = new Set();
+
+    let k = makeKey(inputs);
+    if (memoize.has(k))
+        return true;
+
+    memoize.add(k);
+    return false;
+}
+
+function clone(currentInputs, digit)
+{
+    let inputs = [];
+
+    let exact = undefined;
+
+    inputs.badDigits = {};
+
+    for (let currentInput of currentInputs)
+    {
+        let input = {
+            values: currentInput.values.substring(1),
+            correct: currentInput.correct
+        };
+
+        if (currentInput.values[0] === digit)
+            input.correct--;
+
+        if (input.correct === input.values.length)
+        {
+            if (exact === undefined)
+                exact = input.values;
+            else if (exact !== input.values)
+                return false;
+        }
+
+        if (input.correct === 0)
+            inputs.badDigits[input.values[0]] = 1;
+
+        inputs.push(input)
+    }
+
+    if (exact !== undefined)
+    {
+        for (let input of inputs)
+        {
+            let matches = 0;
+            for (let i = 0; i < input.values.length; i++)
+                if (input.values[i] === exact[i])
+                    matches++;
+            if (matches !== input.correct)
+                return false;
+        }
+        return exact;
+    }
+    return inputs;
 }
 
 function solve(inputs)
 {
-    let count = convertInputs(inputs);
+    let solution = [];
+    let count    = inputs[0].values.length;
 
-    let $isValid = {};
+    let meter = -1;
 
-    function isValid(data, final)
+    function inner(inputs)
     {
-        // if (! final)
-        //     return true;
+        meter++;
 
-        data = convertNumber(data);
-
-        let key = (final ? "1:" : "0:") + data.join(',');
-        let result = $isValid[key];
-        if (result !== undefined)
-            return result;
-
-        for (let input of inputs)
+        if (alreadyProcessed(inputs))
         {
-            let correct = 0;
-            for (let i = 0; i < count; i++)
+            return false;
+        }
+
+        if (meter % 5000 === 0)
+        {
+            global.gc();
+            process.stdout.write('\r');
+            for (let c of solution)
+                process.stdout.write(c);
+        }
+
+        for (let digit of DIGITS)
+        {
+            let valid = inputs.badDigits[digit] !== 1;
+
+            if (valid)
             {
-                let d = data[i];
-                if (d === undefined)
+                solution.push(digit);
+                if (solution.length === count)
                 {
-                    if (final)
-                        return false;
-                    continue;
-                }
-                let d2 = input.values[i];
-                if (d === d2)
-                {
-                    correct++;
-                    if (correct > input.correct)
+                    let good = true;
+                    for (let input of inputs)
                     {
-                        $isValid[key] = false;
-                        return false;
+                        if (input.correct === 0)
+                            continue;
+
+                        if (input.correct > 1 || input.values[0] !== digit)
+                        {
+                            good = false;
+                            break;
+                        }
+                    }
+                    if (good)
+                        return true;
+                }
+                else
+                {
+                    let newInput = clone(inputs, digit);
+                    if (newInput === false)
+                    {
+                        // No-op
+                    }
+                    else if (typeof(newInput) === "string")
+                    {
+                        // early find!
+                        for(let c of newInput)
+                            solution.push(c);
+                        return true;
+                    }
+                    else if (inner(newInput))
+                    {
+                        return true;
                     }
                 }
-            }
-            if (correct > input.correct)
-            {
-                $isValid[key] = false;
-                return false;
-            }
-
-            if (final && correct !== input.correct)
-            {
-                $isValid[key] = false;
-                return false;
+                solution.pop();
             }
         }
-        $isValid[key] = true;
-        return true;
-    }
-
-    let solution  = [];
-    let exclusions = [];
-
-    function getExclusion(pos, digit)
-    {
-        let ex = exclusions[pos];
-        if (ex === undefined)
-            return 0;
-
-        return ex[digit] || 0;
-    }
-
-    function unExclude(pos, digit)
-    {
-        let ex = exclusions[pos];
-        if (ex === undefined)
-            throw "Error";
-
-        let c = ex[digit] || 0;
-        if (c <= 0)
-            throw "Error";
-        ex[digit] = c-1;
-    }
-
-    function reExclude(pos, digit)
-    {
-        let ex = exclusions[pos];
-        if (ex === undefined)
-            throw "Error";
-
-        ex[digit] = (ex[digit] || 0)+1;
-    }
-
-    function addExclusions(input)
-    {
-        for (let i = 0; i < count; i++)
-        {
-            let ex = exclusions[i];
-            if (ex === undefined)
-                ex = exclusions[i] = [];
-
-            let d = input.values[i];
-            ex[d] = (ex[d] || 0) + 1;
-        }
-    }
-
-    function removeExclusions(input)
-    {
-        for (let i = 0; i < count; i++)
-        {
-            let ex = exclusions[i];
-            if (ex === undefined)
-                throw "Wasn't added";
-
-            let d = input.values[i];
-            let c = (ex[d] || 0) - 1;
-            if (c < 0)
-                throw "Wasn't added";
-            ex[d] = c;
-        }
-    }
-
-    function check()
-    {
-        for (let p = 0; p < count; p++)
-        {
-            let d = solution[p];
-            let e = getExclusion(p, d);
-            if (e !== 0)
-                throw "ERROR";
-        }
-    }
-
-    function solve(index, length, pos, correct)
-    {
-        if (length === count)
-            return isValid(solution, true);
-
-        if (index < 0)
-            return false;
-
-        let input;
-        do
-        {
-            if (correct === 0)
-            {
-                index--;
-                if (index < 0)
-                {
-                    if (length === count)
-                        return isValid(solution, true);
-                    else
-                        return false;
-                }
-                pos = undefined;
-                correct = undefined;
-            }
-
-            input = inputs[index];
-
-            if (pos === undefined)
-                pos = 0;
-            if (correct === undefined)
-                correct = input.correct;
-        }
-        while (correct === 0);
-
-        let previous = undefined;
-
-        if (pos === 0 && index < inputs.length-1)
-        {
-            previous = inputs[index+1];
-            addExclusions(previous);
-        }
-
-        for (let p = pos; p < count-correct+1; p++)
-        {
-            let d = input.values[p];
-
-            if (solution[p] === undefined)
-            {
-                let ex = getExclusion(p, d);
-                if (ex > 0)
-                    continue;
-
-                solution[p] = d;
-
-                if (length+1 === count) // full!
-                {
-                    if (isValid(solution, true))
-                        return true;
-                }
-                else if (isValid(solution))
-                {
-                    if (solve(index, length+1, p+1, correct-1))
-                        return true;
-                }
-
-                solution[p] = undefined;
-            }
-            else if (solution[p] === d)
-            {
-                if (solve(index, length, p+1, correct-1))
-                {
-                    return true;
-                }
-            }
-        }
-
-        if (previous !== undefined)
-            removeExclusions(previous);
-
         return false;
     }
 
-    // add well know exclusion
+    memoize = undefined;
+
+    inputs.badDigits = {};
     for (let input of inputs)
-    {
         if (input.correct === 0)
-            addExclusions(input);
-    }
+            inputs.badDigits[input.values[0]] = 1;
 
-    for (let input of inputs)
-    {
-        input.excluded = 0;
-        input.other    = Array.from(input.values);
-        for (let pos = 0; pos < count; pos++)
-        {
-            let d = input.values[pos];
-            if (getExclusion(pos, d) > 0)
-            {
-                input.other[pos] = '*';
-                input.excluded++;
-            }
-        }
-    }
-
-    inputs.sort((a, b) => a.excluded-b.excluded);
-
-    // solve
-    let l = inputs.length-1;
-    while (l > 0 && inputs[l].correct === 0)
-        l--;
-
-    if (solve(l, 0))
+    if (inner(inputs))
         return solution.join('');
-
-    return 'No Solutions';
+    else
+        return 'No solution';
 }
 
 assert.equal(solve(sampleInput), "39542") ;
 
+console.log('');
 let answer = solve(problemInput);
 console.log('Answer is', answer);
