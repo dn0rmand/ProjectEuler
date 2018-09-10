@@ -19,64 +19,63 @@ const MODULO = 1000000009;
 
 primeHelper.initialize(1E6);
 
-let memoize = new Map();
-
-function get(count, max, value)
+class SubsetCounter
 {
-    let m = memoize.get(count);
-    if (m !== undefined)
-        m = m.get(value);
-    if (m === undefined)
-        return;
-
-    let v = m.get(max);
-    if (v !== undefined)
-        return v;
-    // v = m.get(max+1);
-    // if (v === 0)
-    //     return 0;
-}
-
-function set(count, max, value, subSets)
-{
-    let m = memoize.get(count);
-    if (m === undefined)
+    constructor(q, n)
     {
-        m = new Map();
-        memoize.set(count, m);
+        if (q !== 2 && q !== 3)
+            throw "Not supported";
+
+        this.q = q;
+        this.n = n;
+        this.memoize = new Map();
     }
-    let c = m.get(value);
-    if (c === undefined)
+
+    get(count, max, value)
     {
-        c = new Map();
-        m.set(value, c);
+        let m = this.memoize.get(value);
+        if (m !== undefined)
+            m = m.get(count);
+        if (m !== undefined)
+            return m.get(max);
     }
-    c.set(max, subSets);
-}
 
-function A(q, n)
-{
-    let MAX = q*n;
-
-    MAX = (MAX*(MAX+1))/2;
-
-    function countSubSets(value, max, count)
+    set(count, max, value, subSets)
     {
-        if (value < 1 || count < 1)
-            return 0;
-
-        if (count === 1)
+        let m = this.memoize.get(value);
+        if (m === undefined)
         {
-            if (value > 0 && value <= max)
+            m = new Map();
+            this.memoize.set(value, m);
+        }
+        let c = m.get(count);
+        if (c === undefined)
+        {
+            c = new Map();
+            m.set(count, c);
+        }
+        c.set(max, subSets);
+    }
+
+    doCount()
+    {
+    }
+
+    countSubSets(modulo, max, count)
+    {
+        if (count === 0)
+        {
+            if (modulo === 0)
+            {
                 return 1;
+            }
             else
                 return 0;
         }
-
-        if (max < count)
+        else if (count < 0)
             return 0;
 
-        let total = get(count, max, value);
+        let total = this.get(count, max, modulo);
         if (total !== undefined)
             return total;
 
@@ -86,47 +85,48 @@ function A(q, n)
 
         try
         {
-            let m0 = (count*(count+1))/2;
-            if (value < m0)
+            for (let i = max; i >= 0; i--)
             {
-                total = 0;
-                return total;
-            }
+                let result1, result2, result3;
 
-            let m1 = (max*(max+1))/2;
-            let m2 = max - count; m2 = (m2*(m2-1))/2;
-            if (value > m1-m2)
-            {
-                total = 0;
-                return total;
-            }
-            //
+                // use once ( example 1 or 1+n ... 1+(q-1)*n)
+                let v = (modulo + i) % this.n;
 
-            for (let i = max; i > 0; i--)
-            {
-                let result = countSubSets(value-i, i-1, count-1);
+                result1 = this.countSubSets(v, i-1, count-1);
+                total = (total + (this.q*result1))// % MODULO;
 
-                total = (total + result) % MODULO;
+                if (count > 1)
+                {
+                    // used both ( 1 and 1+n )
+                    v = (modulo + (i*2)) % this.n;
+                    result2 = this.countSubSets(v, i-1, count-2);
+                    if (this.q === 2)
+                        total = (total + result2)// % MODULO;
+                    else if (this.q === 3)
+                        total = (total + (3*result2))// % MODULO;
+                }
+                if (count > 2 && this.q === 3)
+                {
+                    v = (modulo + (i*3)) % this.n;
+                    result3 = this.countSubSets(v, i-1, count-3);
+                    total = (total + result3)// % MODULO;
+                }
             }
 
             return total;
         }
         finally
         {
-            set(count, max, value, total);
+            this.set(count, max, modulo, total);
         }
     }
 
-    let subSets = 0
-
-//    memoize = new Map(); // Need to clear it because MAX isn't constant
-
-    for(let total = n; total <= MAX; total += n)
+    count()
     {
-        subSets = (subSets + countSubSets(total, q*n, n)) % MODULO;
-    }
+        this.doCount();
 
-    return subSets;
+        return this.countSubSets(0, this.n-1, this.n);
+    }
 }
 
 function S(q, L)
@@ -138,23 +138,127 @@ function S(q, L)
         if (prime > L)
             break;
 
-        let v = A(q, prime);
+        let v = new SubsetCounter(q, prime).count();
 
-        console.log("A(",q,',',prime,') =', v);
         total = (total + v) % MODULO;
     }
 
     return total;
 }
 
-assert.equal(A(2, 5), 52);
-assert.equal(A(3, 5), 603);
+function A(q, n)
+{
+    return new SubsetCounter(q, n).count();
+}
 
-assert.equal(A(2,2), 2);
-assert.equal(A(2,3), 8);
+function AA(q, n)
+{
+    let k = n;
+    let ncnt= []
+    for (let x = 1; x <= q*n; x++)
+    {
+        let i = x % k;
+        ncnt[i] = (ncnt[i] || 0)+1;
+    }
+
+    function waysToCreate(input_class, class_idx, n)
+    {
+        let ways = 0
+        // not using this class:
+        if (class_idx+1 < k)
+            ways += waysToCreate(input_class, class_idx+1, n);
+
+        for(let i = 1; i < ncnt[class_idx] && i <= n; )
+        {
+            let new_input_class = (input_class + i*class_idx) % k;
+
+            if (i == n && new_input_class != 0)
+            {
+                break; // all elements are used, but doesn't congrunent with 0 (mod k)
+            }
+
+            let subways  =1;
+            if (class_idx+1 < k)
+                subways = waysToCreate(new_input_class, class_idx+1, n-i)
+
+            ways += nchoosek(ncnt[class_idx], i) * subways;
+        }
+
+        return ways;
+    }
+
+    
+}
+
+function subCount(q, n)
+{
+    let k = n;
+
+    n = n*q;
+
+    let mod = [];
+    for(i = 0; i < k; i++)
+        mod.push(0);
+
+    let cumSum = 0;
+    for (let i = 0; i < n; i++)
+    {
+        cumSum += i+1;
+        mod[cumSum % k]++;
+    }
+
+    // Initialize result
+    let result = 0;
+
+    // Traverse mod[]
+    for (let i = 0; i < k; i++)
+    {
+        // If there are more than one prefix subarrays
+        // with a particular mod value.
+        if (mod[i] > 1)
+            result += (mod[i] * (mod[i] - 1)) / 2;
+    }
+    result += mod[0];
+
+    return result;
+}
+
+// console.log(A(2,1));
+// console.log(A(2,2));
+// console.log(A(2,3));
+// console.log(A(2,4));
+// console.log(A(2,5));
+// console.log(A(2,6));
+// console.log(A(2,7));
+
+console.log(subCount(2, 5));
+
 assert.equal(A(2,5), 52);
-assert.equal(A(2,7), 492);
+assert.equal(A(3,5), 603);
 
-assert.equal(S(2, 10), 554);
-// assert.equal(S(2, 100), 100433628);
-// assert.equal(S(3, 100), 855618282);
+assert.equal(A(2,7), 492);
+assert.equal(A(3,7), 16614);
+
+assert.equal(S(2,10), 554);
+assert.equal(A(3,10), 3004206);
+
+let total = 0;
+for (let i = 2; i < 36; i++)
+{
+    let v1 = A(2, i);
+    console.log("A(2,", i, ") =", v1, "- total", total);
+    total += v1;
+}
+
+// console.time("A2(100)")
+// assert.equal(A(2,100), 52431190);
+// console.timeEnd("A2(100)")
+
+// console.time("S2(100)")
+// assert.equal(S(2,100), 100433628);
+// console.timeEnd("S2(100)")
+// console.time("S3(100)")
+// assert.equal(S(3,100), 855618282);
+// console.timeEnd("S3(100)")
+
+console.log("All tests passed");
