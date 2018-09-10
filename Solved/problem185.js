@@ -99,7 +99,8 @@ function randomDigit(antiSolution, position)
     }
     while (true)
     {
-        let v = Math.floor(Math.random() * 10).toString();
+        let v = Math.floor(Math.random() * 97) % 10;
+        v = v.toString();
         if (forbidden[v] !== 1)
             return v;
     }
@@ -143,7 +144,8 @@ function solve(inputs)
 
     let distance = getDistance(inputs, solution);
     let counter  = 0;
-    let posToForce = 0;
+
+    const MAX_COUNTER = 10;
 
     while (distance > 0)
     {
@@ -166,12 +168,13 @@ function solve(inputs)
             if (newDistance === 0)
             {
                 distance = 0;
+                counter  = 0;
                 break; // Done
             }
 
             if (newDistance >= distance)
             {
-                if (counter > 20)
+                if (counter >= MAX_COUNTER)
                 {
                     if (bestDistance === undefined || newDistance < bestDistance)
                     {
@@ -194,12 +197,16 @@ function solve(inputs)
             solution[bestPos] = bestChar;
             counter  = 0;
         }
+        if (counter === 0)
+            process.stdout.write('\r' + solution.join('') + ' : ' + distance + ' ');
     }
-
+    console.log('');
     return solution.join('');
 }
 
 assert.equal(solve(sampleInput), "39542") ;
 
+console.time(185);
 let answer = solve(problemInput);
+console.timeEnd(185);
 console.log('Answer is', answer);
