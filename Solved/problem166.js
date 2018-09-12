@@ -16,6 +16,8 @@
 // In how many ways can you fill a 4x4 grid with the digits d, 0 ≤ d ≤ 9 so that each row, each column,
 // and both diagonals have the same sum?
 
+let sumMap = [];
+
 function allWays()
 {
     let possibilities = [];
@@ -26,8 +28,13 @@ function allWays()
                 for (let c4 = 0; c4 <= 9; c4++)
                 {
                     let set = [c1, c2, c3, c4];
-                    set.sum = c1+c2+c3+c4;
+                    let sum = c1+c2+c3+c4;
+                    set.sum = sum;
                     possibilities.push(set);
+                    if (sumMap[sum] === undefined)
+                        sumMap[sum] = [set];
+                    else
+                        sumMap[sum].push(set);
                 }
 
     return possibilities;
@@ -137,8 +144,7 @@ function combinaison(possibilities)
     for(let d1 of possibilities)
     {
         let sum = d1.sum;
-
-        for (let d2 of possibilities)
+        for (let d2 of sumMap[sum])
         {
             if (sum !== d2.sum)
                 continue;
@@ -177,7 +183,9 @@ function combinaison(possibilities)
     return total;
 }
 
+console.time(166);
 let possibilities = allWays();
 console.log(possibilities.length);
 let answer = combinaison(possibilities);
+console.timeEnd(166);
 console.log("Answer is", answer);
