@@ -99,6 +99,7 @@ function solve(max)
 }
 
 solve(25); // 4933
+
 /*
 2 ^ 22 => 11 squares , 7 cubes, 5 fourth
 3 ^ 10 =>  5 squares , 3 cubes, 2 fourth
@@ -106,6 +107,7 @@ solve(25); // 4933
 7 ^  3 =>  1 square ,  1 cubes, 0 fourth
 11^  2 =>  5 squares,  3 cubes, 2 fourth
 
-12*6*4*2*6  = squares
-
+12*6*4*2*6  = 3456 squares
+ 8*4*3*2*4  =  768 cubes
+ 6*3*2*1*3  =  108 fourth
 */
