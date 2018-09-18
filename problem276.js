@@ -9,7 +9,7 @@
 const primeHelper = require('tools/primeHelper')();
 const bigInt = require('big-integer');
 
-const MAX = 100000;// 10000000;
+const MAX = 10000000;
 
 const MAXA = Math.floor(MAX / 3);
 
