@@ -20,142 +20,81 @@
 const bigInt = require('big-integer');
 const assert = require('assert');
 
-const memoize = [];
-const numbers = [
-    new Map(), // base 10
-    new Map()  // base 3
-]
+const memoize3  = [];
+const memoize10 = [];
 
-function toDigits(n, B)
+function f3(n)
 {
-    if (n === 0)
-        return [0];
-
-    let digits = [];
-
-    while (n > 0)
+    function toDigits(n)
     {
-        let d = n % B;
-        n = (n-d) / B;
-        digits.push(d);
+        if (n === 0)
+            return [0];
+    
+        let digits = [];
+    
+        while (n > 0)
+        {
+            let d = n % 3;
+            n = (n-d) / 3;
+            digits.push(d);
+        }
+        digits = digits.reverse();
+        return digits;
     }
-    return digits;
-}
-
-function f(n, B)
-{
-    if (B !== 10 && B !== 3)
-        throw "Only base 3 or 10 supported";
-
-    if (n < B)
+    
+    if (n < 3)
         return 0;
 
-    let cache = memoize[n];
-    if (cache === undefined)
-        memoize[n] = cache = [];
-
-    let cacheIndex = B === 10 ? 0 : 1;
-
-    let result = cache[cacheIndex];
+    let result = memoize3[n];
     if (result !== undefined)
         return result;
 
-    let digits = toDigits(n, B);
+    let digits = toDigits(n);
 
-    if (digits.length < 2)
+    function *getNumbers(index)
     {
-        cache[cacheIndex] = 0;
-        return 0;
-    }
-
-    function trimDuplicates(nums)
-    {
-        let set = new Set();
-
-        nums = nums.filter((v) => {
-            if (set.has(v))
-                return false;
-            set.add(v);
-            return true;
-        });
-
-        return nums;
-    }
-
-    function makeKey(length)
-    {
-        let v = 0;
-        for (let i = length; i > 0; i--)
+        if (index >= digits.length)
         {
-            v = (v * B) + digits[i-1];
+            yield 0;
+            return;
         }
-        return v;
-    }
-
-    function getNumbers(length)
-    {
-        // Easy cases
-        if (length === 0)
-            return [0];
-        else if (length === 1)
-            return [digits[0]];
-        else if (length === 2)
+        else if (index == digits.length-1)
         {
-            return trimDuplicates([
-                digits[0]+digits[1],
-                digits[0]+(B*digits[1])
-            ]);
+            yield digits[index];
+            return;
         }
-        else if (length === 3)
+        else if (index == digits.length-2)
         {
-            return trimDuplicates([
-                 digits[0] +  digits[1] + digits[2],
-                 digits[0] + (digits[1] + B*digits[2]),
-                (digits[0] + B*digits[1]) + digits[2],
-                 digits[0] + B*(digits[1] + B*digits[2])
-            ]);
+            yield digits[index] + digits[index+1];
+            yield digits[index]*3 + digits[index+1];
+            return;
         }
-
-        let k = makeKey(length);
-        let nums = numbers[cacheIndex][k];
-
-        if (nums !== undefined)
-            return nums;
-
-        nums = [];
 
         let prefix = 0;
-        for (let i = length; i > 0; i--)
+        for (let i = index; i < digits.length; i++)
         {
-            let d = digits[i-1];
+            prefix = (prefix * 3) + digits[i];
 
-            prefix = (prefix * B) + d;
-
-            for (let v of getNumbers(i-1))
+            for (let v of getNumbers(i+1))
             {
-                nums.push(prefix + v);
+                yield prefix + v;
             }
         }
-        nums = trimDuplicates(nums);
-        numbers[cacheIndex][k] = nums;
-        return nums;
     }
 
-    let visited = [];
+    let visited = new Set();
     let minSteps= Number.MAX_SAFE_INTEGER;
 
-    visited[n] = 1;
+    visited.add(n);
 
-    let nums = getNumbers(digits.length);
-
-    for (let v of nums)
+    for (let v of getNumbers(0))
     {
-        if (visited[v] !== undefined)
+        if (visited.has(v))
             continue;
 
-        visited[v] = 1;
+        visited.add(v);
 
-        let steps = f(v, B);
+        let steps = f3(v);
         if (steps < minSteps)
         {
             minSteps = steps;
@@ -164,9 +103,33 @@ function f(n, B)
         }
     }
 
-    cache[cacheIndex] = minSteps+1;
+    memoize3[n] = minSteps+1;
 
     return minSteps+1;
+}
+
+function f10(n)
+{
+    if (n < 10)
+        return 0;
+
+    let result = memoize10[n];
+    if (result !== undefined)
+        return result;
+
+    let v = 0;
+    for (let i = n; i > 0;)
+    {
+        let d = i % 10;
+        i = (i-d) / 10;
+
+        v += d;
+    }
+
+    result = 1 + f10(v, 10);
+    memoize10[n] = result;
+
+    return result;
 }
 
 function g(n, progress)
@@ -177,10 +140,10 @@ function g(n, progress)
     let percent = "";
     let count   = 0;
 
-    for (let i = n; i > 0; i--)
+    for (let i = 1; i <= n; i++)
     {
-        let f1 = f(i, 10);
-        let f2 = -1;//f(i, 3);
+        let f1 = f10(i);
+        let f2 = f3(i);
 
         if(f1 === f2)
         {
@@ -211,10 +174,10 @@ function g(n, progress)
     return extra.plus(total).toString();
 }
 
-// assert.equal(f(7,10), 0);
-// assert.equal(f(123,10), 1);
+assert.equal(f10(7,10), 0);
+assert.equal(f10(123,10), 1);
 
-// assert.equal(g(100), "3302");
+assert.equal(g(100), "3302");
 
 let answer = g(1E7, true);
 
