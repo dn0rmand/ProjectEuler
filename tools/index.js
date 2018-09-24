@@ -1,6 +1,7 @@
 const tools = function()
 {
     return  {
+        digits: require('./digits'),
         primeHelper: require("./primeHelper")(),
         announce: require("./announce"),
         divisors: require("./divisors"),

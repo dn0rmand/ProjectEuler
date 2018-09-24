@@ -17,26 +17,18 @@
 
 // Find g(1E7,10,3)
 
-const assert = require('assert');
-const MAX    = 1E7;
+const assert   = require('assert');
+const toDigits = require('tools/digits');
+const MAX      = 1E7;
 
-const _memoize10 = new Map();
+const memoize = new Map();
 
-function toDigits(n, B)
+function timing()
 {
-    if (n === 0)
-        return [0];
-
-    let digits = [];
-
-    while (n > 0)
-    {
-        let d = n % B;
-        n = (n-d) / B;
-        digits.push(d);
-    }
-    digits = digits.reverse();
-    return digits;
+    console.time("toDigits");
+    for (let i = 1; i <= 1E7; i++)
+        toDigits(i);
+    console.timeEnd("toDigits");
 }
 
 function getNumbers(digits, callback)
@@ -100,8 +92,6 @@ function f10(n)
     if (n < 10)
         return 0;
 
-    let memoize = _memoize10;
-
     let result = memoize.get(n);
     if (result !== undefined)
         return result;
@@ -144,6 +134,8 @@ function g(n)
 
     return total;
 }
+
+timing();
 
 console.log("Running tests");
 
