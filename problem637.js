@@ -19,19 +19,25 @@
 
 const bigInt = require('big-integer');
 const assert = require('assert');
+const MAX    = 1E7;
 
-const memoize3  = [];
-const memoize10 = [];
+const memoize3  = new Map();
+const memoize10 = new Map();
+const digits3   = [];
 
-function f3(n)
+const getNumbers = [
+
+];
+
+function prepare3Digits()
 {
     function toDigits(n)
     {
         if (n === 0)
             return [0];
-    
+
         let digits = [];
-    
+
         while (n > 0)
         {
             let d = n % 3;
@@ -41,15 +47,89 @@ function f3(n)
         digits = digits.reverse();
         return digits;
     }
-    
+
+    console.log('Prebuilding digits.');
+
+    let maxCount = 0;
+    for (let i = 1; i <= MAX; i++)
+    {
+        let digits = toDigits(i);
+        digits3[i] = digits;
+        if (digits.length > maxCount)
+        {
+            maxCount = digits.length;
+            // let f = createPatternFunction(maxCount);
+            // getNumbers[maxCount] = f;
+        }
+    }
+    console.log("Max digits length is", maxCount);
+}
+
+function createPatternFunction(bitLength)
+{
+    function *inner(index)
+    {
+        if (index >= bitLength)
+        {
+            yield "0";
+            return;
+        }
+        else if (index === bitLength-1)
+        {
+            yield "D["+index+"]";
+            return;
+        }
+
+        let prefix = "";
+        for (let i = index; i < bitLength; i++)
+        {
+            if (prefix === "")
+                prefix = "D[" + i + "]";
+            else
+                prefix = "("+prefix+"*3 + D["+i+"])";
+
+            for (let v of inner(i+1))
+            {
+                var pattern = prefix;
+
+                if (v !== "0")
+                    pattern += " + " + v;
+
+                yield pattern;
+            }
+        }
+    }
+
+    let name = "__getNumbers__" + bitLength;
+
+    let fn = "let result = function(digits) {\n";
+
+    fn += "function *" + name + "(D) {\n"
+
+    for (let pattern of inner(0))
+    {
+        fn += "  yield " + pattern + ";\n"
+    }
+
+    fn += "}\n";
+
+    fn += "return " + name + "(digits);"
+    fn += "}\n";
+    fn += "result;";
+    f = eval(fn);
+    return f;
+}
+
+function f3(n, other)
+{
     if (n < 3)
         return 0;
 
-    let result = memoize3[n];
+    let result = memoize3.get(n);
     if (result !== undefined)
         return result;
 
-    let digits = toDigits(n);
+    let digits = digits3[n];
 
     function *getNumbers(index)
     {
@@ -71,6 +151,16 @@ function f3(n)
         }
 
         let prefix = 0;
+
+        while (index < digits.length && digits[index] === 0)
+            index++;
+
+        if (index >= digits.length)
+        {
+            yield 0;
+            return;
+        }
+
         for (let i = index; i < digits.length; i++)
         {
             prefix = (prefix * 3) + digits[i];
@@ -87,7 +177,11 @@ function f3(n)
 
     visited.add(n);
 
-    for (let v of getNumbers(0))
+    if (other !== undefined)
+        other--;
+
+    // let iter = getNumbers[digits.length](digits);
+    for (let v of /*iter) */ getNumbers(0))
     {
         if (visited.has(v))
             continue;
@@ -100,10 +194,12 @@ function f3(n)
             minSteps = steps;
             if (steps === 0) // cannot do better than that!!!
                 break;
+            if (other !== undefined && steps < other)
+                return steps;
         }
     }
 
-    memoize3[n] = minSteps+1;
+    memoize3.set(n, minSteps+1);
 
     return minSteps+1;
 }
@@ -113,7 +209,7 @@ function f10(n)
     if (n < 10)
         return 0;
 
-    let result = memoize10[n];
+    let result = memoize10.get(n);
     if (result !== undefined)
         return result;
 
@@ -127,9 +223,28 @@ function f10(n)
     }
 
     result = 1 + f10(v, 10);
-    memoize10[n] = result;
+    memoize10.set(n, result);
 
     return result;
+}
+
+function executeF10()
+{
+    console.log('Executing f(n, 10)');
+    for (let i = 1; i <= MAX; i++)
+    {
+        f10(i);
+    }
+}
+
+function tests()
+{
+    console.log("Running tests");
+
+    assert.equal(f10(7,10), 0);
+    assert.equal(f10(123,10), 1);
+    
+    assert.equal(g(100), "3302");
 }
 
 function g(n, progress)
@@ -143,7 +258,7 @@ function g(n, progress)
     for (let i = 1; i <= n; i++)
     {
         let f1 = f10(i);
-        let f2 = f3(i);
+        let f2 = f3(i, f1);
 
         if(f1 === f2)
         {
@@ -159,7 +274,7 @@ function g(n, progress)
 
         if (progress && count === 0)
         {
-            let p = (((n-i)*100) / n).toFixed(0);
+            let p = ((i*100) / n).toFixed(0);
             if (p !== percent)
             {
                 percent = p;
@@ -174,11 +289,11 @@ function g(n, progress)
     return extra.plus(total).toString();
 }
 
-assert.equal(f10(7,10), 0);
-assert.equal(f10(123,10), 1);
+prepare3Digits();
+tests();
+executeF10();
+console.log("Solving");
 
-assert.equal(g(100), "3302");
-
-let answer = g(1E7, true);
+let answer = g(MAX, true);
 
 console.log('Answer is', answer);
