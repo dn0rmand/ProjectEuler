@@ -39,10 +39,13 @@ function toDigits(n, B)
     return digits;
 }
 
-function *getNumbers(digits)
+function getNumbers(digits, callback)
 {
     if (digits.length === 1)
-        return digits[0];
+    {
+        callback(digits[0]);
+        return;
+    }
 
     let bits = digits.length-1;
     let mask = (2 ** bits); // adding all digits already handled
@@ -68,11 +71,12 @@ function *getNumbers(digits)
         }
 
         total += value;
-        yield total;
+        if (callback(total) === true)
+            break;
     }
 }
 
-
+// got list from https://oeis.org/A253057
 const exceptions = [
     1781, 3239, 3887, 11177, 14821, 33047, 41065, 43981, 98657, 131461, 393901
 ];
@@ -108,7 +112,7 @@ function f10(n)
         return 1;
 
     let minSteps = 4;
-    for (let v of getNumbers(digits))
+    getNumbers(digits, (v) =>
     {
         let steps = f10(v);
 
@@ -116,9 +120,9 @@ function f10(n)
         {
             minSteps = steps;
             if (steps < 2) // cannot do better than that!!!
-                break;
+                return true; // tell getNumber to stop
         }
-    }
+    });
 
     memoize.set(n, minSteps+1);
 
