@@ -196,7 +196,6 @@ function F(max)
         nodes  = result.nodes;
     }
 
-    console.log();
     return total;
 }
 
