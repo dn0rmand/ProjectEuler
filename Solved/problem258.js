@@ -17,9 +17,8 @@ const prettyHrtime = require('pretty-hrtime');
 
 const LAG     = 2000; // 00;
 const MODULO  = 20092010;
-const BIG_MODULO = 20092010 * 1000;
 
-class DNMatrix extends Matrix 
+class DNMatrix extends Matrix
 {
     static get [Symbol.species]() 
     {
@@ -54,7 +53,7 @@ class DNMatrix extends Matrix
                 var s = 0;
                 for (k = 0; k < n; k++) 
                 {
-                    s = (s + (this.get(i, k) * Bcolj[k])) % 20092010;
+                    s = (s + (this.get(i, k) * Bcolj[k])) % MODULO;
                 }
 
                 result.set(i, j, s);
