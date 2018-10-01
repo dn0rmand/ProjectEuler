@@ -17,7 +17,7 @@ module.exports = function(maxPrime)
         _memoizePrimeCount = new Map();
     }
 
-    function countPrimes(num) 
+    function countPrimes(num)
     {
         let count = _memoizePrimeCount.get(num);
         if (count !== undefined)
@@ -97,7 +97,40 @@ module.exports = function(maxPrime)
             return true;
     }
 
-    function generateMorePrimes(count) 
+    function factorize(n, callback)
+    {
+        if (n === 1)
+            return;
+
+        if (isPrime(n))
+        {
+            callback(n, 1);
+            return;
+        }
+
+        for(let p of _primes)
+        {
+            if (p > n)
+                break;
+            if (n % p === 0)
+            {
+                let factor = 0;
+                while (n % p === 0)
+                {
+                    factor++;
+                    n /= p;
+                }
+                callback(p, factor);
+                if (n === 1 || isPrime(n))
+                    break;
+            }
+        }
+
+        if (n !== 1)
+            callback(n, 1);
+    }
+
+    function generateMorePrimes(count)
     {
         let newMax = _maxPrime + count;
         let n = newMax;
@@ -247,7 +280,6 @@ module.exports = function(maxPrime)
     }
 
     let $init = generatePrimes;
-
     let result = {
         reset: function() {
             reset();
@@ -265,11 +297,14 @@ module.exports = function(maxPrime)
         primes : function *(limitless) {
             yield *primes(limitless);
         },
-        isPrime: function(value) { 
-            return isPrime(value); 
+        isPrime: function(value) {
+            return isPrime(value);
         },
         next: function(p) { return next(p); },
-        countPrimes: function(to) { return countPrimes(to); }        
+        countPrimes: function(to) { return countPrimes(to); },
+        factorize: function (n, callback) {
+            factorize(n, callback);
+        }        
     }
 
     if (maxPrime !== undefined)
