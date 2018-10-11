@@ -13,6 +13,8 @@
 
 // Find S2(10^8)+S3(10^8). Give your answer modulo 1000000009
 
+require('tools/bigintHelper');
+
 const assert = require('assert');
 const primeHelper = require('tools/primeHelper')();
 
@@ -51,102 +53,79 @@ function preload()
     console.log('Preloaded')
 }
 
-function modInv(value, n)
-{
-    let t    = 0n;
-    let newT = 1n;
-    let r    = BigInt(n);
-    let newR = BigInt(value);
-    let q, lastT, lastR;
-
-    if (newR < 0)
-        newR = -newR;
-
-    while (newR != 0)
-    {
-        q = r / newR;
-        lastT = t;
-        lastR = r;
-        t = newT;
-        r = newR;
-        newT = lastT - q * newT;
-        newR = lastR - q * newR;
-    }
-    if (r != 1)
-        throw new Error(value + " and " + n + " are not co-prime");
-
-    if (t < 0)
-        t += BigInt(n);
-
-    if (n < 0)
-        return -t;
-    return t;
-}
-
 function divise(quotient, divisor)
 {
-    divisor = modInv(divisor, MODULO);
+    if (typeof(quotient) !== 'bigint')
+        quotient = BigInt(quotient);
 
-    return Number( (divisor * BigInt(quotient)) % MODULO_N );
+    if (typeof(divisor) !== 'bigint')
+        divisor = BigInt(divisor);
+
+    divisor = divisor.modInv(MODULO_N);
+
+    let result = (quotient * divisor) % MODULO_N;
+
+    return result;
 }
 
 function CNR(n, r)
 {
-    let N = factorial[n];
-    let R = factorial[r];
-    let NR= factorial[n-r];
+    let N = BigInt(factorial[n]);
+    let R = BigInt(factorial[r]);
+    let NR= BigInt(factorial[n-r]);
 
-    let divisor = (BigInt(R) * BigInt(NR)) % MODULO_N;
-    let result  = divise(N, Number(divisor));
+    let divisor = (R * NR) % MODULO_N;
+    let result  = N.modDiv(divisor, MODULO_N);
 
     return result;
 }
 
 function A(q, n)
 {
-    if (q !== 2 && q !== 3)
+    if (q != 2 && q != 3)
         throw "q can only be 2 or 3 supported"
 
     // Special case
-    if (n === 2)
-        return q === 2 ? 2 : 6;
+    if (n == 2)
+        return q == 2 ? BigInt(2) : BigInt(6);
 
     // Normal case
 
-    let v1 = q*(n-1);
-    let v2 = CNR(q*n, n);
+    let v1 = BigInt(q*(n-1));
+    let v2 = BigInt(CNR(q*n, n));
+    let v  = (v1 + v2) % MODULO_N;
 
-    let result = divise((v1 + v2) % MODULO, n) ;
+    let result = v.modDiv(n, MODULO_N) ;
     return result;
 }
 
 function S(q, n)
 {
-    let total = 0;
+    let total = BigInt.ZERO;
     for (let p of primeHelper.primes())
     {
         if (p > n)
             break;
 
-        total = (total + A(q, p)) % MODULO;
+        total = (total + A(q, p)) % MODULO_N;
     }
     return total;
 }
 
 function Solve(n)
 {
-    let total = 0;
+    let total = BigInt.ZERO;
     for (let p of primeHelper.primes())
     {
         if (p > n)
             break;
 
-        let a = (A(2, p) + A(3, p)) % MODULO;
+        let a = (A(2, p) + A(3, p)) % MODULO_N;
 
-        total = (total + a) % MODULO;
+        total = (total + a) % MODULO_N;
     }
 
-    return total;
+    return Number(total);
 }
 
 console.time(635);
