@@ -13,9 +13,6 @@
 
 // Find S2(10^8)+S3(10^8). Give your answer modulo 1000000009
 
-
-// Aq(n)=((q*n C n) + ((−1)^(n−1))*q*(n-1)) / n
-
 const assert = require('assert');
 const primeHelper = require('tools/primeHelper')();
 
