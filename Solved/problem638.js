@@ -41,11 +41,13 @@ function C(a, b, k)
     return total;
 }
 
+console.time(638);
 assert.equal(C( 2,  2, 1), 6);
 assert.equal(C( 2,  2, 2), 35);
 assert.equal(C(10, 10, 1), 184756);
 assert.equal(C(15, 10, 3), 880419838);
 assert.equal(C(10000,10000,4), 395913804);
+console.timeEnd(638);
 
 console.log('Tests passed');
 console.time(638);
