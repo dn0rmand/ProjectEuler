@@ -10,12 +10,48 @@
 
 // Find F(30,10001) mod 1000000007.
 
+require('tools/bigintHelper');
+
 const gcd = require('gcd');
 const assert = require('assert');
 const primeHelper = require('tools/primeHelper')();
 const MODULO = BigInt(1000000007);
 
 primeHelper.initialize(300);
+
+function calculate(equation, n)
+{
+    assert.notEqual(equation.length, undefined);
+    assert.notEqual(equation.length, 0);
+
+    // Get Divisor and make sure it the same for all entries
+    let divisor = undefined;
+
+    for (let e of equation)
+    {
+        if (divisor === undefined)
+            divisor = e.divisor;
+        else
+            assert.equal(divisor, e.divisor);
+    }
+    // Calculate now
+
+    let result = BigInt(0);
+
+    n = BigInt(n);
+    for (let i = 0; i < equation.length; i++)
+    {
+        let p = n.modPow(i+1, MODULO);
+        let v = ( p * BigInt(equation[i].nominator) ) % MODULO;
+
+        result = (result + v) % MODULO;
+    }
+
+    let d = BigInt(divisor).modInv(MODULO);
+
+    result = (((result * d) % MODULO) + BigInt(1)) % MODULO;
+    return Number(result);
+}
 
 function F9(n)
 {
@@ -245,10 +281,31 @@ function OP(values)
                 }
                 else
                 {
-                    let x = state.factors[i];
+                    let fa = state.factors[i];
                     reduceAll(state);
-                    if (x !== state.factors[i])
+                    if (fa !== state.factors[i])
+                    {
                         didSomething = true;
+                    }
+                    else
+                    {
+                        let d = gcd(rf, fa);
+                        if (d !== 1)
+                        {
+                            let vf = rf / d;
+                            let va = fa / d;
+
+                            ref.factors[i] *= va;
+                            ref.value      *= va;
+                            state.value    *= vf;
+                            rf = ref.factors[i];
+
+                            for (let j = 0; j < maxCount; j++)
+                            {
+                                state.factors[j] *= vf;
+                            }
+                        }
+                    }
                 }
             }
 
@@ -343,7 +400,7 @@ function OP(values)
     assert.equal(allSolved, true);
 
     let solutions = [];
-
+    let maxDivisor= 0;
     for (let state of states)
     {
         for (let i = 0; i < maxCount; i++)
@@ -352,14 +409,28 @@ function OP(values)
             if (factor !== 0)
             {
                 assert.equal(solutions[i], undefined);
+                if (factor > maxDivisor)
+                    maxDivisor = factor;
 
                 solutions[i] = { nominator:state.value, divisor: factor }
                 break;
             }
         }
     }
+
     for (let i = 0; i < maxCount; i++)
-        assert.notEqual(solutions[i], undefined);
+    {
+        let s = solutions[i];
+        assert.notEqual(s, undefined);
+        if (maxDivisor % s.divisor === 0)
+        {
+            let m = maxDivisor / s.divisor;
+            s.divisor   *= m;
+            s.nominator *= m;
+        }
+        else
+            console.log(maxDivisor, "is not a multiple of", s.divisor )
+    }
 
     return solutions;
 }
@@ -394,34 +465,11 @@ let values = [30, 308, 1909, 8679, 31856, 99814, 276705, 695552, 1613612, 350064
 let solutions = OP(values);
 console.log(format(30, solutions));
 
-for (let i = 1; i <= 10; i++)
+for (let i = 0; i < values.length; i++)
 {
-    let equation = "";
-    let variable = 'a'.charCodeAt(0);
-    for (let p = 1; p <= 10; p++)
-    {
-        let v = i ** p;
-        if (v === 0)
-            continue;
-        if (v < 0)
-        {
-            v = -v;
-            equation += ' - ';
-        }
-        else if (p > 1)
-        {
-            equation += ' + ';
-        }
-
-        if (v !== 1)
-            equation += v + "*";
-
-        equation += String.fromCharCode(variable++);
-    }
-
-    console.log(values[i]-1, '=', equation.trim());
+    let v = calculate(solutions, i+1);
+    assert.equal(v, values[i]);
 }
-
 
 //let result = F(30,10001);
 
