@@ -441,13 +441,16 @@ function test()
     assert.equal(F(30,2), 308);
 
     let solutions = OP([F(9,1), F(9,2), F(9,3), F(9,4)]);
-    console.log(format(9, solutions));
+
+    for (let i = 1; i <= 10; i++)
+        assert.equal(calculate(solutions, i), F(9, i));
+
     console.log("Tests passed");
 }
 
-// test();
 
-/*
+/* PRE-CALCULATED via brute force
+
 F(30,0) = 1
 F(30,1) = 30
 F(30,2) = 308
@@ -459,18 +462,35 @@ F(30,7) = 276705
 F(30,8) = 695552
 F(30,9) = 1613612
 F(30,10)= 3500640
+
 */
 
-let values = [30, 308, 1909, 8679, 31856, 99814, 276705, 695552, 1613612, 3500640];
-let solutions = OP(values);
-console.log(format(30, solutions));
-
-for (let i = 0; i < values.length; i++)
+function solve(usePrecalculated)
 {
-    let v = calculate(solutions, i+1);
-    assert.equal(v, values[i]);
+    // Pre-Calculated values
+    let values;
+
+    if (usePrecalculated === true)
+        values = [30, 308, 1909, 8679, 31856, 99814, 276705, 695552, 1613612, 3500640];
+    else
+    {
+        values = [];
+        for (let i = 1; i <= 10; i++)
+            values[i] = F(30, i);
+    }
+
+    let solutions = OP(values);
+
+    for (let i = 0; i < values.length; i++)
+    {
+        let v = calculate(solutions, i+1);
+        assert.equal(v, values[i]);
+    }
+
+    let result = calculate(solutions, 10001);
+    return result;
 }
 
-//let result = F(30,10001);
-
-console.log('Done');
+test();
+let answer = solve(true);
+console.log('Answer is', answer);
