@@ -102,7 +102,7 @@ module.exports = function(maxPrime)
         if (n === 1)
             return;
 
-        if (isPrime(n))
+        if (_primeMap !== undefined && isPrime(n))
         {
             callback(n, 1);
             return;
@@ -121,7 +121,9 @@ module.exports = function(maxPrime)
                     n /= p;
                 }
                 callback(p, factor);
-                if (n === 1 || isPrime(n))
+                if (n === 1)
+                    break;
+                if (_primeMap !== undefined && isPrime(n))
                     break;
             }
         }
@@ -304,7 +306,7 @@ module.exports = function(maxPrime)
         countPrimes: function(to) { return countPrimes(to); },
         factorize: function (n, callback) {
             factorize(n, callback);
-        }        
+        }
     }
 
     if (maxPrime !== undefined)
