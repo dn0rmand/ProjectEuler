@@ -13,6 +13,7 @@
 // Find G(17526×1E9).
 
 const assert = require('assert');
+const announce = require('tools/announce');
 
 const MAX = 17526 * 1E9;
 
@@ -149,4 +150,5 @@ assert.equal(solve(1E6), 2106);
 console.log('Test passed');
 
 let answer = solve(MAX);
+announce(621, "Answer is "+ answer)
 console.log('Answer is', answer);
