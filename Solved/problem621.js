@@ -13,62 +13,44 @@
 // Find G(17526×1E9).
 
 const assert = require('assert');
-const announce = require('tools/announce');
+const timeLog = require('tools/timeLogger');
 
-const MAX = 17526 * 1E9;
+const MAX = 17526000000000;
 
-const triangles = new Set();
-let triangleNumbers ;
+const   triangles = new Set();
+const   triangleNumbers = [] ;
+let     _lastTriangle = undefined;
+let     _lastSize = undefined;
 
-function loadTriangles()
+function loadTriangles(max)
 {
-    triangles.add(0);
+    if (_lastTriangle === undefined)
+    {
+        triangles.add(0);
+        triangleNumbers.push(0);
+        _lastTriangle = 0;
+        _lastSize = 1;
+    }
 
-    let current = 0;
-    let l = 1;
     while (true)
     {
-        current = current+l;
-        if (current > MAX)
+        let current = _lastTriangle + _lastSize;
+        if (current > max)
             break;
-        l = l+1;
+
+        _lastTriangle = current;
+        _lastSize++;
 
         triangles.add(current);
+        triangleNumbers.push(current);
     }
-
-    triangleNumbers = [...triangles.keys()];
 }
 
-function solve(max)
+function solve(max, trace)
 {
+    loadTriangles(max);
+
     let total = 0;
-
-    function inner(value, index, count)
-    {
-        if (count === 1)
-        {
-            if (triangles.has(value))
-            {
-                // ABC, ACB, BAC, BCA, CAB, CBA -> 6 possibilities
-                total += 6;
-            }
-            return;
-        }
-
-        for (let i = index; i < triangleNumbers.length; i++)
-        {
-            let t = triangleNumbers[i];
-            if (t+t > value)
-                break;
-
-            if(count === 3 && max === MAX)
-                process.stdout.write('\r' + t);
-
-            let v = value-t;
-            if (v > t)
-                inner(value - t, i+1, count-1);
-        }
-    }
 
     // Check case AAA
 
@@ -112,8 +94,8 @@ function solve(max)
 
     // Now ABC different
 
-    if (max === MAX)
-        process.stdout.write(triangleNumbers[triangleNumbers.length-1]+'\r\n');
+    if (trace)
+        process.stdout.write(M+'\r\n');
 
     for (let i = 0; i < triangleNumbers.length; i++)
     {
@@ -121,7 +103,7 @@ function solve(max)
         if (t1 > M)
             break;
 
-        if (max === MAX)
+        if (trace)
             process.stdout.write('\r' + t1);
 
         let v1 = max - t1;
@@ -137,11 +119,54 @@ function solve(max)
             }
         }
     }
-
+    if (trace)
+        console.log('\r');
     return total;
 }
 
-loadTriangles();
+// USE FORMULAS:
+//    T(3^(2λ+1)*n + (19×3^(2λ) − 3)/8)=(2*3^λ − 1)*T(3n+2)
+function SOLVE_BIG(max)
+{
+    function check(power)
+    {
+        let A = 3 ** (2*power+1);
+        let B = ((19*(3 ** (2*power))) - 3) / 8;
+        if (Math.floor(B) !== B)
+            return undefined;
+
+        // A*n + B = max
+        let n = (max - B) / A;
+        if (n < 1)
+            return false;
+        if (Math.floor(n) !== n)
+            return undefined;
+
+        let factor = 2*(3**power) - 1;
+        let m      = 3*n + 2;
+
+        return { value: m, factor: factor};
+    }
+
+    let current = {factor:1, value: max};
+
+    for (let power = 1; ; power++)
+    {
+        let v = check(power);
+        if (v === false)
+            break;
+        if (v !== undefined)
+        {
+            if (v.value < current.value)
+                current = v;
+        }
+    }
+
+    let t = solve(current.value, true);
+    return t * current.factor;
+}
+
+timeLog("Problem 621", () => {
 
 assert.equal(solve(9), 7);
 assert.equal(solve(1000), 78);
@@ -149,6 +174,7 @@ assert.equal(solve(1E6), 2106);
 
 console.log('Test passed');
 
-let answer = solve(MAX);
-announce(621, "Answer is "+ answer)
+let answer = SOLVE_BIG(MAX);
 console.log('Answer is', answer);
+
+});
