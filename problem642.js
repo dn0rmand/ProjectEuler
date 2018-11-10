@@ -1,52 +1,84 @@
 const assert = require('assert');
+const primeHelper = require('tools/primeHelper')();
+const sieve = require('tools/sieve-offset');
 
-const MAX = 820182018; // 20 1820182018
-const $prime  = new Uint32Array(MAX);
-const $values = new Uint32Array(MAX);
+const MAXPRIME = 1E9;
+console.log('Loading primes');
+primeHelper.initialize(MAXPRIME, true);
+console.log('Primes loaded');
 
-function makeMap(n)
+const MAX    = 20820182018;
+const MODULO = 1E9;
+
+const allPrimes = primeHelper.allPrimes();
+
+function F(n, trace)
 {
-    let max = n / 2
-
-    for (let p = 2; p <= max; p++)
+    function inner(P, index, value)
     {
-        if ($prime[p] === 0)
+        total = (total + P) % MODULO;
+
+        for (let i = index; i <= allPrimes.length; i++)
         {
-            let i = p*2
-            while (i <= n)
+            let prime = allPrimes[i];
+            if (prime > P)
+                break;
+
+            let v = value * prime;
+            if (v > n)
+                break;
+            while (v <= n)
             {
-                $prime[i] = p;
-                i = i + p
+                inner(P, i+1, v);
+                v *= prime;
             }
         }
     }
 
-    let sum   = 0;
-    for (let p = 2; p <= n; p++)
+    let total = 0;
+    let lastP = 0;
+
+    for (let i = 0; i < allPrimes.length; i++)
     {
-        sum = (sum + ($prime[p] || p)) % 1E9;
-        $values[p] = sum;
+        let P = allPrimes[i];
+        lastP = P;
+        if (P > n)
+            break;
+        if (trace)
+            process.stdout.write('\r'+P);
+        inner(P, 0, P);
     }
-}
 
-function F(n)
-{
-    return $values[n];
-}
+    while(lastP < n)
+    {
+        let max = lastP+1E8;
+        if (max > n)
+            max = n;
 
-makeMap(MAX);
+        for (let P of sieve(lastP+1, max))
+        {
+            if (P > n)
+                break;
+            lastP = P;
+            if (trace)
+                process.stdout.write('\r'+P);
+            inner(P, 0, P);
+        }
+    }
+
+    if (trace)
+        console.log('');
+    return total;
+}
 
 assert.equal(F(10), 32);
 assert.equal(F(100), 1915);
 assert.equal(F(10000), 10118280);
 
-let s = F(1);
+console.log('Tests passed');
 
-for (let i = 2; i < 20; i++)
-    s = s + ', ' + F(i);
-
-console.log(s);
-// console.log(F(201820182018));
+let answer = F(201820182018, true);
+console.log('Answer is', answer);
 
 // gpf(n)=if(n<4, n, n=factor(n)[, 1]; n[#n]);
 // a(n)=sum(k=2, n, Mod(gpf(k), 1000000000))
