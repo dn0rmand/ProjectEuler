@@ -1,13 +1,13 @@
-require('tools/bigintHelper');
-
 const assert = require('assert');
 const primeHelper = require('tools/primeHelper')();
 
-const MAX = BigInt(1E36);
+const MAX = 1E36;
 
 const MAX_PRIME = 1E7;
-const SIX = BigInt(6);
-const TWO = BigInt(2);
+const SIX = 6;
+const TWO = 2;
+const ONE = 1;
+const ZERO = 0;
 
 primeHelper.initialize(MAX_PRIME);
 
@@ -65,7 +65,7 @@ function solve(size)
 
         for(let p of allPrimes)
         {
-            if ((TWO ** BigInt(p-1)) > size)
+            if ((TWO ** (p-1)) > size)
                 break;
             max = p;
         }
@@ -77,8 +77,8 @@ function solve(size)
     {
         for (let prime of allPrimes)
         {
-            let p      = BigInt(prime);
-            let factor = p ** BigInt(6);
+            let p      = prime;
+            let factor = p ** SIX;
 
             p = factor;
 
@@ -112,13 +112,13 @@ function solve(size)
                 return;
             }
 
-            let power = BigInt(powers.get(index));
+            let power = powers.get(index);
             for (let p of allPrimes)
             {
                 if (usedPrimes.includes(p))
                     continue;
 
-                let f = value * (BigInt(p) ** power);
+                let f = value * (p ** power);
 
                 if (f >= size)
                     break;
@@ -129,7 +129,7 @@ function solve(size)
             }
         }
 
-        inner(BigInt.ONE, 0);
+        inner(ONE, 0);
     }
 
     function pass2()
@@ -153,10 +153,7 @@ function solve(size)
 
         function inner(value, index)
         {
-            if (value > size)
-                return;
-
-            if (factors.length() > 1 && value % SIX === BigInt.ONE)
+            if (factors.length() > 1 && value % SIX === ONE)
             {
                 // let c = factors.length;
                 // moreFactors(0, 0);
@@ -167,37 +164,34 @@ function solve(size)
                 pass3(factors);
             }
 
+            let c = factors.length();
+
             for (let i = index; i < allPrimes.length; i++)
             {
                 let prime = allPrimes[i];
                 if (prime > maxPower)
                     break;
-                let p =BigInt(prime);
 
-                let v = value * p;
-                if (v > size)
-                    break;
+                let v = value * prime;
 
-                let c = factors.length();
-
-                while (v <= size)
+                while (v <= size && ((v % SIX) !== ZERO))
                 {
                     factors.push(prime-1);
                     inner(v, i+1);
-                    v *= p;
+                    v *= prime;
                 }
 
                 factors.setLength(c);
             }
         }
 
-        inner(BigInt.ONE, 2);
+        inner(ONE, 2);
     }
 
     pass1();
     pass2();
 
-    // let x = [BigInt.ONE, ...processed.keys()].sort((a,b) => { return a-b; });
+    // let x = [ONE, ...processed.keys()].sort((a,b) => { return a-b; });
     // console.log(...x);
     return total;
 }
@@ -214,7 +208,7 @@ function $solve(size)
         for (let i = 0; i < size; i++)
         {
             if (dice[i] === 1)
-                values.push(BigInt(i+1));
+                values.push(i+1);
         }
         console.log(...values);
         // console.log(dice.join(','));
@@ -245,12 +239,12 @@ function $solve(size)
 
 // console.log(solve(MAX));
 
+console.log(" 1E9 =", solve(1E9));
+console.log("1E10 =", solve(1E10));
+
 assert.equal(solve(100), 2);
 assert.equal(solve(1E7), 36);
 assert.equal(solve(1E8), 69);
 assert.equal(solve(1E12), 740);
-
-console.log(" 1E9 =", solve(1E9));
-console.log("1E10 =", solve(1E10));
 
 console.log('done')

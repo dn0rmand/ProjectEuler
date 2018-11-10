@@ -1,31 +1,40 @@
 const assert = require('assert');
 
-function F(n)
+const MAX = 820182018; // 20 1820182018
+const $prime  = new Uint32Array(MAX);
+const $values = new Uint32Array(MAX);
+
+function makeMap(n)
 {
-    let prime = new Map();
-    let sum   = 0;
     let max = n / 2
 
     for (let p = 2; p <= max; p++)
     {
-        if (! prime.has(p))
+        if ($prime[p] === 0)
         {
             let i = p*2
             while (i <= n)
             {
-                prime.set(i, p);
+                $prime[i] = p;
                 i = i + p
             }
         }
     }
 
+    let sum   = 0;
     for (let p = 2; p <= n; p++)
     {
-        sum = (sum + (prime.get(p) || p)) % 1E9;
+        sum = (sum + ($prime[p] || p)) % 1E9;
+        $values[p] = sum;
     }
-
-    return sum
 }
+
+function F(n)
+{
+    return $values[n];
+}
+
+makeMap(MAX);
 
 assert.equal(F(10), 32);
 assert.equal(F(100), 1915);
