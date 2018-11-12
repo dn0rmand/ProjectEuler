@@ -1,10 +1,11 @@
 const assert = require('assert');
 const primeHelper = require('tools/primeHelper')();
 const sieve = require('tools/sieve-offset');
+const announce = require('tools/announce');
 
 const MAX        = 201820182018;
 const MODULO     = 1E9;
-const PRIME_SIZE = 1E8;
+const PRIME_SIZE = 1E9;
 
 let MAX_PRIME = Math.max(PRIME_SIZE, Math.floor(Math.sqrt(MAX)));
 
@@ -98,7 +99,7 @@ console.log('Tests passed');
 console.time(642);
 let answer = F(MAX, true);
 console.timeEnd(642);
-console.log('F('+MAX+')=', answer);
+announce(642, 'F('+MAX+')=' + answer);
 
 // gpf(n)=if(n<4, n, n=factor(n)[, 1]; n[#n]);
 // a(n)=sum(k=2, n, Mod(gpf(k), 1000000000))
