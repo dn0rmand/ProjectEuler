@@ -22,31 +22,31 @@ module.exports = function(maxPrime)
         let count = _memoizePrimeCount.get(num);
         if (count !== undefined)
             return count;
-    
+
         let r = Math.floor(Math.sqrt(num));
         let v = [];
-    
+
         for (let i = 1; i <= r + 1; i++)
             v.push(Math.floor(num / i));
-    
+
         for (let i = v[v.length - 1] - 1; i >= 0; i--)
             v.push(i);
-    
+
         let s = {};
-    
+
         for (let i = 0; i < v.length; i++)
         {
             let idx = v[i];
             s[idx] = idx - 1;
         }
-    
-        for (let p = 2; p <= r + 1; p++) 
+
+        for (let p = 2; p <= r + 1; p++)
         {
             let sp = s[p - 1];
-            if (s[p] > sp) 
+            if (s[p] > sp)
             {
                 let p2 = p * p;
-                for (let i = 0; i < v.length; i++) 
+                for (let i = 0; i < v.length; i++)
                 {
                     let idx = v[i];
                     if (idx < p2)
@@ -55,7 +55,7 @@ module.exports = function(maxPrime)
                 }
             }
         }
-        
+
         count = s[num];
         _memoizePrimeCount.set(num, count);
         return count;
@@ -63,13 +63,15 @@ module.exports = function(maxPrime)
 
     function isPrime(p)
     {
-        if (_primeMap === undefined)
-            throw "Prime Map not enabled";
-
-        if (_primeMap.has(p))
+        if (_primeMap !== undefined)
+        {
+            if (_primeMap.has(p))
+                return true;
+            if (p <= _maxPrime)
+                return false;
+        }
+        if (p === 2 || p === 3)
             return true;
-        if (p <= _maxPrime)
-            return false;
 
         if ((p & 1)  === 0 || (p % 3) === 0)
             return false;
@@ -182,7 +184,7 @@ module.exports = function(maxPrime)
         return _maxPrime;
     }
 
-    function generatePrimes(max) 
+    function generatePrimes(max)
     {
         if (_primeMap !== undefined)
         {

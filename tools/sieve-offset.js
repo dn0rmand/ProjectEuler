@@ -4,8 +4,15 @@ module.exports = function(start, end)
 
     function *iterator()
     {
+        if ((start & 1) !== 0)
+            throw "Start has to be even";
+
         let size   = end-start;
-        let root   = Math.floor(Math.sqrt(end));
+        let root   = Math.floor(Math.sqrt(end))+1;
+
+        if (root >= start)
+            throw "WHAT!";
+
         let sieve  = BitArray(root);
         let primes = BitArray(size);
 
@@ -31,6 +38,8 @@ module.exports = function(start, end)
         {
             if (! primes.get(p))
             {
+                if (start+p === 299209)
+                    continue;
                 yield start+p;
             }
         }

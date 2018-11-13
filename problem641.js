@@ -51,9 +51,15 @@ class FactorArray
         if (index >= 0 && index < this.$length)
             return this.$factors[index];
     }
+
+    set(index, value)
+    {
+        if (index >= 0 && index < this.$length)
+            return this.$factors[index] = value;
+    }
 }
 
-function solve(size)
+function solve(size/*, goods*/)
 {
     let total     = 1;
     let factors   = new FactorArray();
@@ -98,21 +104,67 @@ function solve(size)
     {
         const usedPrimes = [];
 
+        let pows = powers;
+        let done = [];
+
+        function *makePowers()
+        {
+            let ps = [];
+
+            function *inner(index)
+            {
+                if (index >= pows.length())
+                {
+                    if (ps.length > 1)
+                        yield ps;
+                    return;
+                }
+
+                let f = pows.get(index);
+
+                if (index > 0)
+                {
+                    for (let i = 0; i < ps.length; i++)
+                    {
+                        let x1 = ps[i];
+                        if (x1 % f === 0)
+                            continue;
+                        let x2 = x1 * f;
+                        if (x2 <= maxPower && !done[x2])
+                        {
+                            ps[i] = x2;
+                            done[x2] = 1;
+                            yield *inner(index+1);
+                            ps[i] = x1;
+                        }
+                    }
+                }
+
+                ps.push(f);
+                yield *inner(index+1);
+                ps.pop();
+            }
+
+            yield *inner(0);
+        }
+
         function inner(value, index)
         {
             if (value >= size)
                 return;
-            if (index >= powers.length())
+            if (index >= powers.length)
             {
                 if (! processed.has(value))
                 {
+                    // if (goods && ! goods.includes(value))
+                    //     console.log(value, "not correct");
                     total++;
                     processed.add(value);
                 }
                 return;
             }
 
-            let power = powers.get(index);
+            let power = powers[index];
             for (let p of allPrimes)
             {
                 if (usedPrimes.includes(p))
@@ -129,38 +181,18 @@ function solve(size)
             }
         }
 
-        inner(ONE, 0);
+        for (powers of makePowers())
+        {
+            inner(ONE, 0);
+        }
     }
 
     function pass2()
     {
-        // function moreFactors(index, value)
-        // {
-        //     for (let i = index; i < factors.length; i++)
-        //     {
-        //         let factor = ((value+1) * (factors[i]+1));
-        //         if (factor <= maxPower)
-        //         {
-        //             factor--;
-        //             if (! factors.includes(factor))
-        //                 factors.push(factor);
-        //             moreFactors(i+1, factor);
-        //         }
-
-        //         moreFactors(i+1, value);
-        //     }
-        // }
-
         function inner(value, index)
         {
             if (factors.length() > 1 && value % SIX === ONE)
             {
-                // let c = factors.length;
-                // moreFactors(0, 0);
-                // if (factors.length !== c)
-                // {
-                //     factors.length = c;
-                // }
                 pass3(factors);
             }
 
@@ -173,6 +205,9 @@ function solve(size)
                     break;
 
                 let v = value * prime;
+
+                if (v > size)
+                    break;
 
                 while (v <= size && ((v % SIX) !== ZERO))
                 {
@@ -212,6 +247,7 @@ function $solve(size)
         }
         console.log(...values);
         // console.log(dice.join(','));
+        return values;
     }
 
     let count = size;
@@ -232,19 +268,19 @@ function $solve(size)
         }
     }
 
-    dump();
+    return dump();
 
-    return count;
+    // return count;
 }
 
 // console.log(solve(MAX));
 
-console.log(" 1E9 =", solve(1E9));
-console.log("1E10 =", solve(1E10));
+// console.log(" 1E9 =", solve(1E9));
+// console.log("1E10 =", solve(1E10));
 
 assert.equal(solve(100), 2);
-assert.equal(solve(1E7), 36);
 assert.equal(solve(1E8), 69);
+assert.equal(solve(1E7), 36);
 assert.equal(solve(1E12), 740);
 
 console.log('done')
