@@ -15,13 +15,13 @@
 
 const assert = require('assert');
 
-const MODULO = 1000000000n;
+const MODULO = BigInt(1000000000);
 
-const FOUR = 4n;
-const THREE= 3n;
-const TWO  = 2n;
-const ONE  = 1n;
-const ZERO = 0n;
+const FOUR = BigInt(4);
+const THREE= BigInt(3);
+const TWO  = BigInt(2);
+const ONE  = BigInt(1);
+const ZERO = BigInt(0);
 
 class CrazyFunction extends Object
 {
@@ -90,5 +90,5 @@ function test()
 
 test();
 
-let answer = S(21n ** 7n, 7n ** 21n, 12n ** 7n);
+let answer = S(BigInt(21) ** BigInt(7), BigInt(7) ** BigInt(21), BigInt(12) ** BigInt(7));
 console.log("Answer is", answer);
