@@ -200,7 +200,7 @@ module.exports = function(maxPrime)
 
         let n = max;
 
-        let sieve = BitArray(max);
+        let sieve = BitArray(max+1);
 
         for (let i = 2, j = 3, k = 5, l = 7; ; i+=2, j+=3, k+=5, l+=7)
         {
