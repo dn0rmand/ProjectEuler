@@ -278,7 +278,10 @@ module.exports = function(maxPrime)
             {
                 last += 2;
                 if (isPrime(last))
+                {
+                    _extraPrimes.push(last);
                     yield last;
+                }
             }
         }
     }
@@ -308,6 +311,45 @@ module.exports = function(maxPrime)
         countPrimes: function(to) { return countPrimes(to); },
         factorize: function (n, callback) {
             factorize(n, callback);
+        },
+        PHI: function(n) 
+        {
+            if (n === 1)
+                return 1;
+
+            if (this.isPrime(n))
+                return n-1;
+            
+            let pIter     = this.primes(true);
+            let p         = pIter.next().value;
+            let value     = n;
+            let phi       = n;
+            
+            while (value > 1)
+            {
+                if ((value % p) === 0)
+                {
+                    while ((value % p) === 0)
+                        value = value / p;
+
+                    phi *= (p-1) / p;
+
+                    if (value === 1)
+                        break;
+
+                    if (this.isPrime(value))
+                    {
+                        phi *= (value-1)/value;
+                        break;
+                    }
+
+                    p = pIter.next().value;
+                }
+                else
+                    p = pIter.next().value;
+            }
+
+            return phi ;
         }
     }
 
