@@ -122,7 +122,9 @@ module.exports = function(maxPrime)
                     factor++;
                     n /= p;
                 }
-                callback(p, factor);
+                if (callback(p, factor) === false)
+                    return; // Caller says to stop
+
                 if (n === 1)
                     break;
                 if (_primeMap !== undefined && isPrime(n))
@@ -311,6 +313,21 @@ module.exports = function(maxPrime)
         countPrimes: function(to) { return countPrimes(to); },
         factorize: function (n, callback) {
             factorize(n, callback);
+        },
+        mobius: function(n)
+        {
+            let result = 1;
+            let k = 0;
+            this.factorize(n, (prime, factor) => {
+                if (factor > 1)
+                {
+                    result = 0;
+                    return false; // Stop!
+                }
+                result = -result;
+            });
+
+            return result;
         },
         PHI: function(n) 
         {
