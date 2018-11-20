@@ -38,6 +38,7 @@ function f(n, trace)
     
     let max     = Math.floor(n / 2);
     let total   = 0;
+    let loop    = 0;    
     let percent = "";
 
     for (let b = 2; b <= max; b++)
@@ -49,12 +50,18 @@ function f(n, trace)
 
         if (trace)
         {
-            let p = ((b * 100) / max).toFixed(0);
-            if (p !== percent)
+            if (loop === 0)
             {
-                percent = p;
-                process.stdout.write('\r'+p+'%');
+                let p = ((b * 100) / max).toFixed(0);
+                if (p !== percent)
+                {
+                    percent = p;
+                    process.stdout.write('\r'+p+'%');
+                }
             }
+            loop++;
+            if (loop > 1000)
+                loop = 0;
         }
     }
 
