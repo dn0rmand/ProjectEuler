@@ -27,39 +27,35 @@
 
 const assert = require('assert');
 
-const MAX = 1000;
-
-const S = new Map();
-
-const state = {
-    n: 0,
-    last: 0
-};
+const MAX   = 1000;
+const MAX_S = 1E6;
+const S     = new Set();
 
 function buildS(max)
 {
-    while (state.last <= max)
+    let last = 0;
+    let n    = 0;
+
+    while (last <= max)
     {        
-        let x = state.n++;
+        let x = n++;
         while (x > 0)
         {
             let d = (x % 2);
             x = (x-d) / 2;
             if (d !== 0)
-                state.last++;
+                last++;
         }
-        S.set(state.last, state.n-1);
+        S.add(last);
     }
 }
 
-buildS(736176); 
+buildS(MAX_S); 
 
 function isValid(c)
 {
-    // if (c > state.last)
-    // {
-    //     buildS(c);
-    // }
+    if (c > MAX_S)
+        throw "Not enough values in the sequence. " + c + " not defined";
 
     return S.has(c);
 }
@@ -67,55 +63,9 @@ function isValid(c)
 function M(n, reverse, start)
 {
     let memoize = new Map();
+    let player1 = false;
 
-    function $winningPosition(c)
-    {
-        let player1 = false;
-        let stack   = [];
-        let losingChoices = [];
-        let hasMoves = false;
-
-        let start = n;
-
-        while(true)
-        {
-            for(let m = start; m > 0; m--)
-            {
-                let newC = c + m;
-                if (! isValid(newC))
-                    continue;
-                
-                stack.push({m: m-1, c:c, hasMoves: true, player: player1});
-                c = newC;
-                m = n+1;
-            }
-
-            if (player1)
-            {
-                memoize.set(-c, false);
-            }
-            else
-            {
-                memoize.set(c, true);
-            }
-
-            if (stack.length === 0)
-                break;
-
-            let s = stack.pop();
-            c = s.c;
-            start = s.m;
-        }
-
-        for(let m = n; m > 0; m--)
-        {
-            if (memoize.get(c+m) === true)
-                return false;
-        }
-        return true;
-    }
-
-    function winningPosition(c, player1)
+    function winningPosition(c)
     {
         let key = player1 ? -c : c;
 
@@ -125,11 +75,12 @@ function M(n, reverse, start)
 
         for (let m = n; m > 0; m--)
         {
-            let newC = c + m;
-            if (! isValid(newC))
+            if (! isValid(c+m))
                 continue;
             
-            let win = winningPosition(newC, ! player1);
+            player1 = !player1;
+            let win = winningPosition(c+m);
+            player1 = !player1;
 
             if (player1 && win)
             {
@@ -150,6 +101,8 @@ function M(n, reverse, start)
     if (start === undefined)
         start = 0;
 
+    let result = 0;
+
     for (let c = n; c > 0; c--)
     {
         if (! isValid(c + start))
@@ -159,51 +112,46 @@ function M(n, reverse, start)
         {
             let x = M(n, false, c+start);
             if (x !== 0)
-                return c;
+            {
+                result = c;
+                break;
+            }
         }
-        else if (winningPosition(c+start, false))
+        else
         {
-            return c;
+            player1 = false;
+            if (winningPosition(c+start))
+            {
+                result = c;
+                break;
+            }
         }
     }
-
-    return 0;
+    return result;
 }
 
 function solve(value)
 {
     let total = 0;
-    for(let n = 1; n <= value; n++)
+    for(let n = value; n >= 1; n--)
     {
+        process.stdout.write('\r'+n);
         let v = M(n);
         total += (v*v*v);
     }
-
+    console.log('');
     return total;
 }
 
-for (let i = 33; ; i++)
-{
-    let v1 = M(i, false);
-    let v2 = M(i, true);
+assert.equal(M(20), 4);
+assert.equal(M(2), 2);
+assert.equal(M(7), 1);
 
-    if (v1 === 0 || i === 8 || i === 16)
-    {
-        console.log("M(" + i + ") -> " + S.get(v1) + " - " + S.get(v2));
-        if (v1 === 0)
-            break;
-    }
-}
+assert.equal(solve(10), 683);
+assert.equal(solve(13), 3287);
+assert.equal(solve(20), 8150);
 
-// assert.equal(M(20), 4);
+let answer = solve(MAX);
 
-// assert.equal(M(2), 2);
-// assert.equal(M(7), 1);
-
-// assert.equal(solve(10), 683);
-// assert.equal(solve(13), 3287);
-// assert.equal(solve(20), 8150);
-
-// let answer = solve(MAX);
-
-// console.log("Answer is " + answer + " (61029882288)");
+console.log("Answer is " + answer + " (61029882288)");
+console.log('Done');

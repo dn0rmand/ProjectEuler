@@ -15,10 +15,38 @@ const announce = require('tools/announce');
 const primeHelper = require('tools/primeHelper')();
 
 const MODULO    = 1000000007;
+const MODULO_N  = BigInt(MODULO);
 const MAX       = 1E11;
-const MAX_PRIME = 1E8;
+const MAX_PRIME = 1E6;
 
-primeHelper.initialize(MAX_PRIME);
+const MAX_CACHE = 1E9;
+
+const $mobius = new Uint8Array(1E9);
+$mobius.fill(3);
+
+function mobius(n)
+{
+    let v;
+
+    if (n < MAX_CACHE)
+    {
+        v = $mobius[n];
+        if (v !== 3)
+        {
+            if (v === 2)
+                return -1;
+            else
+                return v;
+        }
+    }
+    v = primeHelper.mobius(n);
+    if (v === -1)
+        $mobius[n] = 2;
+    else
+        $mobius[n] = v;
+
+    return v;
+}
 
 function f(n, trace)
 {
@@ -70,10 +98,62 @@ function f(n, trace)
     return total;
 }
 
-assert.equal(f(1E2), 1031);
-assert.equal(f(1E6), 321418433);
+function f2(n)
+{
+    let total = BigInt(0);
 
-let answer = f(MAX, true);
+    let counts = {
+
+    };
+
+    for (let d = 1; d <= n; d++)
+    {
+        let m = mobius(d);
+        if (m === 0)
+            continue;
+        let nd = Math.floor(n / d);
+        counts[nd] = (counts[nd] || 0) + m;
+    }
+
+    let two = BigInt(2);
+    let one = BigInt(1);
+    for (let nd of Object.keys(counts))
+    {
+        let c = counts[nd];
+        if (c === 0)
+            continue;
+
+        nd = +nd;
+        
+        let v = (BigInt(nd) * BigInt(nd+1) * BigInt(c)) / two;
+
+        total += v;
+    }
+
+    total = Number((total-one) % MODULO_N);
+
+    return total;
+}
+
+function f3(n)
+{
+    let total = 0;
+    let m = Math.floor(n / 2);
+    while (m > 1)
+    {
+        total = (total + f2(m)) % MODULO;
+        m = Math.floor(m / 2);
+    }
+
+    return total;
+}
+
+primeHelper.initialize(MAX_PRIME);
+
+assert.equal(f3(1E2), 1031);
+assert.equal(f3(1E6), 321418433);1
+
+let answer = f3(MAX, true);
 
 announce(643, "Answer is " + answer);
 console.log('Answer is', answer);
