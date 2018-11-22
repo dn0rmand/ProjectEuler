@@ -110,10 +110,15 @@ module.exports = function(maxPrime)
             return;
         }
 
+        let max = Math.floor(Math.sqrt(n))+1;
+
         for(let p of _primes)
         {
             if (p > n)
                 break;
+            if (p > max)
+                break;
+
             if (n % p === 0)
             {
                 let factor = 0;
@@ -317,7 +322,6 @@ module.exports = function(maxPrime)
         mobius: function(n)
         {
             let result = 1;
-            let k = 0;
             this.factorize(n, (prime, factor) => {
                 if (factor > 1)
                 {
