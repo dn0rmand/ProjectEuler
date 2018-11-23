@@ -23,6 +23,12 @@ primeHelper.initialize(MAX_PRIME);
 
 const MAX_CACHE = 2E9;
 
+const ZERO  = BigInt(0);
+const ONE   = BigInt(1);
+const TWO   = BigInt(2);
+const THREE = BigInt(3);
+
+/*
 class Mobius
 {
     constructor()
@@ -106,95 +112,14 @@ class Mobius
 
         this.$mobius[index] = value;
     }
-/*
-    generateMobius()
-    {
-        for (let p of primeHelper.primes())
-        {
-            this.set(p, -1);
-
-            let n = p+p;
-            let count = 2;
-            while (n < MAX_CACHE)
-            {
-                if (count === p)
-                {
-                    count = 0;
-                    this.set(n, 0);
-                }
-                else
-                {
-                    let v = this.innerGet(n);
-                    if (v === undefined)
-                        this.set(n, -1) // will get changed later
-                    else if (v !== 0)
-                        this.set(n, -v);
-                }
-
-                count++;
-                n += p;
-            }
-        }
-    }
-*/
 }
 
 const mobius = new Mobius();
 
-function f(n, trace)
-{
-    function count(b)
-    {
-        let c = 0;
-    
-        b *= 2;
-        while (b <= n)
-        {
-            c++;
-            b *= 2;
-        }
-    
-        return c;
-    }
-    
-    let max     = Math.floor(n / 2);
-    let total   = 0;
-    let loop    = 0;    
-    let percent = "";
-
-    for (let b = 2; b <= max; b++)
-    {
-        let coprimes = primeHelper.PHI(b);
-        let times    = count(b);
-
-        total = (total + (coprimes*times)) % MODULO;
-
-        if (trace)
-        {
-            if (loop === 0)
-            {
-                let p = ((b * 100) / max).toFixed(0);
-                if (p !== percent)
-                {
-                    percent = p;
-                    process.stdout.write('\r'+p+'%');
-                }
-            }
-            loop++;
-            if (loop > 1000)
-                loop = 0;
-        }
-    }
-
-    if (trace)
-        console.log('\r100%');
-    return total;
-}
-
 // let previous;
 function f2(n, trace)
 {
-    let total = BigInt(0);
+    let total = ZERO;
 
     let counts = new Map();
 
@@ -207,8 +132,6 @@ function f2(n, trace)
         counts.set(nd, (counts.get(nd) || 0) + m);
     }
 
-    let two = BigInt(2);
-    let one = BigInt(1);
     for (let nd of counts.keys())
     {
         let c = counts.get(nd);
@@ -217,11 +140,11 @@ function f2(n, trace)
 
         // nd = +nd;
         
-        let v = (BigInt(nd) * BigInt(nd+1) * BigInt(c)) / two;
+        let v = (BigInt(nd) * BigInt(nd+1) * BigInt(c)) / TWO;
 
         total += v;
     }
-    total -= one;
+    total -= ONE;
     // if (trace)
     // {
     //     console.log(n,'->',total, ':', (total-previous));
@@ -257,11 +180,79 @@ function f3(n, trace)
 
     return total;
 }
+*/
 
-assert.equal(f3(1E2), 1031);
-assert.equal(f3(1E6), 321418433);
+const $f4 = new Map();
 
-let answer = f3(MAX, true);
+function f4(n)
+{
+    if (n === 0)
+        return 1;
+
+    let v = $f4.get(n);
+    if (v !== undefined)
+        return v;
+
+    v = BigInt(n);
+
+    v = (v * (v + THREE)) / TWO;
+    let previous;
+    let prev;
+    let count;
+
+    for (let k = 2; k <= n; k++)
+    {
+        let m = Math.floor(n/k);
+        if (prev !== m)
+        {
+            if (previous !== undefined)
+                v -= count*previous;
+            prev = m;
+            count= ONE;
+            previous = f4(m);
+        }
+        else
+            count++;
+    }
+    if (previous !== undefined)
+        v -= count*previous;
+
+    // a(n) = n(n+3)/2 - Sum(k = 2 to n, a([n/k]));
+
+    $f4.set(n, v);
+    return v;
+}
+
+function F(n, trace)
+{
+    let values = [];
+
+    let m = Math.floor(n / 2);
+    while (m > 1)
+    {
+        values.push(m);
+        m = Math.floor(m / 2);
+    }
+
+    let total = 0;
+    let size  = values.length;
+    
+    while (values.length > 0)
+    {
+        m = values.pop();
+        if (trace)
+            console.log(values.length+1,':',m);
+        let v = (f4(m) - TWO) % MODULO_N;
+        total = (total + Number(v)) % MODULO;
+    }
+
+    return total;
+}
+
+assert.equal(F(1E2), 1031);
+assert.equal(F(1E6), 321418433);
+
+let answer = F(MAX, true);
 
 announce(643, "Answer is " + answer);
 console.log('Answer is', answer);
