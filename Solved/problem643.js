@@ -11,7 +11,8 @@
 // Find f(10^11) modulo 1000000007.
 
 const assert = require('assert');
-const announce = require('tools/announce');
+const timeLog = require('tools/timeLogger');
+// const announce = require('tools/announce');
 
 const MODULO    = 1000000007;
 const MODULO_N  = BigInt(MODULO);
@@ -34,35 +35,27 @@ function A(n)
         return v;
 
     v = BigInt(n);
-
     v = (v * (v + THREE)) / TWO;
 
-    let previous;
-    let prev;
-    let count;
+    let root = Math.floor(Math.sqrt(n));
 
-    for (let k = 2; k <= n; k++)
+    for (let k = 2; k <= root; k++)
     {
         let m = Math.floor(n/k);
-        if (prev !== m)
-        {
-            if (previous !== undefined)
-                v -= count*previous;
-
-            prev = m;
-            count= ONE;
-            previous = A(m);
-            if (m === 1)
-            {
-                count += BigInt(n-k);
-                break;
-            }
-        }
-        else
-            count++;
+        v -= A(m);
     }
-    if (previous !== undefined)
-        v -= count*previous;
+
+    for (let k = 1; k <= root; k++)
+    {
+        let m1 = Math.floor(n/k);
+        if (m1 === k)
+            continue; // Avoid duplicates
+        let m2 = Math.floor(n/(k+1));
+        let count = BigInt(m1-m2);
+        let m = A(k);
+
+        v -= count*A(k);
+    }
 
     $A.set(n, v);
     return v;
@@ -106,10 +99,11 @@ async function test()
 
 async function solve()
 {
-    let answer = await F(MAX, true);
-
-    await announce(643, "Answer is " + answer);
-    console.log('Answer is', answer);
+    timeLog("Problem 643", async () => {    
+        let answer = await F(MAX, true);
+        // await announce(643, "Answer is " + answer);
+        console.log('Answer is', answer);
+    });
 }
 
 (async function()
