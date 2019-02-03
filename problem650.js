@@ -68,6 +68,7 @@ function binomial(n,  k)
 
     return v;
 }
+
 function getPrimes(N, K)
 {
     let NK = N-K;
