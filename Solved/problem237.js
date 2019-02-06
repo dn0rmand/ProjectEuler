@@ -174,7 +174,7 @@ function $solve(states, n)
 
 function solve(n)
 {
-    const OFFSET = 620000000; // Magical repeat sequence. Guessed by changing modulos 
+    const OFFSET = 620000000; // Magical repeat sequence. Guessed by changing modulos
 
     let a0= 1;
     let a1= 1;
