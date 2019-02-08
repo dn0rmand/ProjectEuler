@@ -1,3 +1,4 @@
+from sys import stdout
 import numpy
 from numpy.core.numeric import concatenate, isscalar, binary_repr, identity, asanyarray, dot
 from numpy.core.numerictypes import issubdtype
@@ -6,10 +7,10 @@ from numpy.core.numerictypes import issubdtype
 
 MODULO = int(1000000007)
 MAX_M  = int(1E12)
-MAX_N  = int(500)#0)
+MAX_N  = int(5000)
 
 def createMatrix(size):
-    matrix = numpy.zeros((size, size), dtype=int)
+    matrix = numpy.zeros((size, size), dtype=numpy.uint64)
 
     for i in range(0, size):
         for j in range(0, size):
@@ -18,27 +19,28 @@ def createMatrix(size):
     return matrix
 
 def createVector(size):
-    vector = numpy.ones((size, 1), dtype=int)
+    vector = numpy.ones((size, 1), dtype=numpy.uint64)
     return vector
 
+def matrixMod(m, modulo):
+    return m % modulo
+
 def multiply(A, B, modulo):
-    m = len(A)
+    return matrixMod(A @ B, modulo)
+    # for kk in range(0, m):
+    #     for i in range(0, m):
+    #         s = 0
+    #         for k in range(0, m):
+    #             x = A[i][k]
+    #             y = B[k][kk]
+    #             s += (x * y)
+    #             if s > modulo:
+    #                 s = s % modulo
 
-    result = numpy.zeros((m, m), dtype=int)
-
-    for kk in range(0, m):
-        for i in range(0, m):
-            s = 0
-            for k in range(0, m):
-                x = A[i][k]
-                y = B[k][kk]
-                s += (x * y)
-                if s > modulo:
-                    s = s % modulo
-
-            result[i][kk] = s
+    #         result[i][kk] = s
 
     return result
+
 
 def matrixPower(M, n, mod_val, trace):
     # Implementation shadows numpy's matrix_power, but with modulo included and use of Strassen multiplication
@@ -54,7 +56,7 @@ def matrixPower(M, n, mod_val, trace):
         M = inv(M)
         n *= -1
 
-    result = M % mod_val
+    result = matrixMod(M, mod_val)
     if n <= 3:
         for _ in range(n-1):
             result = multiply(result, M, mod_val)
@@ -66,7 +68,7 @@ def matrixPower(M, n, mod_val, trace):
     Z, q, t = M, 0, len(beta)
     while beta[t-q-1] == '0':
         if trace:
-            print(t-q-1)
+            stdout.write('\r' + str(t-q-1) + ' ')
         Z = multiply(Z, Z, mod_val)
         if Z.min() < 0:
             print('ERROR')
@@ -74,7 +76,7 @@ def matrixPower(M, n, mod_val, trace):
     result = Z
     for k in range(q+1, t):
         if trace:
-            print(t-k-1)
+            stdout.write('\r' + str(t-k-1) + ' ')
         Z = multiply(Z, Z, mod_val)
         if Z.min() < 0:
             print('ERROR')
@@ -93,6 +95,8 @@ def T(n, m, trace = False):
 
     max = int(vector[n-1][0].max())
     max = max % MODULO
+    if trace:
+        print('')
     return max
 
 
