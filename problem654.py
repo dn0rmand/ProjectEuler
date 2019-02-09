@@ -6,41 +6,56 @@ from numpy.core.numerictypes import issubdtype
 # from numpy.linalg import matrix_power as matrixPower
 
 MODULO = int(1000000007)
-MAX_M  = int(1E12)
+MAX_M  = int(1E9)
 MAX_N  = int(5000)
 
 def createMatrix(size):
-    matrix = numpy.zeros((size, size), dtype=numpy.uint64)
+    matrix = numpy.full((size, size), 0, dtype=object)
 
     for i in range(0, size):
         for j in range(0, size):
             if i+j-size >= 0:
                 matrix[i][j] = 1
+
     return matrix
 
 def createVector(size):
-    vector = numpy.ones((size, 1), dtype=numpy.uint64)
+    vector = numpy.full((size, 1), 1, dtype=object)
     return vector
 
-def matrixMod(m, modulo):
-    return m % modulo
+def Strassen(X,Y):
+    n = len(X)
 
-def multiply(A, B, modulo):
-    return matrixMod(A @ B, modulo)
-    # for kk in range(0, m):
-    #     for i in range(0, m):
-    #         s = 0
-    #         for k in range(0, m):
-    #             x = A[i][k]
-    #             y = B[k][kk]
-    #             s += (x * y)
-    #             if s > modulo:
-    #                 s = s % modulo
+    if n < 512 or (n & 1) != 0:
+        return X.dot(Y)
 
-    #         result[i][kk] = s
+    n2 = n//2
 
-    return result
+    A = X[0:n2, 0:n2]
+    B = X[0:n2, n2:n]
+    C = X[n2:n, 0:n2]
+    D = X[n2:n, n2:n]
+    E = Y[0:n2, 0:n2]
+    F = Y[0:n2, n2:n]
+    G = Y[n2:n, 0:n2]
+    H = Y[n2:n, n2:n]
 
+    P1 = Strassen(A  ,F-H)
+    P2 = Strassen(A+B,H)
+    P3 = Strassen(C+D,E)
+    P4 = Strassen(D  ,G-E)
+    P5 = Strassen(A+D,E+H)
+    P6 = Strassen(B-D,G+H)
+    P7 = Strassen(A-C,E+F)
+
+    R = numpy.full((n,n), 1, dtype=object)
+
+    R[0:n2, 0:n2] = P5 + P4 - P2 + P6
+    R[0:n2, n2:n] = P1 + P2
+    R[n2:n, 0:n2] = P3 + P4
+    R[n2:n, n2:n] = P1 + P5 - P3 - P7
+
+    return R
 
 def matrixPower(M, n, mod_val, trace):
     # Implementation shadows numpy's matrix_power, but with modulo included and use of Strassen multiplication
@@ -56,10 +71,12 @@ def matrixPower(M, n, mod_val, trace):
         M = inv(M)
         n *= -1
 
-    result = matrixMod(M, mod_val)
+    result = M % mod_val
     if n <= 3:
-        for _ in range(n-1):
-            result = multiply(result, M, mod_val)
+        for xxx in range(n-1):
+            if trace:
+                stdout.write('\r' + str(xxx) + ' ')
+            result = result.dot(M) % mod_val
         return result
 
     # binary decompositon to reduce the number of matrix
@@ -69,7 +86,7 @@ def matrixPower(M, n, mod_val, trace):
     while beta[t-q-1] == '0':
         if trace:
             stdout.write('\r' + str(t-q-1) + ' ')
-        Z = multiply(Z, Z, mod_val)
+        Z = Z.dot(Z) % mod_val
         if Z.min() < 0:
             print('ERROR')
         q += 1
@@ -77,11 +94,11 @@ def matrixPower(M, n, mod_val, trace):
     for k in range(q+1, t):
         if trace:
             stdout.write('\r' + str(t-k-1) + ' ')
-        Z = multiply(Z, Z, mod_val)
+        Z = Z.dot(Z) % mod_val
         if Z.min() < 0:
             print('ERROR')
         if beta[t-k-1] == '1':
-            result = multiply(result, Z, mod_val)
+            result = result.dot(Z) % mod_val
             if result.min() < 0:
                 print('ERROR')
 
@@ -91,20 +108,19 @@ def T(n, m, trace = False):
     matrix = createMatrix(n)
     vector = createVector(n)
     matrix = matrixPower(matrix, m, MODULO, trace)
-    vector = matrix @ vector
+    vector = matrix.dot(vector) % MODULO
 
-    max = int(vector[n-1][0].max())
-    max = max % MODULO
+    max = int(vector[n-1][0])
     if trace:
         print('')
-    return max
+    return max % MODULO
 
 
 assert T(3,4) == 8
 assert T(5,5) == 246
 assert T(10, 100) == 862820094
 assert T(100,10) == 782136797
-
+assert T(50, MAX_M) == 737148354
 print("Tests passed")
 
-print('Asnwer is', T(MAX_N, MAX_M, True), '737148354')
+print('Asnwer is', T(MAX_N, MAX_M, True))
