@@ -6,21 +6,20 @@ from numpy.core.numerictypes import issubdtype
 # from numpy.linalg import matrix_power as matrixPower
 
 MODULO = int(1000000007)
-MAX_M  = int(1E9)
+MAX_M  = int(1E12)
 MAX_N  = int(5000)
 
 def createMatrix(size):
-    matrix = numpy.full((size, size), 0, dtype=object)
+    matrix = numpy.zeros((size, size), dtype=numpy.uint64)
 
     for i in range(0, size):
         for j in range(0, size):
             if i+j-size >= 0:
                 matrix[i][j] = 1
-
     return matrix
 
 def createVector(size):
-    vector = numpy.full((size, 1), 1, dtype=object)
+    vector = numpy.ones((size, 1), dtype=numpy.uint64)
     return vector
 
 def Strassen(X,Y):
@@ -57,6 +56,12 @@ def Strassen(X,Y):
 
     return R
 
+def matrixMod(m, modulo):
+    return m; # % modulo
+
+def multiply(A, B, modulo):
+    return matrixMod(A @ B, modulo)
+
 def matrixPower(M, n, mod_val, trace):
     # Implementation shadows numpy's matrix_power, but with modulo included and use of Strassen multiplication
     M = asanyarray(M)
@@ -75,8 +80,8 @@ def matrixPower(M, n, mod_val, trace):
     if n <= 3:
         for xxx in range(n-1):
             if trace:
-                stdout.write('\r' + str(xxx) + ' ')
-            result = result.dot(M) % mod_val
+                stderr.write('\r' + str(xxx) + ' ')
+            result = multiply(result, M, mod_val)
         return result
 
     # binary decompositon to reduce the number of matrix
@@ -85,22 +90,16 @@ def matrixPower(M, n, mod_val, trace):
     Z, q, t = M, 0, len(beta)
     while beta[t-q-1] == '0':
         if trace:
-            stdout.write('\r' + str(t-q-1) + ' ')
-        Z = Z.dot(Z) % mod_val
-        if Z.min() < 0:
-            print('ERROR')
+            stderr.write('\r' + str(t-q-1) + ' ')
+        Z = multiply(Z, Z, mod_val)
         q += 1
     result = Z
     for k in range(q+1, t):
         if trace:
-            stdout.write('\r' + str(t-k-1) + ' ')
-        Z = Z.dot(Z) % mod_val
-        if Z.min() < 0:
-            print('ERROR')
+            stderr.write('\r' + str(t-k-1) + ' ')
+        Z = multiply(Z, Z, mod_val)
         if beta[t-k-1] == '1':
-            result = result.dot(Z) % mod_val
-            if result.min() < 0:
-                print('ERROR')
+            result = multiply(result, Z, mod_val)
 
     return result
 
@@ -108,9 +107,10 @@ def T(n, m, trace = False):
     matrix = createMatrix(n)
     vector = createVector(n)
     matrix = matrixPower(matrix, m, MODULO, trace)
-    vector = matrix.dot(vector) % MODULO
+    vector = matrix @ vector
 
-    max = int(vector[n-1][0])
+    max = int(vector[n-1][0].max())
+    max = max % MODULO
     if trace:
         print('')
     return max % MODULO
