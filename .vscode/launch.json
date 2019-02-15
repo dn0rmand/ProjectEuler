@@ -13,14 +13,14 @@
         {
             "type": "node",
             "request": "attach",
-            "name": "Attach by Process ID",
+            "name": "Node: Attach by Process ID",
             "processId": "${command:PickProcess}"
         },
         {
             "type": "node",
             "request": "launch",
             "runtimeArgs": [ "--stack-size=8092", "--max-old-space-size=12288", "--expose-gc" ],
-            "name": "Launch Program",
+            "name": "Node: Current File",
             "program": "${file}",
             "cwd": "${fileDirname}",
             "__console": "externalTerminal"

@@ -122,7 +122,10 @@ function solve(divisor, maxSize)
         for (let p of generateOdd(start, power, 0n))
         {
             if (p % divisor == 0)
+            {
+                console.log(p);
                 subTotal += 1n;
+            }
 
             if (l+1 <= maxSize)
             {
@@ -135,12 +138,15 @@ function solve(divisor, maxSize)
                 p2 = (p2*d) + p1;
 
                 if (p2 % divisor == 0)
+                {
                     subTotal += 1n;
+                    console.log(p2);
+                }
             }
         }
 
         total += subTotal;
-        console.log(l, '->', subTotal, '-', total);
+        //console.log(l, '->', subTotal, '-', total);
     }
     return total;
 }
