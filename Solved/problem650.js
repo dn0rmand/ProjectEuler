@@ -19,8 +19,41 @@ const MODULO_B  = BigInt(MODULO);
 
 primeHelper.initialize(MAX_N);
 
-// previous is B(n-1) which is a map of factors key=prime , value=count
+const $factors = new Map();
+const $modInv = new Map();
 
+function getInverseModulo(divisor)
+{
+    if ($modInv.has(divisor))
+        return $modInv.get(divisor);
+
+    let d = divisor.modInv(MODULO_B);
+    $modInv.set(divisor, d);
+    return d;
+}
+
+function getFactors(n)
+{
+    if ($factors.has(n))
+        return $factors.get(n);
+
+    let result = [];
+
+    primeHelper.factorize(n, (prime, count) => {
+        result.push({ prime: prime, count:count });
+    });
+
+    $factors.set(n, result);
+    return result;
+}
+
+function *factorize(n)
+{
+    for (let entry of getFactors(n))
+        yield entry;
+}
+
+// previous is B(n-1) which is a map of factors key=prime , value=count
 function getNextB(n, previous)
 {
     if (n === 1)
@@ -30,17 +63,24 @@ function getNextB(n, previous)
     }
 
     // n^n
-    primeHelper.factorize(n, (prime, count) => {
-        count *= n;
+    for (let entry of factorize(n))
+    {
+        let count = entry.count * n;
+        let prime = entry.prime;
+
         if (previous.has(prime))
             count += previous.get(prime);
         previous.set(prime, count);
-    });
+    }
 
     // n!
     for (let i = 2; i <= n; i++)
     {
-        primeHelper.factorize(i, (prime, count) => {
+        for (let entry of factorize(i))
+        {
+            let count = entry.count;
+            let prime = entry.prime;
+
             if (! previous.has(prime))
                 throw "That should not be";
 
@@ -52,7 +92,7 @@ function getNextB(n, previous)
                 previous.delete(prime);
             else
                 previous.set(prime, c);
-        });
+        }
     }
 
     return previous;
@@ -70,19 +110,9 @@ function B(n)
     return current;
 }
 
-const $modInv = new Map();
-
 function modDiv(num, divisor)
 {
-    if ($modInv.has(divisor))
-        divisor = $modInv.get(divisor);
-    else
-    {
-        let d = divisor.modInv(MODULO_B);
-        $modInv.set(divisor, d);
-        divisor = d;
-    }
-
+    divisor = getInverseModulo(divisor);
     return (num * divisor) % MODULO_B;
 }
 
@@ -131,10 +161,27 @@ function S(n)
     return Number(total);
 }
 
+console.log('Pre-factorizing');
+
+for (let i = 2; i <= MAX_N; i++)
+    getFactors(i);
+
+console.log('Generating inverse modulo');
+for (let p of primeHelper.primes())
+{
+    if (p >= MAX_N)
+        break;
+
+    getInverseModulo(BigInt(p-1));
+}
+
+console.log('Running tests');
+
 assert.equal(D(5), 5467);
 assert.equal(S(5), 5736);
 assert.equal(S(100), 332792866);
 assert.equal(S(10), Number(141740594713218418n % MODULO_B));
+
 console.log('Test passed');
 
 let answer = S(20000);
