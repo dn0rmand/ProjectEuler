@@ -7,11 +7,20 @@
 
 // How many palindromes less than 10^32 are divisible by 10000019 ?
 
-const assert = require('assert');
+collect = global.gc || function() {}
 
-function *generateOdd(start, len, power)
+function assert(value, expected)
 {
-    try
+    if (value != expected)
+    {
+        console.log("Error: expecting " + expected + " but got " + value);
+        process.exit(-1);
+    }
+}
+
+function brute(divisor, digits)
+{
+    function *generateOdd(start, len, power)
     {
         if (len < 0)
         {
@@ -37,70 +46,7 @@ function *generateOdd(start, len, power)
             start += steps;
         }
     }
-    finally
-    {
 
-    }
-}
-
-function *generatePalindromes(minSize, maxSize)
-{
-    function *inner2(left, right)
-    {
-        let l = 2*left.length;
-
-        if (l >= minSize && l <= maxSize)
-            yield BigInt(left+right);
-
-        if (l + 1 <= maxSize && l + 1 >= minSize)
-        {
-            for (let middle = 0; middle <= 9; middle++)
-                yield BigInt(left+middle+right);
-        }
-    }
-
-    function *inner(left, right)
-    {
-        if (left.length + right.length > maxSize)
-            return;
-
-        yield *inner2(left, right);
-
-        if (left.length + right.length + 2 <= maxSize)
-        {
-            for (let c = 0; c <= 9; c++)
-            {
-                yield *inner(left+c, c+right);
-            }
-        }
-    }
-
-    for (let c of "123456789")
-        yield *inner(c, c);
-}
-
-function $solve(divisor, maxSize)
-{
-    let minSize = divisor.toString().length;
-    let maxValue = 10n**BigInt(maxSize);
-
-    let total = 0;
-
-    divisor = BigInt(divisor);
-
-    for (let palindrome of generatePalindromes(minSize, maxSize))
-    {
-        if ((palindrome % divisor) == 0)
-        {
-            total++;
-        }
-    }
-
-    return total;
-}
-
-function solve(divisor, maxSize)
-{
     divisor = BigInt(divisor);
 
     let total   = 0n;
@@ -110,7 +56,7 @@ function solve(divisor, maxSize)
         minSize += 1;
 
     // ODD length
-    for (let l = minSize; l <= maxSize; l += 2)
+    for (let l = minSize; l <= digits; l += 2)
     {
         let subTotal = 0n;
         let po = BigInt(l-1);
@@ -122,12 +68,9 @@ function solve(divisor, maxSize)
         for (let p of generateOdd(start, power, 0n))
         {
             if (p % divisor == 0)
-            {
-                console.log(p);
                 subTotal += 1n;
-            }
 
-            if (l+1 <= maxSize)
+            if (l+1 <= digits)
             {
                 // calculate the odd length palindrome
                 let p1 = p % d;
@@ -138,26 +81,175 @@ function solve(divisor, maxSize)
                 p2 = (p2*d) + p1;
 
                 if (p2 % divisor == 0)
-                {
                     subTotal += 1n;
-                    console.log(p2);
-                }
             }
         }
 
         total += subTotal;
-        //console.log(l, '->', subTotal, '-', total);
     }
+    return Number(total);
+}
+
+function normal(modulo, digits, trace)
+{
+    let outside = new Map();
+    let inside  = new Map();
+
+    let divisor = BigInt(modulo);
+
+    function add(map, value)
+    {
+        if (value === 0n)
+            return;
+
+        value = Number(value % divisor);
+        let count = map.get(value) || 0n;
+        map.set(value, count+1n);
+    }
+
+    function reverse(value)
+    {
+        let result = 0n;
+
+        while (value > 0)
+        {
+            let next = value / 10n;
+            result = (result * 10n) + (value - next*10n);
+            value = next;
+        }
+        return result;
+    }
+
+    function solve(digits)
+    {
+        outside.clear();
+        inside.clear();
+
+        let isOdd     = (digits & 1) !== 0;
+        let half      = digits >> 1;
+        let outerSize = half >> 1;
+        let innerSize = half - outerSize;
+
+        if (isOdd && innerSize > outerSize)
+        {
+            outerSize++;
+            innerSize--;
+        }
+
+        // generate outer
+
+        let coef= 10n ** BigInt(digits-outerSize);
+        let max = 10n ** BigInt(outerSize);
+        let min = 10n ** BigInt(outerSize-1);
+
+        for (let i = min; i < max; i++)
+        {
+            let left   = i;
+            let right  = reverse(i); // BigInt(+(i.toString().split('').reverse().join(''))) ;
+            let V      = left * coef + right;
+
+            add(outside, V);
+        }
+
+        // generate inner
+
+        function generateInner(innerSize, coef)
+        {
+            if (innerSize === 0)
+            {
+                if (! isOdd)
+                    return;
+
+                for (let j = 0n; j < 10n; j++)
+                {
+                    add(inside, j * coef);
+                }
+                return;
+            }
+
+            let max  = 10n ** BigInt(innerSize);
+            let min  = 10n ** BigInt(innerSize-1);
+
+            for (let i = min; i < max; i++)
+            {
+                let left   = i;
+                let right  = reverse(i);//BigInt(+(i.toString().split('').reverse().join(''))) ;
+
+                if (isOdd)
+                {
+                    for (let j = 0n; j < 10n; j++)
+                    {
+                        let V = ((left*10n + j) * max) + right;
+                        add(inside, V * coef);
+                    }
+                }
+                else
+                {
+                    let V = (left* max) + right;
+                    add(inside, V * coef);
+                }
+            }
+        }
+
+        coef= 10n ** BigInt(outerSize);
+        for (let s = innerSize; s >= 0; s--)
+        {
+            collect();
+            generateInner(s, coef);
+            coef *= 10n;
+        }
+        collect();
+        add(inside, divisor); // to add 0
+
+        // consolidate
+
+        let total = 0n;
+        for (let e of outside)
+        {
+            let remainder = e[0];
+            let count1    = e[1];
+
+            let other     = modulo-remainder;
+            let count2    = inside.get(other) || 0n;
+
+            total += (count1 * count2);
+        }
+
+        return total;
+    }
+
+    //console.log(reverse(1234567n));
+
+    let total   = 0n;
+    let minSize = modulo.toString().length;
+
+    for (let d = minSize; d <= digits; d++)
+    {
+        let subTotal = solve(d);
+
+        if (trace)
+            console.log(d,'=',subTotal);
+
+        total += subTotal;
+    }
+
     return total;
 }
 
-// console.log($solve(109, 10));
-// console.log(solve(109, 10));
+let solve = brute;
+
+// console.log(solve(10919, 14));
+
+solve = normal;
 
 console.log('Test');
-assert.equal(solve(109, 5), 9);
+
+assert(solve(10919, 14), 1831);
+
+assert(solve(10000019, 16), 8);
+assert(solve(10000019, 17), 99);
+assert(solve(10000019, 18), 200);
 
 console.log('Solving now');
-answer = solve(10000019, 32);
-
+answer = solve(10000019, 32, true);
 console.log('Answer is', answer)

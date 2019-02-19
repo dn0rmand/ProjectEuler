@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@types/node": "^11.9.4",
     "big-integer": "^1.6.34",
     "bignumber.js": "^7.2.1",
     "bitbuffer": "^0.1.3",

@@ -1,26 +1,29 @@
-const MAX : number = 4000000;
-
-function fibonacci() : number
+namespace problem2
 {
-    let term1 : number = 1;
-    let term2 : number = 1;
-    let sum   : number = 0;
+    const MAX : number = 4000000;
 
-    while (term2 < MAX)
+    function fibonacci() : number
     {
-        if ((term2 & 1) === 0)
+        let term1 : number = 1;
+        let term2 : number = 1;
+        let sum   : number = 0;
+
+        while (term2 < MAX)
         {
-            sum += term2;
+            if ((term2 & 1) === 0)
+            {
+                sum += term2;
+            }
+
+            const newterm = term2 + term1;
+            term1 = term2;
+            term2 = newterm;
         }
 
-        const newterm = term2 + term1;
-        term1 = term2;
-        term2 = newterm;
+        return sum;
     }
 
-    return sum;
+    const result : number = fibonacci();
+
+    console.log('Problem 2 result is', result);
 }
-
-const result : number = fibonacci();
-
-console.log('Problem 2 result is', result);

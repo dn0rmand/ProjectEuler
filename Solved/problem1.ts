@@ -1,30 +1,33 @@
-function getMultipleSum(MAX : number, factor : number, notFactor : number = 0) : number
+namespace problem1
 {
-    let sum : number = 0;
-    let value : number = MAX;
-    while (--value > 0)
+    function getMultipleSum(MAX : number, factor : number, notFactor : number = 0) : number
     {
-        if ((value % factor) === 0)
-            break;
+        let sum : number = 0;
+        let value : number = MAX;
+        while (--value > 0)
+        {
+            if ((value % factor) === 0)
+                break;
+        }
+        while (value >= factor)
+        {
+            if (notFactor === 0 || (value % notFactor) !== 0)
+                sum += value;
+
+            value -= factor;
+        }
+
+        return sum;
     }
-    while (value >= factor)
+
+    function solve(max : number) : void
     {
-        if (notFactor === 0 || (value % notFactor) !== 0)
-            sum += value;
+        const sum1 = getMultipleSum(max, 5);
+        const sum2 = getMultipleSum(max, 3, 5);
 
-        value -= factor;
+        console.log("Result for", max, "is", (sum1+sum2));
     }
 
-    return sum;
+    solve(10);
+    solve(1000);
 }
-
-function solve(max : number) : void
-{
-    const sum1 = getMultipleSum(max, 5);
-    const sum2 = getMultipleSum(max, 3, 5);
-
-    console.log("Result for", max, "is", (sum1+sum2));
-}
-
-solve(10);
-solve(1000);
