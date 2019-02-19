@@ -7,7 +7,7 @@
 
 // How many palindromes less than 10^32 are divisible by 10000019 ?
 
-collect = global.gc || function() {}
+const prettyTime= require("pretty-hrtime");
 
 function assert(value, expected)
 {
@@ -92,19 +92,20 @@ function brute(divisor, digits)
 
 function normal(modulo, digits, trace)
 {
-    let outside = new Map();
-    let inside  = new Map();
-
+    let outsides= new Set();
+    let outside = new Uint8Array(modulo);
+    let inside  = new Uint8Array(modulo);
     let divisor = BigInt(modulo);
 
     function add(map, value)
     {
-        if (value === 0n)
-            return;
+        if (value === 0n) return;
 
         value = Number(value % divisor);
-        let count = map.get(value) || 0n;
-        map.set(value, count+1n);
+
+        map[value]++;
+        if (map === outside)
+            outsides.add(value);
     }
 
     function reverse(value)
@@ -122,8 +123,9 @@ function normal(modulo, digits, trace)
 
     function solve(digits)
     {
-        outside.clear();
-        inside.clear();
+        outsides.clear();
+        outside.fill(0);
+        inside.fill(0);
 
         let isOdd     = (digits & 1) !== 0;
         let half      = digits >> 1;
@@ -145,7 +147,7 @@ function normal(modulo, digits, trace)
         for (let i = min; i < max; i++)
         {
             let left   = i;
-            let right  = reverse(i); // BigInt(+(i.toString().split('').reverse().join(''))) ;
+            let right  = reverse(i);
             let V      = left * coef + right;
 
             add(outside, V);
@@ -173,7 +175,7 @@ function normal(modulo, digits, trace)
             for (let i = min; i < max; i++)
             {
                 let left   = i;
-                let right  = reverse(i);//BigInt(+(i.toString().split('').reverse().join(''))) ;
+                let right  = reverse(i);
 
                 if (isOdd)
                 {
@@ -194,33 +196,29 @@ function normal(modulo, digits, trace)
         coef= 10n ** BigInt(outerSize);
         for (let s = innerSize; s >= 0; s--)
         {
-            collect();
             generateInner(s, coef);
             coef *= 10n;
         }
-        collect();
+
         add(inside, divisor); // to add 0
 
         // consolidate
 
-        let total = 0n;
-        for (let e of outside)
+        let total = 0;
+        for (let remainder of outsides)
         {
-            let remainder = e[0];
-            let count1    = e[1];
+            let count1 = outside[remainder];
+            if (count1 === 0) continue;
 
-            let other     = modulo-remainder;
-            let count2    = inside.get(other) || 0n;
-
-            total += (count1 * count2);
+            let count2 = remainder === 0 ? 0 : inside[modulo-remainder];
+            if (count2 !== 0)
+                total += count1 * count2;
         }
 
         return total;
     }
 
-    //console.log(reverse(1234567n));
-
-    let total   = 0n;
+    let total   = 0;
     let minSize = modulo.toString().length;
 
     for (let d = minSize; d <= digits; d++)
@@ -251,5 +249,7 @@ assert(solve(10000019, 17), 99);
 assert(solve(10000019, 18), 200);
 
 console.log('Solving now');
+let timer = process.hrtime();
 answer = solve(10000019, 32, true);
-console.log('Answer is', answer)
+timer = process.hrtime(timer);
+console.log('Answer is', answer, 'caculated in', prettyTime(timer, {verbose:true}));
