@@ -1,5 +1,6 @@
 const primeHelper = require('tools/primeHelper')();
 const announce = require('tools/announce');
+const assert = require('assert');
 
 const MAX = 110000000;
 
@@ -39,13 +40,14 @@ function solve(max, trace)
                 // if (c > 1) // only the ones that can help with squares
                 yield { prime:p, count:c };
 
-                if (n < Number.MAX_SAFE_INTEGER)
-                    if (primeHelper.isPrime(Number(n)))
-                    {
-                        yield { prime:n, count:1 };
-                        break;
-                    }
+                if (n < Number.MAX_SAFE_INTEGER && primeHelper.isPrime(Number(n)))
+                    break;
             }
+        }
+
+        if (n > 1n)
+        {
+            yield { prime:n, count:1 };
         }
     }
 
@@ -64,12 +66,28 @@ function solve(max, trace)
         for(let p of factorize(x5))
         {
             let i = indexes[p.prime];
-            if (i)
+            if (i !== undefined)
                 factors[i].count += p.count;
             else
                 factors.push(p);
         }
 
+        const reducer = (data, value) => 
+        {
+            if (value.count > 1) data.push(value);
+            return data;
+        };
+
+        factors = factors.reduce(reducer, []);
+        factors.sort((a, b) => {
+            if (a.prime > b.prime)
+                return 1;
+            else if (a.prime < b.prime)
+                return -1;
+            else
+                return 0;
+        });
+        
         function *generate(index, value)
         {
             if (value > max)
@@ -158,9 +176,9 @@ function solve(max, trace)
     return total;
 }
 
-console.assert(solve(1000) == 149);
-console.assert(solve(110000) == 18634);
-// console.assert(solve(1100000) == 188336);
+assert.equal(solve(1000), 149);
+assert.equal(solve(110000), 18634);
+assert.equal(solve(1100000), 188336);
 
 let total = solve(110000000, true);
 console.log("Answer is", total);
