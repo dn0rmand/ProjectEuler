@@ -17,7 +17,10 @@ function solve(max, trace)
     {
         if (n < Number.MAX_SAFE_INTEGER)
             if (primeHelper.isPrime(Number(n)))
+            {
+                yield { prime:n, count:1 };
                 return;
+            }
 
         for (let p of allPrimes)
         {
@@ -33,23 +36,38 @@ function solve(max, trace)
                     n /= p;
                     c++;
                 }
-                if (c > 1) // only the ones that can help with squares
-                    yield { prime:p, count:c };
+                // if (c > 1) // only the ones that can help with squares
+                yield { prime:p, count:c };
 
                 if (n < Number.MAX_SAFE_INTEGER)
                     if (primeHelper.isPrime(Number(n)))
+                    {
+                        yield { prime:n, count:1 };
                         break;
+                    }
             }
         }
     }
 
-    function *getSquareDivisors(n)
+    function *getSquareDivisors(x1, x5)
     {
         let factors = [];
+        let indexes = [];
 
-        for(let p of factorize(n))
+        for(let p of factorize(x1))
         {
+            p.count *= 2;
             factors.push(p);
+            indexes[p.prime] = factors.length-1;
+        }
+
+        for(let p of factorize(x5))
+        {
+            let i = indexes[p.prime];
+            if (i)
+                factors[i].count += p.count;
+            else
+                factors.push(p);
         }
 
         function *generate(index, value)
@@ -63,6 +81,8 @@ function solve(max, trace)
             {
                 let p = factors[i].prime;
                 let c = factors[i].count;
+                if (c < 2)
+                    continue;
 
                 // Do first one to be able to break the main loop early
 
@@ -107,7 +127,10 @@ function solve(max, trace)
                 tracer = 0;
         }
 
-        let b2c = (x + 1n) * (x + 1n) * (8n*x + 5n);
+        let x1 = x + 1n;
+        let x5 = 8n*x + 5n;
+
+        let b2c = x1 * x1 * x5;
 
         if ( (4n * ((max - a)**3n)) < (27n * b2c) )
         {
@@ -119,7 +142,7 @@ function solve(max, trace)
         }
         // get all possible b ( squares dividing b2c )
 
-        for (let b of getSquareDivisors(b2c))
+        for (let b of getSquareDivisors(x1, x5))
         {
             if (a+b >= max)
                 continue;
