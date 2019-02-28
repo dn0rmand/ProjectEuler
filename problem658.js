@@ -5,158 +5,179 @@ const announce = require('tools/announce');
 require('tools/numberHelper');
 
 const modulo     = 1000000007;
+const MODULO     = 1000000007n;
 
-const LETTERS    = 1E7;
+const LETTERS    = 1E7; // 1E7;
 const MAX_LENGTH = 1E12;
 
-const $factorials = [];
+// const $modInverse = (function() {
+//     let result = new Uint32Array(modulo);
 
-(function()
+//     console.log('Preloading modulo inverse')
+//     for (let i = 1; i < modulo; i++)
+//     {
+//         result[i] = i.modInv(modulo);
+//     }
+//     console.log('Modulo inverse loaded')
+//     return result;
+// })();
+
+class problem658
 {
-    console.log('Loading factorials');
-    let current = 1;
-    $factorials[0] = current;
-
-    let letters = LETTERS;
-    for (let i = 1; i <= letters; i++)
+    constructor(letters, length, trace)
     {
-        current = current.modMul(i, modulo);
+        this.$factorials = [];
+        this.$modInverse = [];
+        this.modulo      = 1000000007;
+        this.factors     = [];
+        this.letters     = Number(letters);
+        this.length      = Number(length);
+        this.trace       = trace === true;
 
-        if (current === 0) // maybe
-            current = modulo;
-        $factorials[i] = current;
+        this.loadFactorials();
     }
-    console.log('Factorials loaded');
-})();
 
-function C(n, r)
-{
-    let t  = $factorials[n];
-    let b1 = $factorials[n-r];
-    let b2 = $factorials[r];
-    let b  = b1.modMul(b2, modulo);
-
-    t = t.modDiv(b, modulo);
-    return t;
-}
-
-// Count of possibles words made with up to "N" letters and with a width up to length
-// Includes the x<1> times A(n-1) and x<2> times A(n-2) .... x<n-1> times A(1)
-//
-// A(n-1) - (x<n-2>A(n-2) + ... + x<1>A(1)) +
-// A(n-2) - (y<n-3>A(n-3) + ... + y<1>A(1)) +
-
-function A(letters, length)
-{
-    if (letters == 0)
-        return 1;
-    if (letters == 1) // avoid dividing by 0
-        return (length + 1) % modulo;
-
-    let total = letters.modPow(length + 1, modulo) - 1;
-    if (total < 0)
-        total += modulo;
-    total = total.modDiv(letters-1, modulo);
-
-    return total;
-}
-
-function I(letters, length, factors, trace)
-{
-    let total = 0;
-    let MODULO = BigInt(modulo);
-
-    for (let i = 1, j = letters-1; i <= letters; i++, j--)
+    loadFactorials()
     {
-        if (trace)
-            process.stdout.write(`\r${i}`);
+        if (this.trace)
+            console.log('Loading factorials and associated modulo inverse');
+        let current = 1;
+        this.$factorials[0] = current;
 
-        let f = A(j, length);
-
-        let x = factors[j];
-        let negative = (x < 0);
-        if (negative)
-            x = -x;
-        x = Number(x % MODULO);
-
-        let y = f.modMul(x, modulo);
-
-        if (negative)
+        for (let i = 1; i <= this.letters; i++)
         {
-            if (total < y)
-                total += modulo;
+            current = current.modMul(i, this.modulo);
 
-            total = (total - y) % modulo;
+            if (current === 0) // maybe
+                current = this.modulo;
+            this.$factorials[i] = current;
+            this.$modInverse[current] = current.modInv(modulo);
         }
-        else
-        {
-            total = (total + y) % modulo;
-        }
+        if (this.trace)
+            console.log('Factorials loaded');
     }
-    return total;
-}
 
-function I1(letters, factors)
-{
-    let negative = true;
-    let CCache   = [];
-    for (let i = 1, j = letters-1; i <= letters; i++, j--)
+    C(n, r)
     {
-        negative = ! negative;
-
-        // let f = A(j, length);
-        let x = CCache[i];
-        if (x === undefined)
-        {
-            x = BigInt(C(letters, i));
-            CCache[j] = x;
-        }
-
-        let s = factors[j] || 0n;
-        if (negative)
-        {
-            s -= x;
-        }
-        else
-        {
-            s += x;
-        }
-        factors[j] = s;
+        let t  = this.$factorials[n];
+        let b1 = this.$modInverse[this.$factorials[n-r]];
+        let b2 = this.$modInverse[this.$factorials[r]];
+        t = t.modMul(b1, modulo).modMul(b2, modulo);
+        return t;
     }
-}
 
-function S(letters, length, trace)
-{
-    let total = 0;
-    let factors = [];
-
-    for (let l = 1; l <= letters; l++)
+    A(l)
     {
-        if (trace)
-            process.stdout.write(`\r${l}`);
+        if (l == 0)
+            return 1;
+        if (l == 1) // avoid dividing by 0
+            return (this.length + 1) % this.modulo;
 
-        I1(l, factors);
+        let total = l.modPow(this.length + 1, this.modulo) - 1;
+        if (total < 0)
+            total += this.modulo;
+        total = total.modDiv(l-1, this.modulo);
+
+        return total;
     }
-    if (trace)
-        console.log("\rLast step - Consolidation");
 
-    total = (total + I(letters, length, factors, trace)) % modulo;
+    I()
+    {
+        let total = 0;
 
-    if (trace)
-        console.log('\rDone        ');
+        for (let i = 1, j = this.letters-1; i <= this.letters; i++, j--)
+        {
+            if (this.trace)
+                process.stdout.write(`\r${i}`);
 
-    return total;
+            let f = this.A(j);
+
+            let x = this.factors[j];
+            let negative = (x < 0);
+            if (negative)
+                x = -x;
+
+            let y = f.modMul(x, this.modulo);
+
+            if (negative)
+            {
+                if (total < y)
+                    total += this.modulo;
+
+                total = (total - y) % this.modulo;
+            }
+            else
+            {
+                total = (total + y) % this.modulo;
+            }
+        }
+
+        return total;
+    }
+
+    I1(letters)
+    {
+        let negative = true;
+        let CCache   = [];
+        for (let j = letters-1; j >= 0; j--)
+        {
+            negative = ! negative;
+            let x = CCache[letters-j];
+            if (x === undefined)
+            {
+                x = this.C(letters, j);
+                CCache[j] = x;
+            }
+            let s = (this.factors[j] || 0) + (negative ? -x : x);
+            if (s >= this.modulo || s <= -this.modulo)
+                s %= this.modulo;
+
+            this.factors[j] = s;
+        }
+    }
+
+    S()
+    {
+        let timer = process.hrtime();
+        for (let l = 1; l <= this.letters; l++)
+        {
+            if (this.trace)
+                process.stdout.write(`\r${l}`);
+
+            this.I1(l);
+        }
+        timer = process.hrtime(timer);
+
+        if (this.trace)
+        {
+            console.log("\rStep 1 done in", prettyTime(timer, {verbose:true}));
+            console.log("Last step - Consolidation");
+        }
+
+        let total = this.I();
+
+        if (this.trace)
+            console.log('Done');
+
+        return total;
+    }
+
+    static Solve(letters, length, trace)
+    {
+        let p = new problem658(letters, length, trace);
+        return p.S();
+    }
 }
 
-assert.equal(S(4,4), 406);
-assert.equal(S(8,8), 27902680);
-assert.equal(S(10,100), 983602076);
+assert.equal(problem658.Solve(4,4), 406);
+assert.equal(problem658.Solve(8,8), 27902680);
+assert.equal(problem658.Solve(10,100), 983602076);
 
 let timer = process.hrtime();
-let answer = S(LETTERS, MAX_LENGTH, true);
+let answer = problem658.Solve(LETTERS, MAX_LENGTH, true);
 timer = process.hrtime(timer);
 
 timer = prettyTime(timer, {verbose:true});
 console.log('Answer is', answer, 'calculated in', timer);
-announce(658, `Answer is ${answer} calculated in ${ timer}`);
+// announce(658, `Answer is ${answer} calculated in ${ timer}`);
 console.log('Done');

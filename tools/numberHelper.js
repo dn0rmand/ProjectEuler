@@ -5,32 +5,14 @@ const numberHelper = function()
         let r = this * value;
         if (r > Number.MAX_SAFE_INTEGER)
         {
-            /* MAKE IT SLOW, NOT FAST */
-
-            // let max = this > value ? this : value;
-            // let min = this < value ? this : value;
-
-            // if ((max & 1) === 0)
-            // {
-            //     let m = max / 2;
-
-            //     r = min.modMul(m, modulo);
-            //     r = (r + r) % modulo;
-            // }
-            // else
-            // {
-            //     let m1 = (max-1) / 2;
-            //     let m2 = max - m1;
-
-            //     r = (min.modMul(m1, modulo) + min.modMul(m2, modulo)) % modulo;
-            // }
-
             r = (BigInt(this) * BigInt(value)) % BigInt(modulo);
             r = Number(r);
         }
         else
-            r %= modulo;
-
+        {
+            if (r <= -modulo || r >= modulo)
+                r %= modulo;
+        }
         return r;
     }
 
@@ -41,7 +23,9 @@ const numberHelper = function()
 
         let value = this;
         let r     = 1;
-        let base  = value % modulo;
+        let base  = value;
+        if (base >= modulo || base <= -modulo)
+            base %= modulo;
 
         if (base == 0)
             return 0;
