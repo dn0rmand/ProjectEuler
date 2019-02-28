@@ -1,5 +1,7 @@
 const assert = require('assert');
 const prettyTime= require("pretty-hrtime");
+const announce = require('tools/announce');
+
 require('tools/numberHelper');
 
 const modulo     = 1000000007;
@@ -35,7 +37,6 @@ function C(n, r)
     let b  = b1.modMul(b2, modulo);
 
     t = t.modDiv(b, modulo);
-
     return t;
 }
 
@@ -45,8 +46,6 @@ function C(n, r)
 // A(n-1) - (x<n-2>A(n-2) + ... + x<1>A(1)) +
 // A(n-2) - (y<n-3>A(n-3) + ... + y<1>A(1)) +
 
-let $A = [];
-
 function A(letters, length)
 {
     if (letters == 0)
@@ -54,30 +53,32 @@ function A(letters, length)
     if (letters == 1) // avoid dividing by 0
         return (length + 1) % modulo;
 
-    let total = $A[letters];
-    if (total !== undefined)
-        return total;
-
-    total = letters.modPow(length + 1, modulo) - 1;
+    let total = letters.modPow(length + 1, modulo) - 1;
     if (total < 0)
         total += modulo;
     total = total.modDiv(letters-1, modulo);
 
-    $A[letters] = total;
     return total;
 }
 
-function I(letters, length)
+function I(letters, length, factors, trace)
 {
-    let negative = true;
-    let total    = 0;
+    let total = 0;
+    let MODULO = BigInt(modulo);
 
     for (let i = 1, j = letters-1; i <= letters; i++, j--)
     {
-        negative = ! negative;
+        if (trace)
+            process.stdout.write(`\r${i}`);
 
         let f = A(j, length);
-        let x = C(letters, i);
+
+        let x = factors[j];
+        let negative = (x < 0);
+        if (negative)
+            x = -x;
+        x = Number(x % MODULO);
+
         let y = f.modMul(x, modulo);
 
         if (negative)
@@ -92,24 +93,57 @@ function I(letters, length)
             total = (total + y) % modulo;
         }
     }
-
     return total;
+}
+
+function I1(letters, factors)
+{
+    let negative = true;
+    let CCache   = [];
+    for (let i = 1, j = letters-1; i <= letters; i++, j--)
+    {
+        negative = ! negative;
+
+        // let f = A(j, length);
+        let x = CCache[i];
+        if (x === undefined)
+        {
+            x = BigInt(C(letters, i));
+            CCache[j] = x;
+        }
+
+        let s = factors[j] || 0n;
+        if (negative)
+        {
+            s -= x;
+        }
+        else
+        {
+            s += x;
+        }
+        factors[j] = s;
+    }
 }
 
 function S(letters, length, trace)
 {
     let total = 0;
-
-    // Reset cache
-    $A = []
+    let factors = [];
 
     for (let l = 1; l <= letters; l++)
     {
-        total = (total + I(l, length)) % modulo;
+        if (trace)
+            process.stdout.write(`\r${l}`);
+
+        I1(l, factors);
     }
+    if (trace)
+        console.log("\rLast step - Consolidation");
+
+    total = (total + I(letters, length, factors, trace)) % modulo;
 
     if (trace)
-        console.log('\r'+letter);
+        console.log('\rDone        ');
 
     return total;
 }
@@ -122,5 +156,7 @@ let timer = process.hrtime();
 let answer = S(LETTERS, MAX_LENGTH, true);
 timer = process.hrtime(timer);
 
-console.log('Answer is', answer, 'calculated in', prettyTime(timer, {verbose:true}));
+timer = prettyTime(timer, {verbose:true});
+console.log('Answer is', answer, 'calculated in', timer);
+announce(658, `Answer is ${answer} calculated in ${ timer}`);
 console.log('Done');
