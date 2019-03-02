@@ -7,20 +7,8 @@ require('tools/numberHelper');
 const modulo     = 1000000007;
 const MODULO     = 1000000007n;
 
-const LETTERS    = 1E7; // 1E7;
+const LETTERS    = 1E4;
 const MAX_LENGTH = 1E12;
-
-// const $modInverse = (function() {
-//     let result = new Uint32Array(modulo);
-
-//     console.log('Preloading modulo inverse')
-//     for (let i = 1; i < modulo; i++)
-//     {
-//         result[i] = i.modInv(modulo);
-//     }
-//     console.log('Modulo inverse loaded')
-//     return result;
-// })();
 
 class problem658
 {
@@ -29,7 +17,9 @@ class problem658
         this.$factorials = [];
         this.$modInverse = [];
         this.modulo      = 1000000007;
-        this.factors     = [];
+        this.factors     = new Uint32Array(letters);
+        this.currentRow  = new Uint32Array(letters);
+        this.previousRow = new Uint32Array(letters);
         this.letters     = Number(letters);
         this.length      = Number(length);
         this.trace       = trace === true;
@@ -52,6 +42,8 @@ class problem658
                 current = this.modulo;
             this.$factorials[i] = current;
             this.$modInverse[current] = current.modInv(modulo);
+            if (this.$modInverse[i] === undefined)
+                this.$modInverse[i] = i.modInv(modulo);
         }
         if (this.trace)
             console.log('Factorials loaded');
@@ -63,6 +55,14 @@ class problem658
         let b1 = this.$modInverse[this.$factorials[n-r]];
         let b2 = this.$modInverse[this.$factorials[r]];
         t = t.modMul(b1, modulo).modMul(b2, modulo);
+        return t;
+    }
+
+    C2(n, r)
+    {
+        let t = this.$factorials[n];
+        let b = this.$modInverse[this.$factorials[r]];
+        t = t.modMul(b, modulo);
         return t;
     }
 
@@ -92,7 +92,7 @@ class problem658
 
             let f = this.A(j);
 
-            let x = this.factors[j];
+            let x = this.factors[j] || 0;
             let negative = (x < 0);
             if (negative)
                 x = -x;
@@ -122,12 +122,21 @@ class problem658
         for (let j = letters-1; j >= 0; j--)
         {
             negative = ! negative;
-            let x = CCache[letters-j];
+            let x  = CCache[letters-j];
             if (x === undefined)
             {
                 x = this.C(letters, j);
                 CCache[j] = x;
             }
+
+            let sn = negative ? '-' : '+';
+            let r = letters-j;
+            // if (r > j)
+            //     r = j;
+
+            let sx = `${sn}${x}` + (this.$info[j] || '');
+            this.$info[j] = sx;
+
             let s = (this.factors[j] || 0) + (negative ? -x : x);
             if (s >= this.modulo || s <= -this.modulo)
                 s %= this.modulo;
@@ -136,17 +145,92 @@ class problem658
         }
     }
 
+    I2(letter)
+    {
+        let total = 0;
+        if (letter === 1)
+        {
+            for (let l = 0; l <= this.letters-letter; l++)
+            {
+                let v = (l & 1) ? this.modulo-1 : 1;
+                this.currentRow[l] = v;
+                total += v;
+                if (total >= this.modulo)
+                    total -= this.modulo;
+                else if (total < 0)
+                    total += this.modulo;
+            }
+        }
+        else // use previous row to figure it out
+        {
+            this.currentRow[0] = letter;
+            total  = letter;
+            for (let l = 1; l <= this.letters-letter; l++)
+            {
+                let v = this.previousRow[l] - this.currentRow[l-1];
+                if (v >= this.modulo)
+                    v -= this.modulo;
+                else if (v < 0)
+                    v += this.modulo;
+
+                this.currentRow[l] = v;
+
+                total += v;
+
+                if (total >= this.modulo)
+                    total -= this.modulo;
+                else if (total < 0)
+                    total += this.modulo;
+            }
+        }
+        this.factors[letter-1] = total;
+    }
+/*
+    C(n  , r)   = n! / (r! * (n-r)!)
+    C(n+1, r+1) = n!*(n+1)*(n-r) / (r! * (r+1) * (n-r)! ) = C(n,r) * [ (n+1)*(n-r) / (r+1) ]
+
+    C(n, 1) = n
+*/
+
     S()
     {
+        // if (this.length === MAX_LENGTH && this.letters < 50)
+        // {
+        //     for (let l = 1; l <= this.letters; l++)
+        //     {
+        //         this.I1(l);
+        //     }
+        // }
+
         let timer = process.hrtime();
+
         for (let l = 1; l <= this.letters; l++)
         {
             if (this.trace)
                 process.stdout.write(`\r${l}`);
 
-            this.I1(l);
+            this.I2(l);
+
+            // Switch rows to avoid allocating memory
+            let r = this.currentRow;
+            this.currentRow  = this.previousRow;
+            this.previousRow = r;
         }
         timer = process.hrtime(timer);
+
+        if (this.length === MAX_LENGTH && this.letters < 50)
+        {
+            console.log(`Factors for ${ this.letters } letters`);
+            for (let l = 1; l <= this.letters; l++)
+            {
+                let v = this.factors[this.letters-l];
+                if (v > (modulo / 2))
+                    v = v - modulo;
+                let s = v >= 0 ? '+' : ''
+                console.log(`${l} = ${s}${v}`);// = ${this.$info[this.letters-l]}`);
+            }
+            console.log('');
+        }
 
         if (this.trace)
         {
@@ -157,7 +241,7 @@ class problem658
         let total = this.I();
 
         if (this.trace)
-            console.log('Done');
+            console.log('\rDone     ');
 
         return total;
     }
@@ -172,6 +256,13 @@ class problem658
 assert.equal(problem658.Solve(4,4), 406);
 assert.equal(problem658.Solve(8,8), 27902680);
 assert.equal(problem658.Solve(10,100), 983602076);
+
+// problem658.Solve(5, MAX_LENGTH);
+// problem658.Solve(6, MAX_LENGTH);
+// problem658.Solve(7, MAX_LENGTH);
+// problem658.Solve(8, MAX_LENGTH);
+// problem658.Solve(9, MAX_LENGTH);
+// problem658.Solve(10, MAX_LENGTH);
 
 let timer = process.hrtime();
 let answer = problem658.Solve(LETTERS, MAX_LENGTH, true);
