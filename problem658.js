@@ -5,17 +5,14 @@ const announce = require('tools/announce');
 require('tools/numberHelper');
 
 const modulo     = 1000000007;
-const MODULO     = 1000000007n;
 
-const LETTERS    = 1E4;
+const LETTERS    = 1E5;
 const MAX_LENGTH = 1E12;
 
 class problem658
 {
     constructor(letters, length, trace)
     {
-        this.$factorials = [];
-        this.$modInverse = [];
         this.modulo      = 1000000007;
         this.factors     = new Uint32Array(letters);
         this.currentRow  = new Uint32Array(letters);
@@ -23,47 +20,6 @@ class problem658
         this.letters     = Number(letters);
         this.length      = Number(length);
         this.trace       = trace === true;
-
-        this.loadFactorials();
-    }
-
-    loadFactorials()
-    {
-        if (this.trace)
-            console.log('Loading factorials and associated modulo inverse');
-        let current = 1;
-        this.$factorials[0] = current;
-
-        for (let i = 1; i <= this.letters; i++)
-        {
-            current = current.modMul(i, this.modulo);
-
-            if (current === 0) // maybe
-                current = this.modulo;
-            this.$factorials[i] = current;
-            this.$modInverse[current] = current.modInv(modulo);
-            if (this.$modInverse[i] === undefined)
-                this.$modInverse[i] = i.modInv(modulo);
-        }
-        if (this.trace)
-            console.log('Factorials loaded');
-    }
-
-    C(n, r)
-    {
-        let t  = this.$factorials[n];
-        let b1 = this.$modInverse[this.$factorials[n-r]];
-        let b2 = this.$modInverse[this.$factorials[r]];
-        t = t.modMul(b1, modulo).modMul(b2, modulo);
-        return t;
-    }
-
-    C2(n, r)
-    {
-        let t = this.$factorials[n];
-        let b = this.$modInverse[this.$factorials[r]];
-        t = t.modMul(b, modulo);
-        return t;
     }
 
     A(l)
@@ -115,63 +71,34 @@ class problem658
         return total;
     }
 
-    I1(letters)
-    {
-        let negative = true;
-        let CCache   = [];
-        for (let j = letters-1; j >= 0; j--)
-        {
-            negative = ! negative;
-            let x  = CCache[letters-j];
-            if (x === undefined)
-            {
-                x = this.C(letters, j);
-                CCache[j] = x;
-            }
-
-            let sn = negative ? '-' : '+';
-            let r = letters-j;
-            // if (r > j)
-            //     r = j;
-
-            let sx = `${sn}${x}` + (this.$info[j] || '');
-            this.$info[j] = sx;
-
-            let s = (this.factors[j] || 0) + (negative ? -x : x);
-            if (s >= this.modulo || s <= -this.modulo)
-                s %= this.modulo;
-
-            this.factors[j] = s;
-        }
-    }
-
     I2(letter)
     {
         let total = 0;
+        let max = this.letters-letter;
+
         if (letter === 1)
         {
-            for (let l = 0; l <= this.letters-letter; l++)
+            for (let l = 0; l <= max; l++)
             {
                 let v = (l & 1) ? this.modulo-1 : 1;
                 this.currentRow[l] = v;
                 total += v;
                 if (total >= this.modulo)
                     total -= this.modulo;
-                else if (total < 0)
-                    total += this.modulo;
             }
         }
         else // use previous row to figure it out
         {
             this.currentRow[0] = letter;
             total  = letter;
-            for (let l = 1; l <= this.letters-letter; l++)
+            for (let l = 1; l <= max; l++)
             {
-                let v = this.previousRow[l] - this.currentRow[l-1];
-                if (v >= this.modulo)
-                    v -= this.modulo;
-                else if (v < 0)
-                    v += this.modulo;
+                let v = this.previousRow[l];
+                let v2 = this.currentRow[l-1];
+                if (v >= v2)
+                    v -= v2;
+                else
+                    v = v + this.modulo - v2;
 
                 this.currentRow[l] = v;
 
@@ -179,37 +106,72 @@ class problem658
 
                 if (total >= this.modulo)
                     total -= this.modulo;
-                else if (total < 0)
-                    total += this.modulo;
             }
         }
         this.factors[letter-1] = total;
     }
-/*
-    C(n  , r)   = n! / (r! * (n-r)!)
-    C(n+1, r+1) = n!*(n+1)*(n-r) / (r! * (r+1) * (n-r)! ) = C(n,r) * [ (n+1)*(n-r) / (r+1) ]
-
-    C(n, 1) = n
-*/
 
     S()
     {
-        // if (this.length === MAX_LENGTH && this.letters < 50)
-        // {
-        //     for (let l = 1; l <= this.letters; l++)
-        //     {
-        //         this.I1(l);
-        //     }
-        // }
-
         let timer = process.hrtime();
+        let count = 0;
+        let total;
+        let max;
+        let doTrace = (l) => {
 
-        for (let l = 1; l <= this.letters; l++)
+        };
+        if (this.trace)
         {
-            if (this.trace)
-                process.stdout.write(`\r${l}`);
+            doTrace = (letter) => {
+                if (count === 0)
+                    process.stdout.write(`\r${letter}`);
+                if (count++ >= 999)
+                    count = 0;
+            }
+        }
 
-            this.I2(l);
+        for (let letter = 1; letter <= this.letters; letter++)
+        {
+            doTrace(letter);
+
+            max = this.letters-letter;
+
+            if (letter === 1)
+            {
+                total = 0;
+                for (let l = 0; l <= max; l++)
+                {
+                    let v = (l & 1) ? this.modulo-1 : 1;
+                    this.currentRow[l] = v;
+                    total += v;
+                    if (total >= this.modulo)
+                        total -= this.modulo;
+                }
+            }
+            else // use previous row to figure it out
+            {
+                this.currentRow[0] = letter;
+                total  = letter;
+                for (let l = 1; l <= max; l++)
+                {
+                    let v = this.previousRow[l];
+                    let v2 = this.currentRow[l-1];
+                    if (v >= v2)
+                        v -= v2;
+                    else
+                        v = v + this.modulo - v2;
+
+                    this.currentRow[l] = v;
+
+                    total += v;
+
+                    if (total >= this.modulo)
+                        total -= this.modulo;
+                }
+            }
+            this.factors[letter-1] = total;
+
+            // this.I2(letter);
 
             // Switch rows to avoid allocating memory
             let r = this.currentRow;
@@ -218,32 +180,18 @@ class problem658
         }
         timer = process.hrtime(timer);
 
-        if (this.length === MAX_LENGTH && this.letters < 50)
-        {
-            console.log(`Factors for ${ this.letters } letters`);
-            for (let l = 1; l <= this.letters; l++)
-            {
-                let v = this.factors[this.letters-l];
-                if (v > (modulo / 2))
-                    v = v - modulo;
-                let s = v >= 0 ? '+' : ''
-                console.log(`${l} = ${s}${v}`);// = ${this.$info[this.letters-l]}`);
-            }
-            console.log('');
-        }
-
         if (this.trace)
         {
             console.log("\rStep 1 done in", prettyTime(timer, {verbose:true}));
             console.log("Last step - Consolidation");
         }
 
-        let total = this.I();
+        let result = this.I();
 
         if (this.trace)
             console.log('\rDone     ');
 
-        return total;
+        return result;
     }
 
     static Solve(letters, length, trace)
@@ -256,13 +204,6 @@ class problem658
 assert.equal(problem658.Solve(4,4), 406);
 assert.equal(problem658.Solve(8,8), 27902680);
 assert.equal(problem658.Solve(10,100), 983602076);
-
-// problem658.Solve(5, MAX_LENGTH);
-// problem658.Solve(6, MAX_LENGTH);
-// problem658.Solve(7, MAX_LENGTH);
-// problem658.Solve(8, MAX_LENGTH);
-// problem658.Solve(9, MAX_LENGTH);
-// problem658.Solve(10, MAX_LENGTH);
 
 let timer = process.hrtime();
 let answer = problem658.Solve(LETTERS, MAX_LENGTH, true);
