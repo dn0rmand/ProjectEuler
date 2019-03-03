@@ -1,9 +1,7 @@
 //
-//  main.c
-//  problem658
+//  problem658.c
 //
 //  Created by Dominique Normand on 3/2/19.
-//  Copyright © 2019 Normand, Dominique (Warren). All rights reserved.
 //
 
 #include <stdio.h>
@@ -22,10 +20,10 @@ ulong modPow(ulong value, ulong exp)
     ulong base  = value;
     if (base >= modulo)
         base %= modulo;
-    
+
     if (base == 0)
         return 0;
-    
+
     while (exp > 0)
     {
         if ((exp & 1) == 1)
@@ -34,7 +32,7 @@ ulong modPow(ulong value, ulong exp)
         exp >>= 1;
         base = (base * base) % modulo;
     }
-    
+
     return r;
 }
 
@@ -44,7 +42,7 @@ long modInv(long newR)
     long newT = 1;
     long r    = modulo;
     long q, lastT, lastR;
-    
+
     while (newR != 0)
     {
         q = r / newR;
@@ -60,7 +58,7 @@ long modInv(long newR)
         printf("failed to process modInv - values not co-prime\n");
         exit(-1);
     }
-    
+
     if (t < 0)
         t += modulo;
     
@@ -87,7 +85,7 @@ ulong A(ulong l, ulong length)
 ulong I(ulong letters, ulong length, ulong* factors, int trace)
 {
     ulong total = 0;
-    
+
     for (ulong i = 1, j = letters-1; i <= letters; i++, j--)
     {
         if (trace)
