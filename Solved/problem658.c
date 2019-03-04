@@ -11,7 +11,7 @@
 #define ulong unsigned long
 
 const ulong modulo     = 1000000007;
-const ulong LETTERS    = 1E5;
+const ulong LETTERS    = 1E7;
 const ulong MAX_LENGTH = 1E12;
 
 ulong modPow(ulong value, ulong exp)
@@ -129,7 +129,7 @@ void Trace(ulong letter)
         fprintf(stdout, "\r%lu", letter);
         fflush(stdout);
     }
-    if (count++ >= 999)
+    if (count++ >= 9999)
         count = 0;
 }
 
@@ -146,9 +146,9 @@ ulong Solve(ulong letters, ulong length, int trace)
     for (ulong letter = 1; letter <= letters; letter++)
     {
         doTrace(letter);
-        
+
         ulong max = letters-letter;
-        
+
         if (letter == 1)
         {
             total = 0;
@@ -172,9 +172,9 @@ ulong Solve(ulong letters, ulong length, int trace)
                     v -= v2;
                 else
                     v = v + modulo - v2;
-                
+
                 currentRow[l] = v;
-                
+
                 total += v;
             }
             total %= modulo;
@@ -219,7 +219,7 @@ int main(int argc, const char * argv[])
     Assert(Solve(4, 4, 0), 406);
     Assert(Solve(8, 8, 0), 27902680);
     Assert(Solve(10,100,0), 983602076);
-    
+
     ulong start = clock();
     ulong answer = Solve(LETTERS, MAX_LENGTH, 1);
     ulong end = clock();
