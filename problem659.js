@@ -1,65 +1,142 @@
 const assert = require('assert');
 const primeHelper = require('tools/primeHelper')();
+const prettyTime= require("pretty-hrtime");
 
-primeHelper.initialize(1E6);
+const MAX_K = 10000000;
+const MODULO = 1000000000000000000n
+
+console.log('Loading primes');
+
+const MAX_VALUE = (4*(MAX_K*MAX_K) + 1);
+if (!Number.isSafeInteger(MAX_VALUE))
+    throw "MAX_VALUE too big";
+
+const MAX_PRIME = Math.floor(Math.sqrt(MAX_VALUE))+1;
+primeHelper.initialize(MAX_PRIME);
+
+console.log('Primes loaded');
+
+function getMaxFactor(value)
+{
+    function gcd(m, n)
+    {
+        let r;
+
+        if (m < n)
+        {
+            r = m;
+            m = n;
+            n = r;
+        }
+
+        r = m % n;
+        while (r !== 0)
+        {
+            m = n;
+            n = r;
+            r = m % n;
+        }
+
+        return n;
+    }
+
+    function prho(n)
+    {
+        if (n % 2 === 0)
+            return n === 2 ? false : 2;
+        if (primeHelper.isPrime(n))
+            return false;
+
+        const g = (x) => { return (x * x) + 1; };
+
+        let x = 2;
+        let y = 2;
+        let d = 1;
+
+        while (d === 1)
+        {
+            x = g(x);
+            y = g(g(y));
+            d = gcd(Math.abs(x - y), n);
+        }
+
+        return d === n ? false : d;
+    }
+
+    let d = prho(value);
+    if (! d)
+        return n;
+
+    let max = d;
+    let n = value / d;
+
+    while (n > max)
+    {
+        d = prho(n);
+        if (! d)
+            max = n;
+        else
+            n /= d;
+    }
+
+    return max;
+}
 
 function largestPrime(k2)
 {
-    let largest = 1;
-    let index   = 0;
+    let value = (4 * k2) + 1;
+    let maxPrime = 1;
 
-    let previousPrimes = [];
-
-    let N  = 2*k2;
-    let v1 = N*N + k2;
-
-    primeHelper.factorize(v1, (prime) => {
-        previousPrimes[prime] = 1;
-    });
-
-    v1 = ((N+1)*(N+1)) + k2;
-
-    primeHelper.factorize(v1, (prime) => {
-        if (prime > largest && previousPrimes[prime])
-        {
-            largest = prime;
-            index   = N;
-        }
-    });
-
-    previousPrimes = [];
-
-    for (let n = 1; n < 1000; n++)
+    primeHelper.factorize(value, (prime) =>
     {
-        let value = n*n + k2;
-        let currentPrimes = [];
-        let max = 0;
+        maxPrime = prime;
+    });
 
-        primeHelper.factorize(value, (prime) => {
-            currentPrimes[prime] = 1;
-            if (prime > max && previousPrimes[prime])
-                max = prime;
-        });
-
-        if (max > largest)
-        {
-            index   = n-1;
-            largest = max;
-        }
-        previousPrimes = currentPrimes;
-    }
-
-    return { prime: largest, index: index };
+    return maxPrime;
 }
 
-// assert.equal(largestPrime(3).prime, 13);
-
-largestPrime(16);
-
-for (let k = 1; k < 20; k++)
+function S(max, trace)
 {
-    let k2 = k*k;
-    let res = largestPrime(k2);
-    console.log('k =', k, ', k^2 =', k2, ', n =', res.index, ', 2*n+1 = ', (2*res.index + 1), ', prime =', res.prime);
+    let extra = 0n;
+    let total = 0;
+    let count = 0;
+    for (let k = 1; k <= max; k++)
+    {
+        if (trace)
+        {
+            if (count === 0)
+            {
+                let p = ((k * 100)/max).toFixed(0);
+                process.stdout.write(`\r${p}%`);
+            }
+            if (count++ > 100000)
+                count = 0;
+        }
+
+        let maxPrime = largestPrime(k*k);
+        let t = total + maxPrime;
+        if (! Number.isSafeInteger(t))
+        {
+            extra = (extra + BigInt(total) + BigInt(maxPrime)) % MODULO;
+            total = 0;
+        }
+        else
+            total = t;
+    }
+    if (trace)
+        process.stdout.write(`\r100%\n`);
+
+    return (BigInt(total) + extra) % MODULO;
 }
+
+assert.equal(largestPrime(3), 13);
+assert.equal(largestPrime(9*9), 13);
+assert.equal(largestPrime(16*16), 41);
+assert.equal(S(100), 433752);
+
+let timer = process.hrtime();
+let answer = S(MAX_K, true);
+timer = process.hrtime(timer);
+
+console.log("Answer is", answer, "calculated in ", prettyTime(timer, {verbose:true}));
 console.log('Done');
