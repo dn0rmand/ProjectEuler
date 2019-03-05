@@ -14,73 +14,58 @@ if (!Number.isSafeInteger(MAX_VALUE))
 const MAX_PRIME = Math.floor(Math.sqrt(MAX_VALUE))+1;
 primeHelper.initialize(MAX_PRIME);
 
-console.log('Primes loaded');
-
-function getMaxFactor(value)
+let newPrimes = [];
+for (let n = 1; ; n++)
 {
-    function gcd(m, n)
-    {
-        let r;
-
-        if (m < n)
-        {
-            r = m;
-            m = n;
-            n = r;
-        }
-
-        r = m % n;
-        while (r !== 0)
-        {
-            m = n;
-            n = r;
-            r = m % n;
-        }
-
-        return n;
-    }
-
-    function prho(n)
-    {
-        if (n % 2 === 0)
-            return n === 2 ? false : 2;
-        if (primeHelper.isPrime(n))
-            return false;
-
-        const g = (x) => { return (x * x) + 1; };
-
-        let x = 2;
-        let y = 2;
-        let d = 1;
-
-        while (d === 1)
-        {
-            x = g(x);
-            y = g(g(y));
-            d = gcd(Math.abs(x - y), n);
-        }
-
-        return d === n ? false : d;
-    }
-
-    let d = prho(value);
-    if (! d)
-        return n;
-
-    let max = d;
-    let n = value / d;
-
-    while (n > max)
-    {
-        d = prho(n);
-        if (! d)
-            max = n;
-        else
-            n /= d;
-    }
-
-    return max;
+    let p = 4*n + 1;
+    if (p > MAX_PRIME)
+        break;
+    if (primeHelper.isPrime(p))
+        newPrimes.push(p);
 }
+
+primeHelper.factorize = function(n, callback)
+{
+    if (n === 1)
+        return;
+
+    if (primeHelper.isPrime(n))
+    {
+        callback(n, 1);
+        return;
+    }
+
+    let max = Math.floor(Math.sqrt(n))+1;
+
+    for(let p of newPrimes)
+    {
+        if (p > n)
+            break;
+        if (p > max)
+            break;
+
+        if (n % p === 0)
+        {
+            n /= p;
+            while (n % p === 0)
+            {
+                n /= p;
+            }
+
+            callback(p);
+
+            if (n === 1)
+                break;
+            if (primeHelper.isPrime(n))
+                break;
+        }
+    }
+
+    if (n !== 1)
+        callback(n);
+}
+
+console.log('Primes loaded');
 
 function largestPrime(k2)
 {
@@ -139,4 +124,5 @@ let answer = S(MAX_K, true);
 timer = process.hrtime(timer);
 
 console.log("Answer is", answer, "calculated in ", prettyTime(timer, {verbose:true}));
+console.log("should be 238518915714422000");
 console.log('Done');

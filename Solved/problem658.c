@@ -118,9 +118,11 @@ ulong I(ulong letters, ulong length, ulong* factors, int trace)
     return total;
 }
 
-void noTrace(ulong letter) {}
-
 static int count = 0;
+
+void Trace1(ulong letter)
+{
+}
 
 void Trace(ulong letter)
 {
@@ -136,16 +138,14 @@ void Trace(ulong letter)
 ulong Solve(ulong letters, ulong length, int trace)
 {
     ulong total;
-    
-    void (*doTrace)(ulong) = trace ? Trace : noTrace;
-    
     ulong *previousRow = (ulong*)malloc(sizeof(ulong) * letters);
     ulong *currentRow  = (ulong*)malloc(sizeof(ulong) * letters);
     ulong *factors     = (ulong*)malloc(sizeof(ulong) * letters);
     
     for (ulong letter = 1; letter <= letters; letter++)
     {
-        doTrace(letter);
+        if (trace)
+            Trace(letter);
 
         ulong max = letters-letter;
 
@@ -186,23 +186,23 @@ ulong Solve(ulong letters, ulong length, int trace)
         currentRow = previousRow;
         previousRow = r;
     }
-    
+
     free(previousRow);
     free(currentRow);
-    
+
     if (trace)
     {
         printf("\nStep 1 done\n");
         printf("Last step - Consolidation\n");
     }
-    
+
     ulong result = I(letters, length, factors, trace);
-    
+
     free(factors);
-    
+
     if (trace)
         printf("\nDone\n");
-    
+
     return result;
 }
 
@@ -223,9 +223,9 @@ int main(int argc, const char * argv[])
     ulong start = clock();
     ulong answer = Solve(LETTERS, MAX_LENGTH, 1);
     ulong end = clock();
-    
+
     ulong total_t = (ulong )(end - start) / CLOCKS_PER_SEC;
-    
+
     printf("Answer is %lu executed in %lu seconds\n", answer, total_t);
     return 0;
 }
