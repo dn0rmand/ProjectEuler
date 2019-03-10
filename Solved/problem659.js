@@ -29,7 +29,7 @@ primeHelper.factorize = function(n, callback)
     if (n === 1)
         return;
 
-    if (primeHelper.isPrime(n))
+    if (primeHelper.isKnownPrime(n))
     {
         callback(n, 1);
         return;
@@ -56,7 +56,7 @@ primeHelper.factorize = function(n, callback)
 
             if (n === 1)
                 break;
-            if (primeHelper.isPrime(n))
+            if (primeHelper.isKnownPrime(n))
                 break;
         }
     }

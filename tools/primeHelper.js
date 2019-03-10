@@ -61,6 +61,14 @@ module.exports = function(maxPrime)
         return count;
     }
 
+    function isKnownPrime(p)
+    {
+        if (_primeMap !== undefined && p <= _maxPrime)
+            return _primeMap.has(p);
+
+        return false;
+    }
+
     function isPrime(p)
     {
         if (_primeMap !== undefined)
@@ -75,6 +83,7 @@ module.exports = function(maxPrime)
 
         if ((p & 1)  === 0 || (p % 3) === 0)
             return false;
+
         let root = Math.floor(Math.sqrt(p));
 
         for(let i of _primes)
@@ -94,9 +103,18 @@ module.exports = function(maxPrime)
         }
 
         if (root > _maxPrime)
-            return $isNumberPrime(p);
-        else
-            return true;
+        {
+            let start = Math.floor((_maxPrime - 5)/6);
+            start = 5 + start*6;
+
+            for (let i = start; i <= root; i += 6)
+            {
+                if ((p % i) === 0 || (p % (i + 2)) === 0)
+                    return false;
+            }
+        }
+
+        return true;
     }
 
     function factorize(n, callback)
@@ -104,7 +122,7 @@ module.exports = function(maxPrime)
         if (n === 1)
             return;
 
-        if (_primeMap !== undefined && isPrime(n))
+        if (isKnownPrime(n))
         {
             callback(n, 1);
             return;
@@ -130,9 +148,7 @@ module.exports = function(maxPrime)
                 if (callback(p, factor) === false)
                     return; // Caller says to stop
 
-                if (n === 1)
-                    break;
-                if (_primeMap !== undefined && isPrime(n))
+                if (n === 1 || isKnownPrime(n))
                     break;
             }
         }
@@ -313,6 +329,9 @@ module.exports = function(maxPrime)
         },
         isPrime: function(value) {
             return isPrime(value);
+        },
+        isKnownPrime: function(value) {
+            return isKnownPrime(value);
         },
         next: function(p) { return next(p); },
         countPrimes: function(to) { return countPrimes(to); },
