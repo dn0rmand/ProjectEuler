@@ -1,56 +1,99 @@
-function prepare()
+const assert = require('assert');
+const MODULO = 1E9;
+const LENGTH = 11**12;
+
+function makeKey(sum, modulo)
 {
-    let entries = {};
-    let used    = [];
-    let maxCount= 1;
+    return (sum * 23) + modulo;
+}
 
-    function inner(value, sum, length)
+function S(size, trace)
+{
+    let newStates = [];
+
+    for (let d = 1; d < 10; d++)
     {
-        if (sum > 0)
+        newStates[makeKey(d, d)] = {
+            sum: d,
+            modulo: d,
+            count: 1
+        };
+    }
+
+    let length = 0;
+    let total  = 0;
+    let tracer = 1;
+
+    while (++length <= size)
+    {
+        if (trace)
         {
-            if (sum <= 23)
-            {
-                let k = sum + ":" + (value % 23) + ":" + length;
-                let entry = entries[k];
+            if (tracer === 0)
+                process.stdout.write(`\r${size-length}  `);
 
-                if (entry !== undefined)
-                {
-                    entry.count++;
-                    if (entry.count > maxCount)
-                        maxCount = entry.count;
-                }
-                else
-                {
-                    entry = {
-                        sum: sum,
-                        modulo: value % 23,
-                        length: length,
-                        count: 1
-                    };
-
-                    entries[k] = entry;
-                }
-            }
-            if (sum >= 23)
-                return;
+            if (++tracer === 1000)
+                tracer = 0;
         }
 
-        for (let d = 1; d < 10; d++)
+        let states = newStates;
+
+        newStates = [];
+
+        let addState = (sum, modulo, count) =>
         {
-            if (! used[d])
+            if (sum > 23)
+                return;
+
+            modulo %= 23;
+
+            let k = makeKey(sum, modulo);
+            let state = newStates[k];
+            if (state !== undefined)
             {
-                used[d] = 1;
-                inner((value * 10) + d, sum+d, length + 1);
-                used[d] = 0;
+                state.count += count;
+            }
+            else
+            {
+                newStates[k] = { sum: sum, modulo: modulo, count: count };
+            }
+        };
+
+        for (let state of states)
+        {
+            if (state === undefined)
+                continue;
+
+            if (state.sum === 23)
+            {
+                if (state.modulo === 0)
+                {
+                    let count = ((size-length)+1) % MODULO;
+                    count = (count * state.count) % MODULO;
+
+                    total = (total + count) % MODULO;
+                }
+            }
+            else if (length !== size) // last loop so don't case about new states
+            {
+                addState(state.sum, state.modulo * 10, state.count);
+
+                for (let d = 1; d < 10; d++)
+                {
+                    addState(state.sum + d, (state.modulo * 10) + d, state.count);
+                }
             }
         }
     }
 
-    inner(0, 0, 0);
-    console.log(maxCount);
-    return Object.values(entries);
+    if (trace)
+        console.log(`\r${size}`);
+
+    return total;
 }
 
-let entries = prepare();
+assert.equal(S(9),  263626);
+assert.equal(S(42), 878570056);
 
-console.log(entries.length);
+let answer = S(LENGTH, true);
+
+console.log('Answer is', answer);
