@@ -9,15 +9,12 @@ function makeKey(sum, modulo)
 
 function S(size, trace)
 {
-    let newStates = [];
+    let newStates = new Uint32Array(24*23);
+    let states = new Uint32Array(24*23);
 
     for (let d = 1; d < 10; d++)
     {
-        newStates[makeKey(d, d)] = {
-            sum: d,
-            modulo: d,
-            count: 1
-        };
+        newStates[makeKey(d, d)] = 1;
     }
 
     let length = 0;
@@ -31,13 +28,14 @@ function S(size, trace)
             if (tracer === 0)
                 process.stdout.write(`\r${size-length}  `);
 
-            if (++tracer === 1000)
+            if (++tracer === 10000)
                 tracer = 0;
         }
 
-        let states = newStates;
-
-        newStates = [];
+        let oldStates = states;
+        states = newStates;
+        newStates = oldStates;
+        newStates.fill(0);
 
         let addState = (sum, modulo, count) =>
         {
@@ -49,37 +47,39 @@ function S(size, trace)
             let k = makeKey(sum, modulo);
             let state = newStates[k];
             if (state !== undefined)
-            {
-                state.count += count;
-            }
+                state = (state + count) % MODULO;
             else
-            {
-                newStates[k] = { sum: sum, modulo: modulo, count: count };
-            }
+                state = count;
+
+            newStates[k] = state;
         };
 
-        for (let state of states)
+        for (let idx = 0; idx < states.length; idx++)
         {
-            if (state === undefined)
+            let state = states[idx];
+            if (! state)
                 continue;
 
-            if (state.sum === 23)
+            let modulo = (idx % 23);
+            let sum    = (idx - modulo) / 23;
+
+            if (sum === 23)
             {
-                if (state.modulo === 0)
+                if (modulo === 0)
                 {
                     let count = ((size-length)+1) % MODULO;
-                    count = (count * state.count) % MODULO;
+                    count = (count * state) % MODULO;
 
                     total = (total + count) % MODULO;
                 }
             }
-            else if (length !== size) // last loop so don't case about new states
+            else
             {
-                addState(state.sum, state.modulo * 10, state.count);
+                addState(sum, modulo * 10, state);
 
                 for (let d = 1; d < 10; d++)
                 {
-                    addState(state.sum + d, (state.modulo * 10) + d, state.count);
+                    addState(sum + d, (modulo * 10) + d, state);
                 }
             }
         }
@@ -91,7 +91,7 @@ function S(size, trace)
     return total;
 }
 
-assert.equal(S(9),  263626);
+// assert.equal(S(9),  263626);
 assert.equal(S(42), 878570056);
 
 let answer = S(LENGTH, true);
