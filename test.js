@@ -1,22 +1,112 @@
-const primeHelper = require('tools/primeHelper')();
 
-let MAX = 99999999000000;
+let buffer = { value:1 }
 
-let MAX_P = Math.sqrt(MAX)+1;
-
-console.time(321);
-primeHelper.initialize(MAX_P);
-console.timeEnd(321);
-
-console.time(123);
-
-for (let i = 0, j = 0; i <= 1000000; i++, j++)
+let ptr = buffer;
+for (let v = 3; v < 700; v+=2)
 {
-    if (j === 0)
-        process.stdout.write(`\r${i}`);
-    else if (j === 9999)
-        j = -1;
-
-    primeHelper.isPrime(MAX+i);
+    let t = { value : v }
+    ptr.next = t;
+    ptr = t;
 }
-console.timeEnd(123);
+
+ptr = buffer.next;
+while (ptr != undefined)
+{
+    let skip = ptr.value-1;
+    let p2 = buffer;
+
+    while (p2 != undefined)
+    {
+        let p3 = p2.next;
+        if (p3 === undefined)
+            break;
+        skip--;
+        if (skip === 0)
+        {
+            p2.next = p3.next;
+            skip = ptr.value;
+        }
+        p2 = p3;
+    }
+
+    ptr = ptr.next;
+}
+
+ptr = buffer.next;
+while (ptr != undefined)
+{
+    console.log(ptr.value);
+    ptr = ptr.next;
+}
+
+console.log('done');
+
+/*
+
+133
+135
+141
+159
+163
+169
+171
+189
+
+201
+211
+219
+235
+241
+259
+261
+267
+273
+283
+285
+289
+297
+303
+307
+319
+327
+331
+339
+361
+367
+385
+391 <----
+399
+409
+415
+421
+427
+433
+451
+463
+475
+477
+483
+487
+489
+495
+511
+517
+519
+529
+535
+537
+541
+553
+559
+577
+579
+583
+591
+613
+615
+619
+639 <----
+645
+651
+
+*/

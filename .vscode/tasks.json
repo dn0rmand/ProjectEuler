@@ -9,6 +9,13 @@
             "command": "gcc",
             "args": ["${file}", "-o", "${workspaceFolder}/dist/a.out"],
             "group":"build"
+        },
+        {
+            "label": "kotlinc",
+            "type": "shell",
+            "command": "kotlinc",
+            "args": ["${file}", "-include-runtime", "-d", "${workspaceFolder}/dist/a.jar"],
+            "group":"build"
         }
     ]
 }
