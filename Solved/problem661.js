@@ -59,10 +59,12 @@ function EA(pa, pb, p)
             t += (newStates[j] += states[j] * pa);
         }
 
-        let old = states;
-        states = newStates;
-        newStates = old;
+        // let old = states;
+        // states = newStates;
+        // newStates = old;
 
+        [states, newStates] = [newStates, states];
+        
         return t;
     }
 
