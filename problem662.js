@@ -1,4 +1,5 @@
 const assert = require('assert');
+const prettyTime= require("pretty-hrtime");
 
 const MAX = 10000;
 const MODULO = 1000000007;
@@ -24,10 +25,11 @@ function loadFibonacci(W, H)
 function createMap(W, H)
 {
     const map = []
+    const size = Math.max(W, H);
 
-    for (let x = 0; x <= W; x++)
+    for (let x = 0; x <= size; x++)
     {
-        map.push(new Uint32Array(H+1));
+        map.push(new Uint32Array(size+1));
     }
 
     map[W][H] = 1;
@@ -63,74 +65,50 @@ function F(W, H, trace)
     const moves = loadMoves(W, H);
     const map   = createMap(W, H);
 
-    let states = [{w:W, h:H}];
-
-    while (states.length > 0)
+    function processPoint(w, h)
     {
-        let visited   = createMap(W, H);
-        let newStates = [];
+        if (w === 0 && h === 0)
+            return;
 
-        let count = 0;
-        for (let i = 0; i < states.length; i++)
+        const value = map[w][h];
+
+        // if (value === 0)
+        //     return;
+
+        for (const {x, y} of moves)
         {
-            let state = states[i];
-
-            if (trace)
-            {
-                if (count === 0)
-                    process.stdout.write(`\r${states.length} / ${i}`);
-                if (++count === 10000)
-                    count = 0
-            }
-
-            state.value = map[state.w][state.h];
-            if (state.w !== state.h)
-                state.value = (state.value + map[state.h][state.w]) % MODULO;
-
-            if (state.h !== 0 || state.w !== 0)
-            {
-                map[state.w][state.h] = 0;
-                map[state.h][state.w] = 0;
-            }
-        }
-
-        if (trace)
-            process.stdout.write(`\r${states.length}               `);
-
-        count = 0;
-        for (let i = 0; i < states.length; i++)
-        {
-            let {w, h, value} = states[i];
-
-            if (trace)
-            {
-                if (count === 0)
-                    process.stdout.write(`\r${states.length} / ${i}`);
-                if (++count === 10000)
-                    count = 0
-            }
-
-            if (w === 0 && h === 0)
+            const ww = w-x;
+            const hh = h-y;
+            if (hh < 0 || ww < 0)
                 continue;
 
-            for (let {x, y} of moves)
-            {
-                let ww = w-x;
-                let hh = h-y;
-                if (hh < 0 || ww < 0)
-                    continue;
-
-                map[ww][hh] = (map[ww][hh] + value) % MODULO;
-
-                if (! visited[ww][hh] && ! visited[[hh][ww]])
-                {
-                    visited[ww][hh] = 1;
-                    newStates.push({w:ww, h:hh, value:0});
-                }
-            }
+            map[ww][hh] = (map[ww][hh] + value) % MODULO;
         }
+    }
 
-        states = newStates;
+    const size = Math.max(W, H);
+
+    // Above Diagonal
+    if (trace)
+        console.log('Above Diagonal');
+
+    for (let i = size; i >= 0; i--)
+    {
+        // if (trace)
+        //     process.stdout.write(`\r${i} `);
+        for (let w = i, h = size; w <= size && h >= 0; w++, h--)
+            processPoint(w, h);
+    }
+
+    if (trace)
+        console.log('\rBelow Diagonal');
+    // Below Diagonal
+    for (let i = size-1; i >= 0; i--)
+    {
+        // if (trace)
+        //     process.stdout.write(`\r${i} `);
+        for (let h = i, w = 0; w <= size && h >= 0; w++, h--)
+            processPoint(w, h);
     }
     if (trace)
         console.log('');
@@ -138,8 +116,11 @@ function F(W, H, trace)
     return map[0][0];
 }
 
-//assert.equal(F(3, 4), 278);
+assert.equal(F(3, 4), 278);
 assert.equal(F(10, 10), 215846462);
 
+let timer = process.hrtime();
 const answer = F(MAX, MAX, true);
-console.log('Answer is', answer);
+timer = process.hrtime(timer);
+console.log('Answer is', answer, "calculated in ", prettyTime(timer, {verbose:true}));
+

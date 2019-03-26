@@ -64,7 +64,7 @@ function EA(pa, pb, p)
         // newStates = old;
 
         [states, newStates] = [newStates, states];
-        
+
         return t;
     }
 
