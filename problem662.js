@@ -67,24 +67,49 @@ function F(W, H, trace)
 
     while (states.length > 0)
     {
-        if (trace)
-            process.stdout.write(`\r${states.length}     `);
-
         let visited   = createMap(W, H);
         let newStates = [];
 
-        for (let state of states)
+        let count = 0;
+        for (let i = 0; i < states.length; i++)
         {
+            let state = states[i];
+
+            if (trace)
+            {
+                if (count === 0)
+                    process.stdout.write(`\r${states.length} / ${i}`);
+                if (++count === 10000)
+                    count = 0
+            }
+
             state.value = map[state.w][state.h];
+            if (state.w !== state.h)
+                state.value = (state.value + map[state.h][state.w]) % MODULO;
 
             if (state.h !== 0 || state.w !== 0)
+            {
                 map[state.w][state.h] = 0;
+                map[state.h][state.w] = 0;
+            }
         }
 
-        let w, h, value;
+        if (trace)
+            process.stdout.write(`\r${states.length}               `);
 
-        for ({w, h, value} of states)
+        count = 0;
+        for (let i = 0; i < states.length; i++)
         {
+            let {w, h, value} = states[i];
+
+            if (trace)
+            {
+                if (count === 0)
+                    process.stdout.write(`\r${states.length} / ${i}`);
+                if (++count === 10000)
+                    count = 0
+            }
+
             if (w === 0 && h === 0)
                 continue;
 
@@ -97,10 +122,10 @@ function F(W, H, trace)
 
                 map[ww][hh] = (map[ww][hh] + value) % MODULO;
 
-                if (! visited[ww][hh])
+                if (! visited[ww][hh] && ! visited[[hh][ww]])
                 {
                     visited[ww][hh] = 1;
-                    newStates.push({w:ww, h:hh});
+                    newStates.push({w:ww, h:hh, value:0});
                 }
             }
         }
@@ -113,7 +138,7 @@ function F(W, H, trace)
     return map[0][0];
 }
 
-assert.equal(F(3, 4), 278);
+//assert.equal(F(3, 4), 278);
 assert.equal(F(10, 10), 215846462);
 
 const answer = F(MAX, MAX, true);
