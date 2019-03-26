@@ -72,17 +72,18 @@ function F(W, H, trace)
 
         const value = map[w][h];
 
-        // if (value === 0)
-        //     return;
+        if (value === 0)
+            return;
 
         for (const {x, y} of moves)
         {
             const ww = w-x;
-            const hh = h-y;
-            if (hh < 0 || ww < 0)
-                continue;
+            if (ww < 0)
+                break;
 
-            map[ww][hh] = (map[ww][hh] + value) % MODULO;
+            const hh = h-y;
+            if (hh >= 0)
+                map[ww][hh] = (map[ww][hh] + value) % MODULO;
         }
     }
 
@@ -91,11 +92,16 @@ function F(W, H, trace)
     // Above Diagonal
     if (trace)
         console.log('Above Diagonal');
-
+    let count = 0
     for (let i = size; i >= 0; i--)
     {
-        // if (trace)
-        //     process.stdout.write(`\r${i} `);
+        if (trace)
+        {
+            if (count === 0)
+                process.stdout.write(`\r${i} `);
+            if (++count >= 200)
+                count = 0;
+        }
         for (let w = i, h = size; w <= size && h >= 0; w++, h--)
             processPoint(w, h);
     }
@@ -105,13 +111,18 @@ function F(W, H, trace)
     // Below Diagonal
     for (let i = size-1; i >= 0; i--)
     {
-        // if (trace)
-        //     process.stdout.write(`\r${i} `);
+        if (trace)
+        {
+            if (count === 0)
+                process.stdout.write(`\r${i} `);
+            if (++count >= 200)
+                count = 0;
+        }
         for (let h = i, w = 0; w <= size && h >= 0; w++, h--)
             processPoint(w, h);
     }
     if (trace)
-        console.log('');
+        console.log('\rDone  ');
 
     return map[0][0];
 }
@@ -123,4 +134,3 @@ let timer = process.hrtime();
 const answer = F(MAX, MAX, true);
 timer = process.hrtime(timer);
 console.log('Answer is', answer, "calculated in ", prettyTime(timer, {verbose:true}));
-
