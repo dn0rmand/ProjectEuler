@@ -22,24 +22,15 @@ function p(k, n, trace)
     const getting    = BigNumber(1).dividedBy(n);
     const notGetting = BigNumber(1).minus(getting);
 
-    let state = [];
-
-    for (let i = 1; i <= k; i++)
-        state[i] = BigNumber(0);
-
-    state[0] = BigNumber(1);
+    let state = [BigNumber(1), BigNumber(0), BigNumber(0)];
 
     function step()
     {
         const newState   = [];
 
-        newState[0] = state[0].times(getting);
-
-        for (let i = 1; i <= k; i++)
-        {
-            newState[i] = state[i].times(notGetting).plus(state[i-1].times(getting));
-        }
-
+        newState[0] = state[0].times(notGetting);
+        newState[1] = state[0].times(getting).plus(state[1].times(notGetting));
+        newState[2] = state[1].times(getting).plus(state[2].times(notGetting));
         state = newState;
     }
 
@@ -52,10 +43,7 @@ function p(k, n, trace)
     if (trace)
         process.stdout.write('\r        \r');
 
-    let result = BigNumber(0);
-
-    for (let i = 3; i <= k; i++)
-        result = result.plus(state[i]);
+    let result = BigNumber(1).minus(state[0]).minus(state[1]).minus(state[2]);
 
     result = result.times(n);
     result = result.toFixed(10);
