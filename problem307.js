@@ -10,50 +10,108 @@
 // Find p(20 000, 1 000 000) and give your answer rounded to 10 decimal places in the form 0.abcdefghij
 
 const assert = require('assert');
-const BigNumber = require('bignumber.js');
 
-BigNumber.set({
-    // ROUNDING_MODE: 1,
-    DECIMAL_PLACES: 20
-});
-
-function p(k, n, trace)
+function p(k, n)
 {
-    const getting    = BigNumber(1).dividedBy(n);
-    const notGetting = BigNumber(1).minus(getting);
+    const getting    = 1 / n;
+    const notGetting = 1 - getting;
 
-    let state = [BigNumber(1), BigNumber(0), BigNumber(0)];
+    const state1 = [1];
+    const state2 = [1];
+
+    for (let i = 1; i <= k; i++)
+        state1[i] = state2[i] = 0;
+
+    let state = state1;
+    let newState = state2;
 
     function step()
     {
-        const newState   = [];
+        newState[0] = state[0] * notGetting;
 
-        newState[0] = state[0].times(notGetting);
-        newState[1] = state[0].times(getting).plus(state[1].times(notGetting));
-        newState[2] = state[1].times(getting).plus(state[2].times(notGetting));
-        state = newState;
+        for (let i = 1; i <= k; i++)
+            newState[i] = state[i-1]*getting + state[i]*notGetting;
+
+        const s = newState;
+        newState = state;
+        state = s;
     }
+
+    // Build states
 
     for (let i = 1; i <= k; i++)
-    {
-        if (trace)
-            process.stdout.write(`\r${i}`);
         step();
+
+    let total = 0;
+
+    for (let defect = 3; defect <= k; defect++)
+    {
+        let t = state[defect];
+        let chips = 1;
+        for (let d = k-defect; chips <= n && d >= 0; d--)
+        {
+            t *= (n-chips) * state[d];
+            chips++;
+        }
+
+        total += x;
     }
-    if (trace)
-        process.stdout.write('\r        \r');
 
-    let result = BigNumber(1).minus(state[0]).minus(state[1]).minus(state[2]);
-
-    result = result.times(n);
-    result = result.toFixed(10);
+    let result = total;
+    // let result = 1 - (state[0]+state[1]+state[2]);
+    result = (result * n).toFixed(10);
 
     return result;
 }
 
-assert.equal(p(3, 7), "0.0204081633");
+function $p(k, n, precision)
+{
+    function simulate(k, n)
+    {
+        let values = [];
 
-const answer = p(20000, 1000000, true);
+        for (let i = 0; i < k; i++)
+        {
+            let c = Math.round(Math.random() * n) % n;
+            values[c] = (values[c] || 0) + 1;
+            if (values[c] > 2)
+                return 1;
+        }
+
+        return 0;
+    }
+
+    let result = 0;
+    let oldResult;
+    let count  = 0;
+    let runs   = 0;
+
+    while (true)
+    {
+        runs++;
+        count += simulate(k, n);
+
+        let result = (count / runs);
+        let newResult = result.toFixed(precision);
+        if (runs > 10000 && oldResult === newResult)
+            break;
+        oldResult = newResult;
+        if (runs % 100 === 0)
+            process.stdout.write(`\rp(${k}, ${n}) => ${newResult} - ${runs}`);
+    }
+
+    return (+result).toFixed(10);
+}
+
+// console.log(p(4, 7));
+// console.log(p(5, 7));
+// console.log(p(6, 7));
+
+assert.equal(p(3, 7), "0.0204081633");
+assert.equal(p(4, 7), "0.0728862974");
+// assert.equal(p(200, 10000), "0.0128617346");  // 0.0129414583
+
+const answer = p(20000, 1000000, 12);
 
 console.log('Answer is', answer);
-console.log('Not 0.0001973242');
+console.log('Not 0.0001973242 - Should start with 0.7311');
