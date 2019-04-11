@@ -10,56 +10,83 @@
 // Find p(20 000, 1 000 000) and give your answer rounded to 10 decimal places in the form 0.abcdefghij
 
 const assert = require('assert');
+const BigNumber = require('bignumber.js');
+
+BigNumber.set({
+    //ROUNDING_MODE: 1,
+    DECIMAL_PLACES: 30
+});
+
+const $factorials = [];
+
+function loadFactorial(max)
+{
+    let f = BigNumber(1);
+
+    let next = $factorials.length-1;
+
+    if (next > 0)
+    {
+        f = $factorials[next];
+        next++;
+        if (next < max)
+            $factorials[max] = 0;//pre-allocate array size
+    }
+    else
+    {
+        $factorials[0] = 1;
+        $factorials[1] = 1;
+        next = 2;
+    }
+
+    for (let x = next; x <= max; x++)
+    {
+        f = f.times(x);
+        $factorials[x] = f;
+    }
+}
+
+function factorial(n)
+{
+    if (n >= $factorials.length)
+        throw "Not initialized properly";
+    if (n < 0)
+        throw "Invalid n";
+    return $factorials[n];
+}
 
 function p(k, n)
 {
-    const getting    = 1 / n;
-    const notGetting = 1 - getting;
+    loadFactorial(Math.max(k,n));
 
-    const state1 = [1];
-    const state2 = [1];
+    const TWO = BigNumber(2);
 
-    for (let i = 1; i <= k; i++)
-        state1[i] = state2[i] = 0;
+    const NK = BigNumber(n).pow(k);
 
-    let state = state1;
-    let newState = state2;
-
-    function step()
+    function NPR(n, r)
     {
-        newState[0] = state[0] * notGetting;
-
-        for (let i = 1; i <= k; i++)
-            newState[i] = state[i-1]*getting + state[i]*notGetting;
-
-        const s = newState;
-        newState = state;
-        state = s;
+        let N = factorial(n);
+        let NR = factorial(n-r);
+        return N.dividedBy(NR);
     }
 
-    // Build states
-
-    for (let i = 1; i <= k; i++)
-        step();
-
-    let total = 0;
-
-    for (let defect = 3; defect <= k; defect++)
+    function step(x)
     {
-        let t = state[defect];
-        let chips = 1;
-        for (let d = k-defect; chips <= n && d >= 0; d--)
-        {
-            t *= (n-chips) * state[d];
-            chips++;
-        }
+        let A = NPR(n, k-x);
+        let B = NPR(k, x+x);
 
-        total += x;
+        B = B.dividedBy(factorial(x)).dividedBy(TWO.pow(x))
+
+        return A.times(B).dividedBy(NK);
     }
 
-    let result = total;
-    // let result = 1 - (state[0]+state[1]+state[2]);
-    result = (result * n).toFixed(10);
+    let total = BigNumber(1);
+    for (let x = 0; x <= k/2; x++)
+    {
+        total = total.minus(step(x));
+    }
+
+    let result = total.toFixed(10);
 
     return result;
 }
@@ -109,7 +136,7 @@ function $p(k, n, precision)
 
 assert.equal(p(3, 7), "0.0204081633");
 assert.equal(p(4, 7), "0.0728862974");
-// assert.equal(p(200, 10000), "0.0128617346");  // 0.0129414583
+assert.equal(p(200, 10000), "0.0128617346");  // 0.0129414583
 
 const answer = p(20000, 1000000, 12);
 
