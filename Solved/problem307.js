@@ -10,18 +10,15 @@
 // Find p(20 000, 1 000 000) and give your answer rounded to 10 decimal places in the form 0.abcdefghij
 
 const assert = require('assert');
-const BigNumber = require('bignumber.js');
+const Decimal = require('decimal.js');
 
-BigNumber.set({
-    //ROUNDING_MODE: 1,
-    DECIMAL_PLACES: 30
-});
+Decimal.set({ precision: 20 })
 
 const $factorials = [];
 
 function loadFactorial(max)
 {
-    let f = BigNumber(1);
+    let f = Decimal(1).ln();
 
     let next = $factorials.length-1;
 
@@ -29,19 +26,17 @@ function loadFactorial(max)
     {
         f = $factorials[next];
         next++;
-        if (next < max)
-            $factorials[max] = 0;//pre-allocate array size
     }
     else
     {
-        $factorials[0] = 1;
-        $factorials[1] = 1;
+        $factorials[0] = f; // 1
+        $factorials[1] = f; // 1
         next = 2;
     }
 
     for (let x = next; x <= max; x++)
     {
-        f = f.times(x);
+        f = f.plus(Decimal(x).ln());
         $factorials[x] = f;
     }
 }
@@ -59,15 +54,14 @@ function p(k, n)
 {
     loadFactorial(Math.max(k,n));
 
-    const TWO = BigNumber(2);
-
-    const NK = BigNumber(n).pow(k);
+    const NK  = Decimal(n).ln().times(k);
+    const TWO = Decimal(2).ln();
 
     function NPR(n, r)
     {
-        let N = factorial(n);
+        let N  = factorial(n);
         let NR = factorial(n-r);
-        return N.dividedBy(NR);
+        return N.minus(NR);
     }
 
     function step(x)
@@ -75,18 +69,24 @@ function p(k, n)
         let A = NPR(n, k-x);
         let B = NPR(k, x+x);
 
-        B = B.dividedBy(factorial(x)).dividedBy(TWO.pow(x))
+        B = B.minus(factorial(x)).minus(TWO.times(x));
 
-        return A.times(B).dividedBy(NK);
+        let result = A.plus(B).minus(NK);
+
+        // convert back to decimal
+
+        let y = result.exp();
+        return y;
     }
 
-    let total = BigNumber(1);
+    let sum = Decimal(1);
     for (let x = 0; x <= k/2; x++)
     {
-        total = total.minus(step(x));
+        let t = step(x);
+        sum = sum.minus(t);
     }
 
-    let result = total.toFixed(10);
+    let result = sum.toFixed(10);
 
     return result;
 }
@@ -130,15 +130,12 @@ function $p(k, n, precision)
     return (+result).toFixed(10);
 }
 
-// console.log(p(4, 7));
-// console.log(p(5, 7));
-// console.log(p(6, 7));
-
 assert.equal(p(3, 7), "0.0204081633");
 assert.equal(p(4, 7), "0.0728862974");
-assert.equal(p(200, 10000), "0.0128617346");  // 0.0129414583
+assert.equal(p(200, 10000), "0.0128617346");
 
-const answer = p(20000, 1000000, 12);
-
+console.time(307);
+const answer = p(20000, 1000000);
 console.log('Answer is', answer);
-console.log('Not 0.0001973242 - Should start with 0.7311');
+console.timeEnd(307);
+
