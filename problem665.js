@@ -1,132 +1,127 @@
-function solve(size)
+const assert = require('assert');
+const prettyTime= require("pretty-hrtime");
+
+const MAX = 10000; // 1E7
+
+function solve(size, trace)
 {
-    const SIZE = BigInt(size)*10n;
+    let   total  = 0;
+    const losing = [];
+    const columns= [];
+    const diagonals = [];
 
-    const losing = new Set();
-    const holes  = new Set();
-
-    function makeKey(x, y)
+    function isLosing(n, m)
     {
-        let k = (SIZE * BigInt(x)) + BigInt(y);
-
-        return k;
+        let i = losing[n];
+        if (i !== undefined)
+            return i.has(m);
+        else
+            return false;
     }
 
-    function revertKey(k)
+    function addLosing(n, m)
     {
-        let y = k % SIZE;
-        let x = (k - y) / SIZE;
+        let d = Math.abs(n-m);
+        diagonals[d] = 1;
+        columns[m]   = 1;
 
-        return {x:Number(x), y:Number(y)};
-    }
-
-    function addLosing(x, y)
-    {
-        let k = makeKey(x, y);
-        losing.add(k);
-        holes.delete(k);
-
-        for (let i = 1; i <= size; i++)
+        let i = losing[n];
+        if (i === undefined)
         {
-            if (x+y+i > size)
-                break;
+            i = new Set();
+            losing[n] = i;
+        }
+        i.add(m);
 
-            if (x+i+y+i <= size)
+        if (n <= m && n+m <= size)
+            total += (n+m);
+    }
+
+    function canReach(n, m)
+    {
+        if (n === m)
+            return true; // in 0,0 reach
+        if (n === m+m)
+            return true; // in 0,0 reach
+        if (n+n === m)
+            return true; // in 0,0 reach
+
+        if (losing[n] || columns[m])
+            return true;
+
+        let d = Math.abs(n-m);
+        if (diagonals[d])
+            return true;
+
+        if (isLosing(n, m))
+            return true;
+
+        let [n2, m2] = [n-2, m-1];
+        let [n3, m3] = [n-1, m-2];
+
+        let done = false;
+        while (! done)
+        {
+            done = true;
+
+            if (n2 >= 0 && m2 >= 0)
             {
-                k = makeKey(x+i, y+i);
-                holes.delete(k);
+                if (isLosing(n2, m2))
+                    return true;
+                done = false;
+                n2 -= 2;
+                m2--;
             }
-
-            k = makeKey(x+i, y);
-            holes.delete(k);
-
-            k = makeKey(x, y+i);
-            holes.delete(k);
+            if (n3 >= 0 && m3 >= 0)
+            {
+                if (isLosing(n3, m3))
+                    return true;
+                done = false;
+                n3--;
+                m3 -= 2;
+            }
         }
 
-        let x1 = x+2, y1 = y+1;
-        while (x1+y1 <= size)
-        {
-            k = makeKey(x1, y1);
-            holes.delete(k);
-            x1 += 2;
-            y1 += 1;
-        }
-
-        let x2 = x+1, y2 = y+2;
-        while (x2+y2 <= size)
-        {
-            k = makeKey(x2, y2);
-            holes.delete(k);
-            x2 += 1;
-            y2 += 2;
-        }
-    }
-
-    for (let x = 0; x <= size; x++)
-    {
-        for (let y = x; y <= size; y++)
-        {
-            if (x+y <= size)
-                holes.add(makeKey(x, y));
-            else
-                break;
-        }
+        return false;
     }
 
     addLosing(0, 0);
-    while (holes.size > 0)
+    let end = ((size|1) + 1)/2;
+    let count = 0;
+    for (let n = 1; n <= end; n++)
     {
-        let {x, y} = revertKey(holes.keys().next().value);
-        x = +x;
-        y = +y;
-
-        addLosing(x, y);
-        addLosing(y, x);
-    }
-
-    // if (size < 50)
-    // {
-    //     for (let x = 0; x <= size; x++)
-    //     {
-    //         let s = "";
-    //         for (let y = 0; y <= size; y++)
-    //         {
-    //             let k = makeKey(x, y);
-    //             if (losing.has(k))
-    //                 s += 'X';
-    //             else
-    //                 s += '.';
-    //         }
-    //         console.log(s);
-    //     }
-    // }
-
-    let total = 0;
-
-    for (let k of losing.keys())
-    {
-        let {x, y} = revertKey(k);
-        x = +x;
-        y = +y;
-        if (x+y > size)
-            throw "Error 1"
-        if (x > y)
+        if (losing[n])
             continue;
-        total += (x+y);
+
+        if (trace)
+        {
+            if (count === 0)
+                process.stdout.write(`\r${n}`);
+            if (++count >= 100)
+                count = 0;
+        }
+
+        for (let m = 1; m <= size-n; m++)
+        {
+            if (! canReach(n, m))
+            {
+                addLosing(n, m);
+                addLosing(m, n);
+                break; // all others on that line are winning
+            }
+        }
     }
+    if (trace)
+        process.stdout.write(`\r         \r`);
     return total;
 }
 
-let seq = '';
-for (let i = 1; i < 50; i++)
-    seq += solve(i)+', ';
-console.log(seq);
+assert.equal(solve(10), 21);
+assert.equal(solve(20), 38);
+assert.equal(solve(100), 1164);
+assert.equal(solve(1000), 117002);
 
-console.log(solve(10));
-console.log(solve(20));
-console.log(solve(100));
-console.log(solve(1000));
-console.log(solve(10000));
-
-// solve(1E7);
+let timer = process.hrtime();
+const answer = solve(MAX, true);
+timer = process.hrtime(timer);
+console.log('Answer is', answer, "calculated in ", prettyTime(timer, {verbose:true}));
