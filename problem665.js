@@ -1,37 +1,26 @@
 const assert = require('assert');
 const prettyTime= require("pretty-hrtime");
 
-const MAX = 10000; // 1E7
+const MAX = 100000; // 1E7
 
 function solve(size, trace)
 {
-    let   total  = 0;
-    const losing = [];
-    const columns= [];
-    const diagonals = [];
+    let   total     = 0;
 
-    function isLosing(n, m)
-    {
-        let i = losing[n];
-        if (i !== undefined)
-            return i.has(m);
-        else
-            return false;
-    }
+    const rows      = [];
+    const diagonals = [];
+    const positions = [];
 
     function addLosing(n, m)
     {
-        let d = Math.abs(n-m);
+        let d  = Math.abs(n-m);
         diagonals[d] = 1;
-        columns[m]   = 1;
 
-        let i = losing[n];
-        if (i === undefined)
-        {
-            i = new Set();
-            losing[n] = i;
-        }
-        i.add(m);
+        rows[n]      = 1;
+        rows[m]      = 1;
+
+        if (n > 0 || m > 0)
+            positions.push({n:n, m:m});
 
         if (n <= m && n+m <= size)
             total += (n+m);
@@ -46,39 +35,37 @@ function solve(size, trace)
         if (n+n === m)
             return true; // in 0,0 reach
 
-        if (losing[n] || columns[m])
+        if (rows[n] || rows[m])
             return true;
 
         let d = Math.abs(n-m);
         if (diagonals[d])
             return true;
 
-        if (isLosing(n, m))
-            return true;
-
-        let [n2, m2] = [n-2, m-1];
-        let [n3, m3] = [n-1, m-2];
-
-        let done = false;
-        while (! done)
+        for (let {n:a, m:b} of positions)
         {
-            done = true;
+            if (a > n)
+                break;
 
-            if (n2 >= 0 && m2 >= 0)
+            // process a,b
+
+            let i = m-b;
+            if (i >= 0 && a+i+i === n)
+                return true;
+            i = n-a;
+            if (i >= 0 && b+i+i === m)
+                return true;
+
+            if (a !== b)
             {
-                if (isLosing(n2, m2))
+                // process b,a
+
+                let i = m-a;
+                if (i >= 0 && b+i+i === n)
                     return true;
-                done = false;
-                n2 -= 2;
-                m2--;
-            }
-            if (n3 >= 0 && m3 >= 0)
-            {
-                if (isLosing(n3, m3))
+                i = n-b;
+                if (i >= 0 && a+i+i === m)
                     return true;
-                done = false;
-                n3--;
-                m3 -= 2;
             }
         }
 
@@ -90,7 +77,7 @@ function solve(size, trace)
     let count = 0;
     for (let n = 1; n <= end; n++)
     {
-        if (losing[n])
+        if (rows[n])
             continue;
 
         if (trace)
@@ -106,13 +93,15 @@ function solve(size, trace)
             if (! canReach(n, m))
             {
                 addLosing(n, m);
-                addLosing(m, n);
                 break; // all others on that line are winning
             }
         }
     }
     if (trace)
+    {
         process.stdout.write(`\r         \r`);
+        console.log(`${positions.length} positions`);
+    }
     return total;
 }
 
@@ -125,3 +114,4 @@ let timer = process.hrtime();
 const answer = solve(MAX, true);
 timer = process.hrtime(timer);
 console.log('Answer is', answer, "calculated in ", prettyTime(timer, {verbose:true}));
+
