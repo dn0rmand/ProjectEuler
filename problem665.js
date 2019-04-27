@@ -1,26 +1,50 @@
 const assert = require('assert');
 const prettyTime= require("pretty-hrtime");
 
-const MAX = 100000; // 1E7
+const MAX = 1E7;
 
 function solve(size, trace)
 {
     let   total     = 0;
 
-    const rows      = [];
-    const diagonals = [];
-    const positions = [];
+    const size2     = size+size;
+    const rows      = new Uint32Array(size);
+    const diagonals = new Uint32Array(size);
+    const position1 = new Uint32Array(size+size2);
+    const position2 = new Uint32Array(size+size2);
+
+    const end       = Math.floor((size + 1)/2);
+
+    const RANGE     = 1000;
+
+    function add(array, index)
+    {
+        if (! array[index])
+        {
+            let offset = (array[index+1] || 0)+1;
+            array[index] = offset;
+            let i = 1;
+            index--;
+            while (index >= 0 && i < RANGE && array[index])
+            {
+                array[index] += offset;
+                i++;
+                index--;
+            }
+        }
+    }
 
     function addLosing(n, m)
     {
-        let d  = Math.abs(n-m);
-        diagonals[d] = 1;
+        add(diagonals, Math.abs(n-m));
+        add(rows, n);
+        add(rows, m);
 
-        rows[n]      = 1;
-        rows[m]      = 1;
+        let k1 = (m - 2*n) + size2;
+        let k2 = (n - 2*m) + size2;
 
-        if (n > 0 || m > 0)
-            positions.push({n:n, m:m});
+        add(position1, k1);
+        add(position2, k2);
 
         if (n <= m && n+m <= size)
             total += (n+m);
@@ -28,57 +52,29 @@ function solve(size, trace)
 
     function canReach(n, m)
     {
-        if (n === m)
-            return true; // in 0,0 reach
-        if (n === m+m)
-            return true; // in 0,0 reach
-        if (n+n === m)
-            return true; // in 0,0 reach
+        let k11 = (m - 2*n) + size2;
+        let k12 = (n - 2*m) + size2;
 
-        if (rows[n] || rows[m])
-            return true;
+        let d = Math.max(diagonals[Math.abs(n-m)], rows[n], rows[m], position1[k11], position2[k11]);
+        if (d)
+            return d;
 
-        let d = Math.abs(n-m);
-        if (diagonals[d])
-            return true;
+        if (position1[k12] || position2[k12])
+            return 1;
 
-        for (let {n:a, m:b} of positions)
-        {
-            if (a > n)
-                break;
-
-            // process a,b
-
-            let i = m-b;
-            if (i >= 0 && a+i+i === n)
-                return true;
-            i = n-a;
-            if (i >= 0 && b+i+i === m)
-                return true;
-
-            if (a !== b)
-            {
-                // process b,a
-
-                let i = m-a;
-                if (i >= 0 && b+i+i === n)
-                    return true;
-                i = n-b;
-                if (i >= 0 && a+i+i === m)
-                    return true;
-            }
-        }
-
-        return false;
+        return 0;
     }
 
     addLosing(0, 0);
-    let end = ((size|1) + 1)/2;
+
     let count = 0;
     for (let n = 1; n <= end; n++)
     {
         if (rows[n])
+        {
+            n += rows[n]-1;
             continue;
+        }
 
         if (trace)
         {
@@ -88,19 +84,20 @@ function solve(size, trace)
                 count = 0;
         }
 
-        for (let m = 1; m <= size-n; m++)
+        for (let m = n; m <= size-n;)
         {
-            if (! canReach(n, m))
+            let offset = canReach(n, m);
+            if (offset === 0)
             {
                 addLosing(n, m);
                 break; // all others on that line are winning
             }
+            m += offset;
         }
     }
     if (trace)
     {
         process.stdout.write(`\r         \r`);
-        console.log(`${positions.length} positions`);
     }
     return total;
 }
