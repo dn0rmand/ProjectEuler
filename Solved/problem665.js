@@ -15,7 +15,7 @@ function solve(size, trace)
 
     const end       = Math.floor((size + 1)/2);
 
-    const RANGE     = 1000;
+    const RANGE     = 2000;
 
     function add(array, index)
     {
@@ -60,14 +60,24 @@ function solve(size, trace)
             return d;
 
         if (position1[k12] || position2[k12])
-            return 1;
-
+        {
+            let off = 1;
+            k12 -= 2;
+            while (off <= RANGE && (position1[k12] || position2[k12]))
+            {
+                k12 -= 2;
+                off++;
+            }
+            return off;
+        }
         return 0;
     }
 
     addLosing(0, 0);
 
     let count = 0;
+    const ZONE = 700;
+
     for (let n = 1; n <= end; n++)
     {
         if (rows[n])
@@ -84,8 +94,17 @@ function solve(size, trace)
                 count = 0;
         }
 
-        for (let m = n; m <= size-n;)
+        let from1 = Math.max(n, Math.floor(1.4778 * n) - ZONE);
+        let to1   = Math.min(size-n, from1 + ZONE+ZONE);
+
+        let from2 = Math.max(n, Math.floor(2.2478 * n) - ZONE);
+        let to2   = Math.min(size-n, from2 + ZONE+ZONE);
+
+        for (let m = from1; m <= to2;)
         {
+            if (m > to1 && m < from2)
+                m = from2;
+
             let offset = canReach(n, m);
             if (offset === 0)
             {
@@ -106,9 +125,17 @@ assert.equal(solve(10), 21);
 assert.equal(solve(20), 38);
 assert.equal(solve(100), 1164);
 assert.equal(solve(1000), 117002);
+assert.equal(solve(10000), 11579519);
+assert.equal(solve(100000), 1155283827);
 
 let timer = process.hrtime();
 const answer = solve(MAX, true);
 timer = process.hrtime(timer);
+
+if (answer < 11541685709674)
+    console.log('Missing', 11541685709674-answer);
+else if (answer > 11541685709674)
+    console.log(answer-11541685709674, 'too many');
+
 console.log('Answer is', answer, "calculated in ", prettyTime(timer, {verbose:true}));
 
