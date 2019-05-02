@@ -61,9 +61,7 @@ function triangleNumbers()
 triangleNumbers();
 
 /*
-136
 153
-171
 190
 210
 253

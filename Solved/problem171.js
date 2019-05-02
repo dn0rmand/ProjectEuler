@@ -1,14 +1,14 @@
 const assert = require('assert');
 require('tools/numberHelper');
+const prettyTime= require("pretty-hrtime");
 
 const MODULO  = 1E9;
 const MAX     = 20;
 const squares = [0, 1, 4, 9, 16, 25, 36, 49, 64, 81];
-const MAXSUM  = MAX * 81;
 
 const bigSquares = (function() {
     const result = {};
-    const max = MAXSUM;
+    const max = MAX * 81;
 
     for (let x = 1; ; x++)
     {
@@ -87,24 +87,15 @@ function solve(maxLength)
 {
     function update(newState, ns, sum, count)
     {
-        if (count === 0)
-            count = 1;
-
-        if (ns === 4)
-            console.log('sum:', sum, '- count:', count);
-
         if (newState[ns])
         {
-            newState[ns].sum   = (newState[ns].sum + sum) % MODULO;
+            newState[ns].sum   = (newState[ns].sum   + sum)   % MODULO;
             newState[ns].count = (newState[ns].count + count) % MODULO;
         }
         else
         {
             newState[ns] = {sum: sum, count: count};
         }
-
-        if (ns === 4)
-            console.log('sum:', newState[ns].sum, '- count:', newState[ns].count);
     }
 
     const MAX_SUM = maxLength * 81;
@@ -118,14 +109,13 @@ function solve(maxLength)
     {
         pow = pow.modMul(10, MODULO);
 
-        let newState = []
+        let newState = [];
 
         for (let i = 0; i < state.length; i++)
             if (state[i])
                 newState[i] = {sum: state[i].sum, count: state[i].count };
 
         // new Numbers with only zero after
-
         for (let d = 1; d < 10; d++)
             update(newState, d*d, pow.modMul(d, MODULO), 1);
 
@@ -134,13 +124,8 @@ function solve(maxLength)
             if (state[s] === undefined)
                 continue;
 
-            const count = state[s].count;
-            const sum   = state[s].sum;
-            const p     = pow.modMul(count || 1, MODULO);
-
-            // // prefixing with 0
-            // if (! newState[s])
-            //     newState[s] = { sum: sum, count: count };
+            const {count, sum} = state[s];
+            const p            = pow.modMul(count || 1, MODULO);
 
             // adding other digits
             for (let d = 1; d < 10; d++)
@@ -148,7 +133,7 @@ function solve(maxLength)
                 const sum2   = (sum + p.modMul(d, MODULO)) % MODULO;
                 const ns     = s + (d*d);
 
-                update(newState, ns, sum2, count*2);
+                update(newState, ns, sum2, count);//*2);
             }
         }
         state = newState;
@@ -158,11 +143,8 @@ function solve(maxLength)
     for (let square of Object.keys(bigSquares))
     {
         let s = +square;
-        if (! state[s])
-            console.log('Nothing for', s)
-        else if (state[s].count > 0 && state[s].sum > 0)
+        if (state[s] && state[s].count > 0 && state[s].sum > 0)
         {
-            let x = state[s].count.modMul(state[s].sum, MODULO);
             total = (total + state[s].sum) % MODULO;
         }
     }
@@ -174,19 +156,13 @@ assert.equal(f(3), 9);
 assert.equal(f(25), 29);
 assert.equal(f(442), 36);
 
-let l = 3;
-console.log(`S(10^${l}) = ${examples(l)}`);
+assert.equal(solve(2), examples(2));
+assert.equal(solve(3), examples(3));
+assert.equal(solve(4), examples(4));
+assert.equal(solve(5), examples(5));
 
-let answer = solve(3);
-console.log('Answer is', answer);
+let timer = process.hrtime();
+const answer = solve(MAX);
+timer = process.hrtime(timer);
 
-
-//  2 -> 4 ( sum: 2      count: 1)
-// 02 -> 4 ( sum: 2      count: 1)
-// 20 -> 4 ( sum: 20     count: 1)
-//       4 ( sum: 22     count: 2)
-
-// 402 -> 20 ( sum: 402 , count: 1)
-// 420 -> 20 ( sum: 420 , count: 1)
-
-// 20 ( sum: 822 count:2)
+console.log('Answer is', answer, "calculated in ", prettyTime(timer, {verbose:true}));
