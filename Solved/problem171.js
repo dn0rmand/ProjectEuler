@@ -1,6 +1,7 @@
 const assert = require('assert');
-require('tools/numberHelper');
 const prettyTime= require("pretty-hrtime");
+
+require('tools/numberHelper');
 
 const MODULO  = 1E9;
 const MAX     = 20;
