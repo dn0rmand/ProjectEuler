@@ -12,21 +12,22 @@ function solve(max)
 {
     let total = 1;
 
-    function inner(value, index, maxPrime)
+    function inner(value, index, pSquare)
     {
-        if (maxPrime < Math.sqrt(value))
+        if (pSquare < value)
             total++;
 
         for (let i = index; i < allPrimes.length; i++)
         {
             let p = allPrimes[i];
+            let pp = p*p;
             let v = value*p;
             if (v > max)
                 break;
 
             while (v <= max)
             {
-                inner(v, i+1, p);
+                inner(v, i+1, pp);
                 v *= p;
             }
         }
