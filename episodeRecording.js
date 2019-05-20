@@ -3,187 +3,82 @@ const readline = require('readline');
 const prettyHrtime = require('pretty-hrtime');
 const assert = require('assert');
 
-const expected = [
-    /*
-    [7, 12],
-    [36, 41],
-    [1, 5],
-    [85, 92],
-    [3, 6],
-    [4, 7],
-    [4, 8],
-    [16, 20],
-    [30, 35],
-    [74, 80],
-    [19, 24],
-    [24, 30],
-    [3, 6],
-    [3, 9],
-    [8, 12],
-    [66, 71],
-    [5, 9],
-    [1, 4],
-    [2, 6],
-    [1, 4],
-    [3, 6],
-    [2, 5],
-    [4, 8],
-    [14, 19],
-    [11, 16],
-    [32, 37],
-    [6, 9],
-    [10, 15],
-    [18, 25],
-    [49, 54],
-    [8, 16],
-    [11, 16],
-    [3, 7],
-    [31, 35],
-    [38, 44],
-    [29, 34],
-    [44, 49],
-    [6, 10],
-    [14, 18],
-    [25, 30],
-    [6, 12],
-    [14, 18],
-    [3, 5],
-    [9, 14],
-    [44, 48],
-    [1, 6],
-    [4, 7],
-    [18, 23],
-    [6, 9],
-    [13, 18],
-    [25, 32],
-    [27, 33],
-    [8, 14],
-    [21, 25],
-    [37, 42],
-    [1, 1],
-    [3, 8],
-    [20, 25],
-    [38, 43],
-    [14, 19],
-    [36, 43],
-    [7, 11],
-    [1, 3],
-    [1, 5],
-    [17, 22],
-    [26, 31],
-    [2, 6],
-    [1, 3],
-    [8, 11],
-    [34, 39],
-    [14, 18],
-    [1, 3],
-    [1, 4],
-    [7, 12],
-    [20, 27],
-    [11, 15],
-    [48, 55],
-    [19, 26],
-    [24, 31],
-    [17, 21],
-    [6, 12],
-    [5, 10],
-    [57, 66],
-    [21, 26],
-    [32, 37],
-    [24, 28],
-    [39, 44],
-    [3, 7],
-    [47, 53],
-    [30, 35],
-    [1, 1],
-    [3, 8],
-    [4, 11],
-    [34, 38],
-    [1, 5],
-    [1, 5],
-    [20, 25],
-    [3, 6],
-    [46, 52],
-    [37, 44],
-    */
-];
-
-function execute()
+async function loadExpected(FILENAME)
 {
-    const readInput = readline.createInterface({
-        input: fs.createReadStream('episodeRecording.expected')
-    });
+    return new Promise((resolve, error) => {
+        const readInput = readline.createInterface({
+            input: fs.createReadStream(FILENAME+'.expected')
+        });
 
-    readInput
-    .on('line', (line) => {
-        let v = line.split(' ');
-        v[0] = +(v[0]);
-        v[1] = +(v[1]);
-        expected.push(v);
-    })
-    .on('close', () => {
-        execute2();
+        let exp = [];
+        readInput
+        .on('line', (line) => {
+            let v = line.split(' ');
+            v[0] = +(v[0]);
+            v[1] = +(v[1]);
+            exp.push(v);
+        })
+        .on('close', () => {
+            expected = exp;
+            resolve(exp);
+        });
     });
 }
 
-function execute2()
+async function execute(FILENAME, expected)
 {
-    let startTime = process.hrtime();
+    return new Promise((resolve, error) => {
+        const readInput = readline.createInterface({
+            input: fs.createReadStream(FILENAME+'.data')
+        });
 
-    const readInput = readline.createInterface({
-        input: fs.createReadStream('episodeRecording.data')
-    });
+        let seasons      = undefined;
+        let season       = 0;
+        let episodeCount = 0;
+        let episodes     = undefined;
 
-    let seasons      = undefined;
-    let season       = 0;
-    let episodeCount = 0;
-    let episodes     = undefined;
-
-    readInput
-    .on('line', (line) => {
-        if (seasons === undefined)
-        {
-            seasons = +line;
-        }
-        else if (! episodeCount)
-        {
-            assert.notEqual(seasons, 0);
-            seasons--;
-            episodeCount = +line;
-            episodes = [];
-        }
-        else
-        {
-            const values = line.split(' ');
-            assert.equal(values.length, 4);
-
-            values[0] = +values[0];
-            values[1] = +values[1];
-            values[2] = +values[2];
-            values[3] = +values[3];
-
-            episodes.push(values);
-
-            if (episodeCount === episodes.length)
+        readInput
+        .on('line', (line) => {
+            if (seasons === undefined)
             {
-                let results = episodeRecording(episodes);
-
-                let e = expected[season][0]+','+expected[season][1];
-                assert.equal(results[0]+','+results[1], e);
-                console.log(season,  'good');
-
-                season++;
-                episodes = undefined;
-                episodeCount = 0;
+                seasons = +line;
             }
-        }
-    })
-    .on('close', () => {
-        let endTime = process.hrtime(startTime);
-        let time    = prettyHrtime(endTime, {verbose:true});
+            else if (! episodeCount)
+            {
+                assert.notEqual(seasons, 0);
+                seasons--;
+                episodeCount = +line;
+                episodes = [];
+            }
+            else
+            {
+                const values = line.split(' ');
+                assert.equal(values.length, 4);
 
-        console.log(time);
-        process.exit(0);
+                values[0] = +values[0];
+                values[1] = +values[1];
+                values[2] = +values[2];
+                values[3] = +values[3];
+
+                episodes.push(values);
+
+                if (episodeCount === episodes.length)
+                {
+                    let results = episodeRecording(episodes);
+
+                    let e = expected[season][0]+','+expected[season][1];
+                    assert.equal(results[0]+','+results[1], e);
+                    console.log(season,  'good');
+
+                    season++;
+                    episodes = undefined;
+                    episodeCount = 0;
+                }
+            }
+        })
+        .on('close', () => {
+            resolve();
+        });
     });
 }
 
@@ -216,7 +111,9 @@ function episodeRecording(episodes)
         if (isPossible(n.live))
         {
             used.push(n.live);
-            max = Math.max(max, lastPossible(i));
+            let m = lastPossible(i);
+            if (m > max)
+                max = m;
             used.pop();
             if (max+1 === nodes.length)
                 return max; // no need to try better.
@@ -224,7 +121,9 @@ function episodeRecording(episodes)
         if (isPossible(n.replay))
         {
             used.push(n.replay);
-            max = Math.max(max, lastPossible(i));
+            let m = lastPossible(i);
+            if (m > max)
+                max = m;
             used.pop();
         }
 
@@ -256,9 +155,12 @@ function episodeRecording(episodes)
 
     for (let l = 1; l <= nodes.length; l++)
     {
+        let r;
+
         let n = nodes[l];
+
         used[0] = n.live;
-        let r = lastPossible(l);
+        r = lastPossible(l);
 
         used[0] = n.replay;
         r = Math.max(r, lastPossible(l));
@@ -277,4 +179,21 @@ function episodeRecording(episodes)
     return [bestMin, bestMax];
 }
 
-execute();
+async function DoIt()
+{
+    console.log('Test Case 1');
+    let exp = await loadExpected('episodeRecording-1');
+    let time = process.hrtime();
+    await execute('episodeRecording-1', exp);
+    time = process.hrtime(time);
+    console.log(prettyHrtime(time, {verbose:true}));
+
+    console.log('Test Case 2');
+    exp = await loadExpected('episodeRecording-2');
+    time = process.hrtime();
+    await execute('episodeRecording-2', exp);
+    time = process.hrtime(time);
+    console.log(prettyHrtime(time, {verbose:true}));
+}
+
+DoIt();
