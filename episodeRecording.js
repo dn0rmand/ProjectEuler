@@ -233,18 +233,20 @@ function episodeRecording(episodes)
 
     // Create nodes
 
-    for (let i = 0; i < episodes.length; i++)
+    nodes.push(undefined); // not needed
+
+    for (let i = 1; i <= episodes.length; i++)
     {
-        let e = episodes[i];
+        let e = episodes[i-1];
 
         let e1 = {
-            episode: i+1,
+            episode: i,
             start: e[0],
             end:   e[1]
         };
 
         let e2 = {
-            episode: i+1,
+            episode: i,
             start: e[2],
             end: e[3],
         };
@@ -252,7 +254,7 @@ function episodeRecording(episodes)
         nodes.push({ live: e1, replay: e2 });
     }
 
-    for (let l = 0; l < nodes.length; l++)
+    for (let l = 1; l <= nodes.length; l++)
     {
         let n = nodes[l];
         used[0] = n.live;
@@ -272,7 +274,7 @@ function episodeRecording(episodes)
             break;
     }
 
-    return [bestMin+1, bestMax+1];
+    return [bestMin, bestMax];
 }
 
 execute();
