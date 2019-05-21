@@ -64,11 +64,13 @@ async function execute(FILENAME, expected)
 
                 if (episodeCount === episodes.length)
                 {
+                    let time = process.hrtime();
                     let results = episodeRecording(episodes);
+                    time = process.hrtime(time);
 
                     let e = expected[season][0]+','+expected[season][1];
                     assert.equal(results[0]+','+results[1], e);
-                    console.log(season,  'good');
+                    console.log(season,  'good in',prettyHrtime(time, {verbose:true}));
 
                     season++;
                     episodes = undefined;
@@ -99,6 +101,8 @@ function episodeRecording(episodes)
         return true;
     }
 
+    // let theBestOne = [];
+
     function lastPossible(index)
     {
         let i = index+1;
@@ -108,13 +112,18 @@ function episodeRecording(episodes)
         let max = index;
         let n   = nodes[i];
 
+        // if (used.length> theBestOne.length)
+        // {
+        //     theBestOne = [... used];
+        // }
+
         if (isPossible(n.live))
         {
             used.push(n.live);
             let m = lastPossible(i);
+            used.pop();
             if (m > max)
                 max = m;
-            used.pop();
             if (max+1 === nodes.length)
                 return max; // no need to try better.
         }
@@ -122,9 +131,9 @@ function episodeRecording(episodes)
         {
             used.push(n.replay);
             let m = lastPossible(i);
+            used.pop();
             if (m > max)
                 max = m;
-            used.pop();
         }
 
         return max;
@@ -140,22 +149,34 @@ function episodeRecording(episodes)
 
         let e1 = {
             episode: i,
-            start: e[0],
-            end:   e[1]
+            start:   e[0],
+            end:     e[1],
+            key:     i*2,
         };
 
         let e2 = {
             episode: i,
-            start: e[2],
-            end: e[3],
+            start:   e[2],
+            end:     e[3],
+            key:     i*2+1,
         };
 
         nodes.push({ live: e1, replay: e2 });
     }
 
+    function print()
+    {
+        // let S = '';
+        // for (let i = 0; i < theBestOne.length; i++)
+        //     S += theBestOne[i].key + ' ';
+        // console.log(S);
+        // theBestOne = [];
+    }
+
     for (let l = 1; l <= nodes.length; l++)
     {
-        let r;
+        if (bestCount+l-1 >= nodes.length) // No point ... can't do better
+            break;
 
         let n = nodes[l];
 
@@ -166,7 +187,7 @@ function episodeRecording(episodes)
         r = Math.max(r, lastPossible(l));
 
         let count = r-l+1;
-        if (count > bestCount || (count === bestCount && l < bestMin))
+        if (count > bestCount)
         {
             bestCount = count;
             bestMin   = l;
