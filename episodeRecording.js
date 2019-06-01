@@ -68,9 +68,7 @@ async function execute(FILENAME, expected)
                     let results = episodeRecording(episodes);
                     time = process.hrtime(time);
 
-                    if (expected[season][0] == results[0] && expected[season][1] == results[1])
-                        console.log(season,  'good in',prettyHrtime(time, {verbose:true}));
-                    else
+                    if (expected[season][0] != results[0] || expected[season][1] != results[1])
                         console.log(`${season} bad. Expecting ${expected[season][0]}, ${expected[season][1]} but got ${results[0]}, ${results[1]} in ${ prettyHrtime(time, {verbose:true})} `);
                     season++;
                     episodes = undefined;
@@ -84,47 +82,40 @@ async function execute(FILENAME, expected)
     });
 }
 
-class SCC
+class StronglyConnectedComponents
 {
-    constructor()
+    constructor(edges)
     {
-        this.$num  = []; // length SCCNODE
+        this.$num  = [];
         this.$low  = [];
         this.$col  = [];
         this.$cycle= [];
         this.$st   = [];
-        this.tail  = 0;
-        this.count = 0;
-        this.index = 0;
-        this.$adj  = [];
+        this.$tail = 0;
+        this.$count= 0;
+        this.$index= 0;
+        this.$edges= edges;
+        this.$hasCycles = false;
     }
 
-    add(index, value)
+    tarjan(s, stack)
     {
-        let a = this.$adj[index];
-        if (a === undefined)
-            this.$adj[index] = a = [];
+        this.$num[s] = this.$low[s] = this.$count++;
+        this.$col[s] = this.$index + 1;
 
-        a.push(value);
-    }
+        stack.push(s);
 
-    tarjan(s)
-    {
-        this.$num[s] = this.$low[s] = this.count++;
-        this.$col[s] = this.index + 1;
-        this.$st[this.tail++] = s;
+        const edge = this.$edges[s] || [];
 
-        let adj = this.$adj[s] || [];
-
-        for(let i = 0; i < adj.length; i++)
+        for(let i = 0; i < edge.length; i++)
         {
-            let t = adj[i] || 0;
-            if ((this.$col[t] || 0) <= this.index)
+            const t = edge[i] || 0;
+            if ((this.$col[t] || 0) <= this.$index)
             {
-                this.tarjan(t);
+                this.tarjan(t, stack);
                 this.$low[s] = Math.min(this.$low[s] || 0, this.$low[t] || 0);
             }
-            else if ((this.$col[t] || 0) === this.index+1)
+            else if ((this.$col[t] || 0) === this.$index+1)
             {
                 this.$low[s] = Math.min(this.$low[s] || 0, this.$low[t] || 0);
             }
@@ -133,9 +124,13 @@ class SCC
         {
             while (true)
             {
-                let temp = this.$st[--this.tail] || 0;
-                this.$col[temp] = this.index + 2;
+                const temp = stack.pop() || 0;
+
+                this.$col[temp] = this.$index + 2;
                 this.$cycle[temp] = s;
+                if (s === this.$cycle[temp ^ 1])
+                    this.$hasCycles = true;
+
                 if (s === temp)
                     break;
             }
@@ -146,9 +141,10 @@ class SCC
     {
         for (let i = 0; i <= n; i++)
         {
-            if ((this.$col[i] || 0) <= this.index)
-                this.tarjan(i);
+            if ((this.$col[i] || 0) <= this.$index)
+                this.tarjan(i, []);
         }
+        return this.$hasCycles;
     }
 };
 
@@ -156,60 +152,48 @@ class SAT2
 {
     constructor()
     {
-        this.scc = new SCC();
+        this.$edges = [];
     }
 
-    orClause(a, b, converted )
+    add(index, value)
     {
-        if (! converted)
-        {
-            a *= 2;
-            b *= 2;
-        }
-        /// A || B clause
-        //!a->b !b->a
-        this.scc.add(a ^ 1, b);
-        this.scc.add(b ^ 1, a);
+        let a = this.$edges[index];
+        if (a === undefined)
+            this.$edges[index] = [value];
+        else
+            a.push(value);
     }
 
-    xorClause(a, b, converted)
+    xorClause(a, b)
     {
-        if (! converted)
-        {
-            a *= 2;
-            b *= 2;
-        }
+        a *= 2;
+        b *= 2;
 
-        this.orClause(a, b, true);
-        this.orClause(a ^ 1, b ^ 1, true);
+        // OR
+        this.add(a ^ 1, b);
+        this.add(b ^ 1, a);
+
+        // Reversed OR
+        this.add(a, b ^ 1);
+        this.add(b, a ^ 1);
     }
 
-    notAndClause(a, b, converted)
+    notAndClause(a, b)
     {
-        if (! converted)
-        {
-            a *= 2;
-            b *= 2;
-        }
-        this.scc.add(a, b ^ 1);
-        this.scc.add(b, a ^ 1);
+        a *= 2;
+        b *= 2;
+
+        this.add(a, b ^ 1);
+        this.add(b, a ^ 1);
     }
 
-    ///Send n, total number of nodes, after expansion
     possible(n)
     {
-        this.scc.findCycles(n);
+        const scc = new StronglyConnectedComponents(this.$edges);
 
-        for (let i = 0; i <= n; i++)
-        {
-            let a = i;
-            let b = i ^ 1;
-            ///Falls on same cycle a and !a.
-            if ((this.scc.$cycle[a] || 0) === (this.scc.$cycle[b] || 0))
-                return false;
-        }
+        if (scc.findCycles(n))
+            return false;
 
-        ///Valid solution exists
         return true;
     }
 }
@@ -217,20 +201,20 @@ class SAT2
 function episodeRecording(episodes)
 {
     let bestMin = 0, bestMax = 0;
-    let nodes = [];
+    const nodes = [];
 
     function buildNodes()
     {
         for (let i = 0; i < episodes.length; i++)
         {
-            let e = episodes[i];
+            const e = episodes[i];
 
-            let e1 = {
+            const e1 = {
                 start:   e[0],
                 end:     e[1],
             };
 
-            let e2 = {
+            const e2 = {
                 start:   e[2],
                 end:     e[3],
             };
@@ -242,7 +226,7 @@ function episodeRecording(episodes)
 
     function buildGraph(b, e)
     {
-        let sat2 = new SAT2();
+        const sat2 = new SAT2();
 
         b = b * 2;
         e = e * 2 + 1;
@@ -255,24 +239,17 @@ function episodeRecording(episodes)
 
         for ( let i = b; i <= e; i++ )
         {
-            let node1 = nodes[i];
+            const node1 = nodes[i];
             if (node1 === undefined)
                 break;
 
             for ( let j = i + 1; j <= e; j++ )
             {
-                let node2 = nodes[j];
+                const node2 = nodes[j];
                 if (node2 === undefined)
                     break;
-                ///Check if they overlap
-                if ( node1.end < node2.start || node2.end < node1.start)
-                {
-                    ///No overlap
-                }
-                else
-                {
+                if (! (node1.end < node2.start || node2.end < node1.start))
                     sat2.notAndClause(i, j);
-                }
             }
         }
 
@@ -288,10 +265,10 @@ function episodeRecording(episodes)
 
         let sat2 = buildGraph(left, right);
 
-        while (! sat2.possible(episodes.length * 4))
+        while (! sat2.possible(episodes.length * 4)) // 2 nodes / episode and 2 states per node ( XOR )
         {
             if (left === right)
-                throw "Should be possible!";
+                throw "It should be possible!";
             sat2 = buildGraph(++left, right);
         }
         if (right - left > bestMax - bestMin )
