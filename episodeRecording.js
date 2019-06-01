@@ -84,67 +84,69 @@ async function execute(FILENAME, expected)
     });
 }
 
-const SCCNODE = 1000;
-
 class SCC
 {
     constructor()
     {
-        this.num  = []; // length SCCNODE
-        this.low  = [];
-        this.col  = [];
-        this.cycle= [];
-        this.st   = [];
-        this.tail = 0;
-        this.cnt  = 0;
-        this.cc   = 0;
-        this.adj  = [];
+        this.$num  = []; // length SCCNODE
+        this.$low  = [];
+        this.$col  = [];
+        this.$cycle= [];
+        this.$st   = [];
+        this.tail  = 0;
+        this.count = 0;
+        this.index = 0;
+        this.$adj  = [];
     }
 
-    clear(n)
+    add(index, value)
     {
-        this.cc += 3;
-        for(let i = 0 ; i <= n ; i++)
-            this.adj[i] = [];
-        this.tail = 0;
+        let a = this.$adj[index];
+        if (a === undefined)
+            this.$adj[index] = a = [];
+
+        a.push(value);
     }
 
     tarjan(s)
     {
-        this.num[s] = this.low[s] = this.cnt++;
-        this.col[s] = this.cc + 1;
-        this.st[tthis.ail++] = s;
-        for(let i = 0; i < adj[s].length; i++)
+        this.$num[s] = this.$low[s] = this.count++;
+        this.$col[s] = this.index + 1;
+        this.$st[this.tail++] = s;
+
+        let adj = this.$adj[s] || [];
+
+        for(let i = 0; i < adj.length; i++)
         {
-            let t = adj[s][i];
-            if (this.col[t] <= this.cc )
+            let t = adj[i] || 0;
+            if ((this.$col[t] || 0) <= this.index)
             {
                 this.tarjan(t);
-                this.low[s] = Math.min(this.low[s], this.low[t]);
+                this.$low[s] = Math.min(this.$low[s] || 0, this.$low[t] || 0);
             }
-            else if (this.col[t] == this.cc+1)
+            else if ((this.$col[t] || 0) === this.index+1)
             {
-                this.low[s] = Math.min(this.low[s], this.low[t]);
+                this.$low[s] = Math.min(this.$low[s] || 0, this.$low[t] || 0);
             }
         }
-        if (this.low[s] == this.num[s])
+        if ((this.$low[s] || 0) === (this.$num[s] || 0))
         {
             while (true)
             {
-                let temp = this.st[--this.tail];
-                this.col[temp] = this.cc + 2;
-                this.cycle[temp] = s;
-                if (s == temp)
+                let temp = this.$st[--this.tail] || 0;
+                this.$col[temp] = this.index + 2;
+                this.$cycle[temp] = s;
+                if (s === temp)
                     break;
             }
         }
     }
 
-    findSCC(n )
+    findCycles(n)
     {
         for (let i = 0; i <= n; i++)
         {
-            if ( this.col[i] <= this.cc )
+            if ((this.$col[i] || 0) <= this.index)
                 this.tarjan(i);
         }
     }
@@ -154,12 +156,7 @@ class SAT2
 {
     constructor()
     {
-        this.scc   = new SCC();
-    }
-
-    clear(n)
-    {
-        this.scc.clear(n);
+        this.scc = new SCC();
     }
 
     orClause(a, b, converted )
@@ -171,8 +168,8 @@ class SAT2
         }
         /// A || B clause
         //!a->b !b->a
-        this.scc.adj[a ^ 1].push(b);
-        this.scc.adj[b ^ 1].push(a);
+        this.scc.add(a ^ 1, b);
+        this.scc.add(b ^ 1, a);
     }
 
     xorClause(a, b, converted)
@@ -194,21 +191,21 @@ class SAT2
             a *= 2;
             b *= 2;
         }
-        this.scc.adj[a].push(b ^ 1);
-        this.scc.adj[b].push(a ^ 1);
+        this.scc.add(a, b ^ 1);
+        this.scc.add(b, a ^ 1);
     }
 
     ///Send n, total number of nodes, after expansion
     possible(n)
     {
-        this.scc.findSCC(n);
+        this.scc.findCycles(n);
 
         for (let i = 0; i <= n; i++)
         {
             let a = i;
             let b = i ^ 1;
             ///Falls on same cycle a and !a.
-            if (this.scc.cycle[a] == this.scc.cycle[b] )
+            if ((this.scc.$cycle[a] || 0) === (this.scc.$cycle[b] || 0))
                 return false;
         }
 
@@ -219,50 +216,34 @@ class SAT2
 
 function episodeRecording(episodes)
 {
-    let bestMin = 1, bestMax = 1, bestCount = 1;
+    let bestMin = 0, bestMax = 0;
     let nodes = [];
 
     function buildNodes()
     {
-        nodes.push(undefined); // not needed
-
-        for (let i = 1; i <= episodes.length; i++)
+        for (let i = 0; i < episodes.length; i++)
         {
-            let e = episodes[i-1];
+            let e = episodes[i];
 
             let e1 = {
-                episode: i,
                 start:   e[0],
                 end:     e[1],
-                key:     i*2,
             };
-    
+
             let e2 = {
-                episode: i,
                 start:   e[2],
                 end:     e[3],
-                key:     i*2+1,
             };
-    
-            nodes.push({ live: e1, replay: e2 });
-        }
-    }
 
-    function isPossible(used, current)
-    {
-        for (let e of used)
-        {
-            if (current.start <= e.end && current.end >= e.start)
-                return false;
+            nodes.push(e1);
+            nodes.push(e2);
         }
-
-        return true;
     }
 
     function buildGraph(b, e)
     {
         let sat2 = new SAT2();
-    
+
         b = b * 2;
         e = e * 2 + 1;
 
@@ -275,9 +256,14 @@ function episodeRecording(episodes)
         for ( let i = b; i <= e; i++ )
         {
             let node1 = nodes[i];
+            if (node1 === undefined)
+                break;
+
             for ( let j = i + 1; j <= e; j++ )
             {
                 let node2 = nodes[j];
+                if (node2 === undefined)
+                    break;
                 ///Check if they overlap
                 if ( node1.end < node2.start || node2.end < node1.start)
                 {
@@ -289,150 +275,33 @@ function episodeRecording(episodes)
                 }
             }
         }
-    }
 
-    function findPath(start, end)
-    {
-        let used = [];
-
-        function possible(index)
-        {
-            if (index > end)
-                return true;
-
-            let n = nodes[index];
-
-            if (isPossible(used, n.live))
-            {
-                used.push(n.live);
-                if (possible(index+1))
-                    return true;
-                used.pop();
-            }
-            if (isPossible(used, n.replay))
-            {
-                used.push(n.replay);
-                if (possible(index+1))
-                    return true;
-                used.pop();
-            }
-            return false;
-        }
-
-        return possible(start);
-    }
-
-    function process(start, end)
-    {
-        let used = [];
-
-        function lastPossible(index)
-        {
-            let i = index+1;
-            if (i >= end)
-                return index;
-
-            let max = index;
-            let n   = nodes[i];
-
-            if (isPossible(used, n.live))
-            {
-                used.push(n.live);
-                let m = lastPossible(i);
-                used.pop();
-                if (m > max)
-                    max = m;
-                if (max+1 === nodes.length)
-                    return max; // no need to try better.
-            }
-            if (isPossible(used, n.replay))
-            {
-                used.push(n.replay);
-                let m = lastPossible(i);
-                used.pop();
-                if (m > max)
-                    max = m;
-            }
-    
-            return max;
-        }
-    
-        for (let l = start; l < end; l++)
-        {
-            if (bestCount+l-1 >= end) // No point ... can't do better
-                break;
-
-            let n = nodes[l];
-    
-            used[0] = n.live;
-            r = lastPossible(l);
-    
-            used[0] = n.replay;
-            r = Math.max(r, lastPossible(l));
-    
-            let count = r-l+1;
-            if (count > bestCount)
-            {
-                bestCount = count;
-                bestMin   = l;
-                bestMax   = r;
-            }
-            if (r+1 === end) // Best we can do!
-                break;
-        }
+        return sat2;
     }
 
     buildNodes();
 
-    // process(1, nodes.length);
-
-    for (let l = 1; l < nodes.length; l++)
+    for (let left = 0, right = 1; right < episodes.length; right++ )
     {
-        if (bestCount+l-1 >= nodes.length)
-            break;
+        if (right - left <= bestMax - bestMin)
+            continue;
 
-        let minR   = bestCount+l;
-        let maxR   = nodes.length-1;
-        let found  = -1;
-        let okr    = -1;
-        while (minR <= maxR)
+        let sat2 = buildGraph(left, right);
+
+        while (! sat2.possible(episodes.length * 4))
         {
-            let r = Math.floor((maxR + minR)/2);
-            if (r < minR)
-                r = minR;
-            else if (r > maxR)
-                r = maxR;
-            let ok = true;
-            if (found > 0)
-            {
-                if (okr < r)
-                {
-                    ok = findPath(found, r);
-                    if (ok)
-                    {
-                        okr = r;
-                    }
-                }
-            }
-
-            if (ok && findPath(l, r))
-            {
-                minR = r+1;
-                found= r;
-            }
-            else
-                maxR = r-1;
+            if (left === right)
+                throw "Should be possible!";
+            sat2 = buildGraph(++left, right);
         }
-
-        if (found > 0 && found-l+1 > bestCount)
+        if (right - left > bestMax - bestMin )
         {
-            bestCount = found-l+1;
-            bestMin   = l;
-            bestMax   = found;
+            bestMin = left;
+            bestMax = right;
         }
     }
 
-    return [bestMin, bestMax];
+    return [bestMin+1, bestMax+1];
 }
 
 async function DoIt()
