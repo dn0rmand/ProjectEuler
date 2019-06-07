@@ -3,7 +3,7 @@ require('tools/numberHelper');
 const assert    = require('assert');
 const fs        = require('fs');
 const readline  = require('readline');
-const prettyHrtime = require('pretty-hrtime');
+const prettyTime = require('pretty-hrtime');
 
 const MODULO = 999999937;
 const TWO = 2;
@@ -118,6 +118,9 @@ function solve(studentCount, beds, desks)
         '.': {'1': []}
     };
 
+    // cycles are not per type.
+    let cycles = {};
+
     // Students not in the file
 
     for (let student = 1; student <= studentCount; student++)
@@ -126,14 +129,26 @@ function solve(studentCount, beds, desks)
             chainsPerType['.'][1].push([student]);
     }
 
-    // cycles are not per type.
-    let cycles = {};
-
     for (let student = 1; student <= studentCount; student++)
     {
         let [chain, type] = follow(student);
         if (chain === undefined)
             continue;
+        let [chain2, type2] = follow(student);
+
+        if (chain2 !== undefined)
+        {
+            let reverseType = {'B':'D', 'D':'B'};
+
+            chain2.shift(); // remove last item ( same as the one in chain )
+
+            while (chain2.length > 0)
+            {
+                let x = chain2.shift();
+                chain.unshift(x);
+                type = reverseType[type];
+            }
+        }
 
         let length = chain.length;
         if ((length & 1) === 1)
@@ -158,10 +173,24 @@ function solve(studentCount, beds, desks)
 
     // Process circles
 
+    let count = 0;
+    let students = [];
+
     for (let k of Object.keys(cycles))
     {
         let l = +k;
         let c = cycles[k].length;
+        for (let i of cycles[k])
+        {
+            for (let j of i)
+            {
+                if (students[j])
+                    throw "Double counting student "+j;
+
+                students[j] = 1;
+                count++;
+            }
+        }
 
         let t = 1;
 
@@ -184,6 +213,21 @@ function solve(studentCount, beds, desks)
             if (c === 0)
                 continue;
 
+            for (let i of chainsPerType[type][k])
+            {
+                for (let j of i)
+                {
+                    if (students[j])
+                        throw "Double counting student "+j;
+
+                    if (j === 33)
+                        students[j] = 1;
+                    else
+                        students[j] = 1;
+                    count++;
+                }
+            }
+
             let t = 1;
 
             if (type !== '.')
@@ -196,6 +240,9 @@ function solve(studentCount, beds, desks)
             total = total.modMul(t, MODULO);
         }
     }
+
+    if (count !== studentCount)
+        throw `Missing ${ studentCount - count } students`;
 
     return total;
 }
@@ -235,9 +282,10 @@ async function execute()
     let beds = await loadBeds();
     let desks= await loadDesks();
 
+    let timer = process.hrtime();
     let total = solve(500, beds, desks);
-
-    console.log('Answer is', total);
+    timer = process.hrtime(timer);
+    console.log('Answer is', total, "calculated in ", prettyTime(timer, {verbose:true}));
 }
 
 test();

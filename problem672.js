@@ -44,28 +44,14 @@ function g(value)
     return total;
 }
 
-let $S = 0;
-let $N = 0;
-
 function S(n)
 {
     n = Math.floor(n);
 
     let total = 0;
 
-    if ($N > 0)
-    {
-        total = $S;
-        start = $N+1;
-    }
-    else
-        start = 1;
-
-    for (let i = start; i <= n; i++)
+    for (let i = 1; i <= n; i++)
         total = (total + g(i)) % MODULO;
-
-    $N = n;
-    $S = total;
 
     return total;
 }
@@ -81,13 +67,35 @@ function H(k)
 
 //analyze();
 
-console.log(S(6).toString(7));
-console.log(S(21).toString(7));
-console.log(S(98).toString(7));
+function test(digit1, digit2)
+{
+    let value = digit1*7 + digit2;
+    let v2    = S(digit2);
+    let base  = S(6);
 
-console.log(236, S(125), S(125).toString(7));
-for (let n = 7; n < 200; n++)
-    console.log(n.toString(7), S(n).toString(7));
+    let result = 0;
+    for (let i = 0; i <= digit1; i++)
+    {
+        if (i === digit1)
+        {
+            result += g(i) + 1 + v2;
+        }
+        else
+        {
+            let o = 0;
+            for (let j = 0; j < 7; j++)
+            {
+                o += g(i*7 + j);
+            }
+            result += (o + base);
+        }
+    }
+
+    console.log(`expected ${ S(value) } , calculated ${ result }`);
+}
+
+test(1, 2);
+test(2, 1);
 
 console.log(H(1).toString(7));
 console.log(Number(690409338).toString(7));
