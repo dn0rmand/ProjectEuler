@@ -1,3 +1,52 @@
+// https://www.hackerrank.com/challenges/organizing-containers-of-balls/problem
+
+const assert = {
+    problem: 0,
+    equal: function(value, expected)
+    {
+        this.problem++;
+        if (value !== expected)
+            console.log(`Answer to problem ${this.problem} is incorrect`);
+    }
+}
+
+function pickingNumbers(a)
+{
+    let maxLength = 0;
+
+    for (let i = 0; i < a.length; i++)
+    {
+        let min = a[i];
+        let max = a[i];
+        let length = 0;
+        let X = [];
+        for (let j = 0; j < a.length; j++)
+        {
+            let v = a[j];
+            if (Math.abs(v-min) <= 1 && Math.abs(v-max) <= 1)
+            {
+                min = Math.min(v, min);
+                max = Math.max(v, max);
+                if (Math.abs(max-min) > 1)
+                    throw "ERROR";
+                length++;
+                X.push(v);
+            }
+        }
+        if (length > maxLength)
+            maxLength = length;
+    }
+
+    return maxLength;
+}
+
+
+assert.equal(pickingNumbers([4,6,5,3,3,1]), 3);
+assert.equal(pickingNumbers([1,2,2,3,1,2]), 5);
+
+console.log('Success');
+
+process.exit(0);
 
 function luckyNumbers()
 {
