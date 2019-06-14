@@ -1,3 +1,5 @@
+//134
+
 // https://www.hackerrank.com/challenges/organizing-containers-of-balls/problem
 
 const assert = {
@@ -10,40 +12,50 @@ const assert = {
     }
 }
 
-function pickingNumbers(a)
+function climbingLeaderboard(scores, alice)
 {
-    let maxLength = 0;
+    let ranks = [];
 
-    for (let i = 0; i < a.length; i++)
+    let rank    = 1;
+    let previous= scores[0];
+    let iScores = 0;
+    let iAlice  = alice.length;
+    let current = alice[--iAlice];
+
+    while (true)
     {
-        let min = a[i];
-        let max = a[i];
-        let length = 0;
-        let X = [];
-        for (let j = 0; j < a.length; j++)
+        if (current >= previous)
         {
-            let v = a[j];
-            if (Math.abs(v-min) <= 1 && Math.abs(v-max) <= 1)
-            {
-                min = Math.min(v, min);
-                max = Math.max(v, max);
-                if (Math.abs(max-min) > 1)
-                    throw "ERROR";
-                length++;
-                X.push(v);
-            }
+            ranks.unshift(rank);
+            if (iAlice === 0)
+                break;
+
+            current = alice[--iAlice];
         }
-        if (length > maxLength)
-            maxLength = length;
+        else if (++iScores < scores.length)
+        {
+            let v = scores[iScores];
+            if (v === previous)
+                continue;
+            rank++;
+            previous = v;
+        }
+        else
+        {
+            rank++;
+            for (let i = 0; i <= iAlice; i++)
+                ranks.unshift(rank);
+            break;
+        }
     }
 
-    return maxLength;
+    return ranks;
 }
 
 
-assert.equal(pickingNumbers([4,6,5,3,3,1]), 3);
-assert.equal(pickingNumbers([1,2,2,3,1,2]), 5);
-
+assert.equal(climbingLeaderboard([100,100,50,40,40,20,10], [5, 25, 50, 120]), '6 4 2 1');
+// assert.equal(encryption('feedthedog'), 'fto ehg ee dd');
+// assert.equal(encryption('ifmanwasmeanttostayonthegroundgodwouldhavegivenusroots'), 'imtgdvs fearwer mayoogo anouuio ntnnlvt wttddes aohghn sseoau')
 console.log('Success');
 
 process.exit(0);
