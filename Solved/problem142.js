@@ -81,7 +81,7 @@ function solve()
                     let ans = x+y+z;
                     if (ans < answer)
                     {
-                        console.log(`\rBest so far is ${ans}`);
+                        console.log(`\rBest so far is ${ans} for x=${x}, y=${y} and z=${z}`);
                         answer = ans;
                     }
                 }
