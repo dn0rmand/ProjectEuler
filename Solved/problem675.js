@@ -34,8 +34,11 @@ function F(n, trace)
 {
     let previous = S(2);
     let total    = previous;
-    let primes   = { "2": 1 };
+    let primes   = new Uint32Array(n+1);
+    let $modInv  = new Uint32Array(2E8);
     let count    = 0;
+
+    primes[2] = 1;
 
     for (let i = 3; i <= n; i++)
     {
@@ -44,7 +47,7 @@ function F(n, trace)
             if (count-- === 0)
             {
                 process.stdout.write(`\r${n-i} `);
-                count = 999;
+                count = 99999;
             }
         }
 
@@ -54,11 +57,20 @@ function F(n, trace)
             let c2 = c + c1;
             primes[p] = c2;
 
-            let n = (1 + 2*c2) % MODULO;
-            let d = (1 + 2*c1) % MODULO;
+            let n = (1 + 2*c2) //% MODULO;
 
             newValue = newValue.modMul(n, MODULO);
-            newValue = newValue.modDiv(d, MODULO);
+            if (c1 > 0)
+            {
+                let d = (1 + 2*c1) //% MODULO;
+                let dd = $modInv[d];
+                if (dd === 0)
+                {
+                    dd = d.modInv(MODULO);
+                    $modInv[d] = dd;
+                }
+                newValue = newValue.modMul(dd, MODULO);
+            }
         });
         previous = newValue;
         total = (total + newValue) % MODULO;
