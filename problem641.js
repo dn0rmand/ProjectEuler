@@ -59,7 +59,7 @@ class FactorArray
     }
 }
 
-function solve(size/*, goods*/)
+function $solve(size/*, goods*/)
 {
     let total     = 1;
     let factors   = new FactorArray();
@@ -231,7 +231,7 @@ function solve(size/*, goods*/)
     return total;
 }
 
-function $solve(size)
+function solve(size)
 {
     let dice  = new Uint8Array(size);
 
@@ -243,11 +243,14 @@ function $solve(size)
         for (let i = 0; i < size; i++)
         {
             if (dice[i] === 1)
-                values.push(i+1);
+            {
+                let s = '';
+                primeHelper.factorize(i+1, (p, f) => {
+                    s += `${p}^${f}  `
+                });
+                console.log(s);
+            }
         }
-        console.log(...values);
-        // console.log(dice.join(','));
-        return values;
     }
 
     let count = size;
@@ -268,10 +271,19 @@ function $solve(size)
         }
     }
 
-    return dump();
+    dump();
 
-    // return count;
+    return count;
 }
+
+// let r = [1];
+// for (let i = 1; i < 10; i++)
+// {
+//     let x = solve(i);
+//     r.push(x);
+// }
+
+// console.log(r.join(','));
 
 // console.log(solve(MAX));
 
@@ -279,8 +291,10 @@ function $solve(size)
 // console.log("1E10 =", solve(1E10));
 
 assert.equal(solve(100), 2);
-assert.equal(solve(1E8), 69);
 assert.equal(solve(1E7), 36);
-assert.equal(solve(1E12), 740);
+assert.equal(solve(1E8), 69);
+// assert.equal(solve(1E12), 740);
 
-console.log('done')
+let answer = solve(MAX);
+
+console.log('done', answer)

@@ -73,6 +73,25 @@ function test(digit1, digit2)
     let v2    = S(digit2);
     let base  = S(6);
 
+    console.log(`S(10) -> ${ S(Number.parseInt("10", 7)).toString(7) }`);
+    console.log(`S(11) -> ${ S(Number.parseInt("11", 7)).toString(7) }`);
+    console.log(`S(12) -> ${ S(Number.parseInt("12", 7)).toString(7) }`);
+    console.log(`S(13) -> ${ S(Number.parseInt("13", 7)).toString(7) }`);
+    console.log(`S(14) -> ${ S(Number.parseInt("14", 7)).toString(7) }`);
+
+    console.log(`S(06) -> ${ S(Number.parseInt("6", 7)) }`);
+    console.log(`S(16) -> ${ S(Number.parseInt("16", 7)) }`);
+    console.log(`S(26) -> ${ S(Number.parseInt("26", 7)) }`);
+    console.log(`S(36) -> ${ S(Number.parseInt("36", 7) )}`);
+
+    for (let i = 0; i < 7; i++)
+    {
+        let x = 7 + i;
+        let v = g(x);
+        b2 += v;
+    }
+    console.log(b2);
+
     let result = 0;
     for (let i = 0; i <= digit1; i++)
     {
@@ -80,22 +99,26 @@ function test(digit1, digit2)
         {
             result += g(i) + 1 + v2;
         }
-        else
+        else if (i > 0)
         {
-            let o = 0;
-            for (let j = 0; j < 7; j++)
+            let x = g(i*7 + 1);
+
+            let o = base;
+            for (let j = 1; j < 7; j++)
             {
-                o += g(i*7 + j);
+                o += x--;
             }
-            result += (o + base);
+            result += o;
         }
+        else
+            result += base;
     }
 
     console.log(`expected ${ S(value) } , calculated ${ result }`);
 }
 
-test(1, 2);
 test(2, 1);
+test(1, 2);
 
 console.log(H(1).toString(7));
 console.log(Number(690409338).toString(7));
