@@ -15,13 +15,17 @@ class TimeLogger
 
     logEnd()
     {
-        TimeLogger.log(`.. Executed in ${ prettyHrtime(Number(this.time), 2) }`);
+        let msg = this.message ? ".. " : "";
+        TimeLogger.log(`${msg}Executed in ${ prettyHrtime(Number(this.time), 2) }`);
         if (! debugging)
             process.stdout.write('\r\n');
     }
 
     logStart()
     {
+        if (! this.message)
+            return;
+
         if (debugging)
         {
             console.log(this.message);
@@ -74,6 +78,25 @@ class TimeLogger
         else
         {
             process.stdout.write(message);
+        }
+    }
+
+    static wrap(message, action)
+    {
+        var logger = new TimeLogger(message);
+        logger.start();
+        try
+        {
+            return action();
+        }
+        catch(e)
+        {
+            logger.stop();
+            throw e;
+        }
+        finally
+        {
+            logger.stop();
         }
     }
 }
