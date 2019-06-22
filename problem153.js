@@ -1,82 +1,196 @@
 const assert = require('assert');
 const divisors = require('tools/divisors');
 const primeHelper = require('tools/primeHelper')();
-const timeLog = require('tools/timeLogger');
+const TimeLogger = require('tools/timeLogger');
+const prettyHrtime = require('atlas-pretty-hrtime');
 
-const MAX = 1E8;
+const MAX = 1E6;
 
-timeLog("Loading primes",() => { primeHelper.initialize(MAX); });
+function timeLog(message, action)
+{
+    var logger = new TimeLogger(message);
+    logger.start();
+    try
+    {
+        return action();
+    }
+    catch(e)
+    {
+        logger.stop();
+        throw e;
+    }
+    finally
+    {
+        logger.stop();
+    }
+}
+
+const $gcd = [];
 
 function gcd(a, b)
 {
+    if (a === b)
+        return a;
+
+    if (a < b)
+        [a, b] = [b, a];
+
+    let x = $gcd[a];
+    if (x === undefined)
+        x = $gcd[a] = [];
+    if (x[b] !== undefined)
+        return x[b];
+
+    let B = b; // Save B value
+
     while (b !== 0)
     {
         let c = a % b;
         a = b;
         b = c;
     }
+    x[B] = a;
     return a;
 }
 
-function divisorSum(n)
+const $squares       = [];
+const $squaresMap    = new Map();
+const $otherDivisors = new Int32Array(MAX+1);
+
+$otherDivisors.fill(-1);
+
+function preloadSquares()
 {
-    let total = 0;
-
-    divisors(n, primeHelper.isKnownPrime, (d) =>
+    for (let i = 1; ; i++)
     {
-        total += d;
-    });
+        let b = i*i;
+        if (b > MAX) break;
+        for (let a of $squares)
+        {
+            if (a+b > MAX)
+                break;
+            if (gcd(a, b) === 1)
+            {
+                let coprimes = $squaresMap.get(a);
+                if (coprimes === undefined)
+                {
+                    coprimes = [b];
+                    $squaresMap.set(a, coprimes);
+                }
+                else
+                    coprimes.push(b);
+            }
+        }
 
-    return total;
+        $squares.push(b);
+    }
 }
 
-function otherDivisorSum(n)
+function otherDivisors(d)
 {
-    let total = 0;
-    let max = Math.floor(Math.sqrt(n))+1;
+    let total = $otherDivisors[d];
 
-    for (let b = 1; b <= max; b++)
+    if (total >= 0)
+        return total;
+
+    total = 0;
+
+    let a = 0;
+    for (let a2 of $squares)
     {
-        let b2 = b*b;
-        for (let a = 1; ; a++)
-        {
-            if (gcd(a, b) !== 1)
-                continue;
+        a++;
 
-            let ab = a*a + b2;
-            if (ab > n)
+        for (let b = a+1; ; b++)
+        {
+            let b2 = $squares[b-1];
+            let ab = b2 + a2;
+            if (ab > d)
                 break;
-            if (n % ab === 0)
+
+            if ((d % ab) === 0)
             {
-                let v = (n / ab);
-                let t = v*(v+1)*a;
-                total += t;
+                if (gcd(a, b) !== 1)
+                    continue;
+
+                let k = d / ab;
+                total += 2*k*a;
+                if (a !== b)
+                    total += 2*k*b; // add the ones with a and b switched
             }
         }
     }
 
+    $otherDivisors[d] = total;
+
     return total;
 }
 
-function solve(n)
+function preload(n, trace)
 {
-    let total = 0;
+    preloadSquares();
+
+    // preloading otherDivisors
+    let count = 0;
+    if (trace)
+        TimeLogger.log('..tracing on\r\n');
+
     for (let i = n; i > 0; i--)
     {
-        let v1 = divisorSum(i);
-        let v2 = 0;//otherDivisorSum(i);
-
-        total += (v1+v2);
+        if (trace)
+        {
+            if (count-- === 0)
+            {
+                TimeLogger.log(`\r${ i } `);
+                count = 999;
+            }
+        }
+        otherDivisors(i);
     }
+
+    if (trace)
+        TimeLogger.log('\r');
+}
+
+function solve(n, trace)
+{
+    let total = 0;
+    let count = 0;
+    if (trace)
+        TimeLogger.log('..tracing on\r\n');
+
+    for (let i = n; i > 0; i--)
+    {
+        if (trace)
+        {
+            if (count-- === 0)
+            {
+                TimeLogger.log(`\r${ i } `);
+                count = 999;
+            }
+        }
+        divisors(i, primeHelper.isKnownPrime, (d) => {
+            total += d;
+            total += otherDivisors(d);
+        });
+    }
+    if (trace)
+        TimeLogger.log('\r');
+
     return total;
 }
 
-timeLog("Testing", () => {
-// assert.equal(solve(5), 35);
-// assert.equal(solve(100000), 17924657155);
+timeLog("Loading primes",() => { primeHelper.initialize(MAX); });
+
+timeLog("Preloading", () => {
+    preload(MAX, true);
+});
+
+timeLog("Running Tests", () => {
+    assert.equal(solve(5), 35);
+    assert.equal(solve(1E5), 17924657155);
 });
 
 let answer = timeLog("Solving", () => {
-    return solve(1E7);
+    return solve(MAX, true);
 });
 console.log(`Answer is ${answer}`);

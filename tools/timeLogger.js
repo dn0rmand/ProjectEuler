@@ -1,8 +1,86 @@
 "use strict"
 
-const prettyHrtime = require('pretty-hrtime');
+const prettyHrtime = require('atlas-pretty-hrtime');
 const debugging    = ! process.stdout.isTTY;
 
+class TimeLogger
+{
+    constructor(message)
+    {
+        this.time = 0n;
+        this.timer = undefined;
+        this.message = message;
+        this.paused = false;
+    }
+
+    logEnd()
+    {
+        TimeLogger.log(`.. Executed in ${ prettyHrtime(Number(this.time), 2) }`);
+        if (! debugging)
+            process.stdout.write('\r\n');
+    }
+
+    logStart()
+    {
+        if (debugging)
+        {
+            console.log(this.message);
+        }
+        else
+        {
+            process.stdout.write(this.message);
+            process.stdout.write(' ..');
+        }
+    }
+
+    start()
+    {
+        this.logStart();
+        this.time  = 0n;
+        this.timer = process.hrtime.bigint();
+        this.paused = false;
+    }
+
+    stop()
+    {
+        this.pause();
+        this.paused = false;
+        this.logEnd();
+    }
+
+    pause()
+    {
+        if (this.timer === undefined)
+            return; // Wasn't started!!!
+        this.time += process.hrtime.bigint() - this.timer;
+        this.timer = undefined;
+        this.paused = true;
+    }
+
+    resume()
+    {
+        if (! this.paused)
+            return; // wasn't paused
+
+        this.timer = process.hrtime.bigint();
+    }
+
+    static log(message)
+    {
+        if (debugging)
+        {
+            console.log(message);
+        }
+        else
+        {
+            process.stdout.write(message);
+        }
+    }
+}
+
+module.exports = TimeLogger;
+
+/*
 module.exports = function(title, action, postMessage)
 {
     function logEnd(message, time)
@@ -52,3 +130,4 @@ module.exports = function(title, action, postMessage)
         logEnd(postMessage, time);
     }
 }
+*/
