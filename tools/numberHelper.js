@@ -1,5 +1,34 @@
 const numberHelper = function()
 {
+    Number.prototype.gcd = function(b)
+    {
+        let a = this;
+        if (a < b)
+            [a, b] = [b, a];
+
+        while (b !== 0)
+        {
+            let c = a % b;
+            a = b;
+            b = c;
+        }
+        return a;
+    }
+
+    Number.prototype.lcm = function(b)
+    {
+        let a = this;
+        if (a < 0)
+            a = -a;
+        if (b < 0)
+            b = -b;
+
+        let g = a.gcd(b);
+        let l = (a / g) * b;
+
+        return l;
+    }
+
     Number.prototype.modMul = function(value, modulo)
     {
         let r = this * value;
