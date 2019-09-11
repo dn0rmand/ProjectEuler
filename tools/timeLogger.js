@@ -64,9 +64,9 @@ class TimeLogger
     resume()
     {
         if (! this.paused)
-            return; // wasn't paused
-
-        this.timer = process.hrtime.bigint();
+            this.start();
+        else
+            this.timer = process.hrtime.bigint();
     }
 
     static log(message)
