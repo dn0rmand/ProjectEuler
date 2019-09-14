@@ -1,6 +1,94 @@
-const assert = require('assert');
-const timeLog = require('tools/timeLogger');
-const MAX = 10 ** 11;
+const assert      = require('assert');
+const timeLog     = require('tools/timeLogger');
+const primeHelper = require('tools/primeHelper')();
+
+const MAX = 10 ** 12;
+// primeHelper.initialize(1E9, true);
+
+// const allPrimes = primeHelper.allPrimes();
+
+function loadSquares(max)
+{
+    process.stdout.write(' Allocating array ..');
+    let result = [];
+    for(let i = 0; i < 1E8; i++)
+        result[i] = 0;
+    console.log(' Done');
+    let count = 0;
+    let isBig = false;
+    let c = 0;
+
+    for (let a = 2; ; a++)
+    {
+        let A = a*a;
+        if (A > max)
+            break;
+
+        if (c === 0)
+        {
+            if (isBig)
+                process.stdout.write(`\r*${ max - A }   `);
+            else
+                process.stdout.write(`\r${ max - BigInt(A) }   `);
+        }
+        c++;
+        if (c > 1000000)
+            c = 0;
+
+        if (! isBig && A > Number.MAX_SAFE_INTEGER)
+        {
+            isBig = true;
+            a = BigInt(a);
+            A = a*a;
+        }
+
+        // result[count] = A;
+        count++;
+    }
+
+    console.log(count, 'cubes');
+    return result;
+}
+
+timeLog.wrap('Squares', () => {
+    loadSquares(10n ** 18n);
+});
+process.exit(0);
+
+function generateC(max)
+{
+    function inner(index, value, $gcd)
+    {
+        for(let i = index; i < allPrimes.length; i++)
+        {
+            let p = allPrimes[i];
+            let v = value * (p ** 3);
+            if (v > max)
+                break;
+
+            while (v <= max)
+            {
+
+            }
+        }
+    }
+
+    inner(0, 1);
+}
+
+function gcd(a, b)
+{
+    if (a < b)
+        [a, b] = [b, a];
+
+    while (b !== ZERO)
+    {
+        let c = a % b;
+        a = b;
+        b = c;
+    }
+    return a;
+}
 
 function biggy(n)
 {
@@ -86,12 +174,53 @@ function buildMap(max, trace)
     return [values, map];
 }
 
+function factorize(value, squares)
+{
+    let result = '';
+    let pf = 0;
+    primeHelper.factorize(value, (a, f) => {
+        if (result != '')
+            result += '*'
+
+        if (squares)
+        {
+            while (f > 2 && (f & 1)==0)
+            {
+                let k = f / 2;
+                f /= k;
+
+                a = a ** k;
+            }
+            if (f !== 2)
+                console.log('error - not square');
+        }
+        else
+        {
+            if (! pf)
+                pf = f;
+            else if (pf != f)
+            {
+                let x = gcd(pf, f);
+                if (x < 3)
+                    result = '!'+result;
+                else
+                    pf = x;
+            }
+        }
+
+        result += `${a}^${f}`;
+    });
+    return result;
+}
+
 function F(N, trace)
 {
     let total   = 0;
     let [values, map] = buildMap(N, trace);
     let maxValue = values[values.length-1];
     let traceCount = 0;
+
+    let primitives = new Set();
 
     for(let C of values)
     {
@@ -129,7 +258,46 @@ function F(N, trace)
             if (! pab) // no common factors
                 continue;
 
-            subCount+= digitCounts(pab) * countC;
+            let t = digitCounts(pab) * countC;
+/*
+            if (t != 0)
+            {
+                let v1 = gcd(A, B);
+                let v2 = gcd(A, C);
+                let v3 = gcd(B, C);
+
+                if (v1 === ONE)
+                {
+                    if (v2 !== ONE || v3 !== ONE)
+                    {
+                        console.log(`${A} + ${B} = ${C} - ${v1}, ${v2}, ${v3}`);
+                    }
+                    else
+                    {
+                        let AA = factorize(A, true);
+                        let BB = factorize(B, true);
+                        let CC = factorize(C, false);
+
+                        let k = `${CC} = ${AA} + ${BB}`;
+                        if (! primitives.has(k))
+                        {
+                            primitives.add(k);
+                            if (k[0] == '!')
+                                console.log(k);
+                        }
+                    }
+                }
+                else if (v2 !== v1)
+                {
+                    console.log(`${A} + ${B} = ${C} - ${v1}, ${v2}, ${v3}`);
+                }
+                else if (v3 !== v1)
+                {
+                    console.log(`${A} + ${B} = ${C} - ${v1}, ${v2}, ${v3}`);
+                }
+            }
+*/
+            subCount += t;
         }
 
         if (subCount != 0)
@@ -144,13 +312,13 @@ function F(N, trace)
 
 function analyze()
 {
-    console.log(F(1E3));
-    console.log(F(1E4));
-    console.log(F(1E5));
-    console.log(F(1E6));
-    console.log(F(1E7));
-    console.log(F(1E8));
-    console.log(F(1E9));
+    // console.log(F(1E3));
+    // console.log(F(1E4));
+    // console.log(F(1E5));
+    // console.log(F(1E6));
+    // console.log(F(1E7));
+    // console.log(F(1E8));
+    // console.log(F(1E9));
 }
 
 function runTests()
@@ -158,14 +326,14 @@ function runTests()
     assert.equal(F(1E3), 7);
     assert.equal(F(1E5), 53);
     assert.equal(F(1E7), 287);
-    assert.equal(F(1E9), 1429);
-    assert.equal(F(1E10), 3231);
+    // assert.equal(F(1E9), 1429);
+    // assert.equal(F(1E10), 3231);
 
     // 1E12 -> 16066
     console.log('Tests passed');
 }
 
-// analyze();
+analyze();
 runTests();
 
 let answer = timeLog.wrap("", () => {
