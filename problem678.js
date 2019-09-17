@@ -2,23 +2,18 @@ const assert      = require('assert');
 const timeLog     = require('tools/timeLogger');
 const primeHelper = require('tools/primeHelper')();
 
-const MAX = 10n ** 15n;
+const MAX = 10n ** 12n;
+const MAX_PRIME = 1E6;
 
-// primeHelper.initialize(1E9, true);
-// const allPrimes = primeHelper.allPrimes();
+primeHelper.initialize(MAX_PRIME, true);
 
+const allPrimes = primeHelper.allPrimes();
 
-function biggy(n)
-{
-    if (MAX > Number.MAX_SAFE_INTEGER)
-        return BigInt(n);
-    else
-        return n;
-}
-
-const ZERO = biggy(0);
-const ONE  = biggy(1);
-const TWO  = biggy(2);
+const ZERO = 0n;
+const ONE  = 1n;
+const TWO  = 2n;
+const THREE= 3n;
+const FOUR = 4n;
 
 const TRACE_SPEED = 1000;
 
@@ -39,7 +34,7 @@ function digitCounts(value)
 
 function buildMap(max, trace)
 {
-    max = biggy(max);
+    max = BigInt(max);
 
     let map = new Map();
 
@@ -90,6 +85,82 @@ function buildMap(max, trace)
     return [values, map];
 }
 
+function factorize(n, callback)
+{
+    var max = MAX_PRIME;
+    if (n < Number.MAX_SAFE_INTEGER)
+    {
+        let s = Math.round(Math.sqrt(Number(n)))+1;
+        max = Math.max(max, s);
+    }
+
+    for (let p of allPrimes)
+    {
+        if (p > max)
+            break;
+        p = BigInt(p);
+        if (p > n)
+            break;
+        let f = 0;
+
+        while ((n % p) === ZERO)
+        {
+            n /= p;
+            f++;
+        }
+        if (f)
+        {
+            if (callback(p, f) === false)
+                return;
+        }
+    }
+    if (n !== ONE)
+        callback(n, 1);
+}
+
+function getSquareSumCount(C)
+{
+    let count = 1;
+
+    if (C > Number.MAX_SAFE_INTEGER)
+    {
+        factorize(C, (p, f) => {
+
+            if ((f & 1) && (p % FOUR) === THREE)
+            {
+                count = 0;
+                return false;
+            }
+            if ((p % FOUR) === ONE)
+            {
+                count *= (f+1);
+            }
+        });
+    }
+    else
+    {
+        primeHelper.factorize(Number(C), (p, f) => {
+            if ((f & 1) && (p % 4) === 3)
+            {
+                count = 0;
+                return false;
+            }
+            if ((p % 4) === 1)
+            {
+                count *= (f+1);
+            }
+        });
+    }
+    
+    if (count & 1)
+        count = (count-1)/2;
+    else
+        count = count/2;
+    // count >>= 1;
+
+    return count;
+}
+
 function F(N, trace)
 {
     let total   = 0;
@@ -109,14 +180,20 @@ function F(N, trace)
 
         let pc  = map.get(C);
 
-        if (C === ONE)
+        if (C === ONE || pc < ONE)
             continue; // Not a valid c^f
 
+        let cc = getSquareSumCount(C);
+        if (cc != 0)
+        {
+            console.log(C,'->',cc);
+            total += cc;
+        }
         let countC = digitCounts(pc);
+
         if (! countC)
             continue;
 
-        let subCount = 0;
         for (let A of values)
         {
             let B = C - A;
@@ -127,7 +204,7 @@ function F(N, trace)
             let pb = map.get(B) || ZERO;
             let pab = pa & pb;
             if (pab)
-                total = digitCounts(pab) * countC;
+            	total += digitCounts(pab) * countC;
         }
     }
 
@@ -139,13 +216,14 @@ function F(N, trace)
 
 function analyze()
 {
-    console.log(F(1E3));
-    console.log(F(1E4));
-    console.log(F(1E5));
-    console.log(F(1E6));
-    console.log(F(1E7));
-    console.log(F(1E8));
-    console.log(F(1E9));
+    console.log(F(1E11));
+    // console.log(F(1E3));
+    // console.log(F(1E4));
+    // console.log(F(1E5));
+    // console.log(F(1E6));
+    // console.log(F(1E7));
+    // console.log(F(1E8));
+    // console.log(F(1E9));
 }
 
 function runTests()
@@ -153,52 +231,17 @@ function runTests()
     assert.equal(F(1E3), 7);
     assert.equal(F(1E5), 53);
     assert.equal(F(1E7), 287);
-    // assert.equal(F(1E9), 1429);
-    // assert.equal(F(1E10), 3231);
+    assert.equal(F(1E9), 1429);
+    assert.equal(F(1E10), 3231);
 
     // 1E12 -> 16066
     console.log('Tests passed');
 }
 
 // analyze();
-// runTests();
+runTests();
 
 let answer = timeLog.wrap("", () => {
     return F(MAX, true);
 });
 console.log('Answer is', answer);
-
-/*
-
- 2^2 + 11^2 =  5^3 - 1
- 5^2 + 10^2 =  5^3 - 1
- 3^3 +  6^3 =  3^5 - 1
- 7^2 + 24^2 =  5^4 - 1
-15^2 + 20^2 =  5^4 - 1
-10^2 + 30^2 = 10^3 - 1
-18^2 + 26^2 = 10^3 - 1
- 9^2 + 46^2 = 13^3 - 1
-26^2 + 39^2 = 13^3 - 1
-10^2 + 55^2 =  5^5 - 1
-25^2 + 50^2 =  5^5 - 1
-38^2 + 41^2 =  5^5 - 1
-17^2 + 68^2 = 17^3 - 1
-47^2 + 52^2 = 17^3 - 1
-
- 9^3 + 18^3 =  9^4
- 9^3 + 18^3 =  3^8
-
-16^2 + 88^2 = 20^3 - 1
-40^2 + 80^2 = 20^3 - 1
-28^2 + 96^2 = 10^4 - 1
-60^2 + 80^2 = 10^4 - 1
-
-
-35^2 + 120^2 = 25^3
-             = 5^6 - 2
-
-
-1936 + 13689 = 15625 - 2 ( 5^6 or 25^3)
-5625 + 10000 = 15625 - 2
-
-*/
