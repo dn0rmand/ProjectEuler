@@ -2,51 +2,41 @@ const assert      = require('assert');
 const timeLog     = require('tools/timeLogger');
 const primeHelper = require('tools/primeHelper')();
 
-const MAX = 10n ** 14n;
+const MAX = 10n ** 18n;
 
-primeHelper.initialize(1E7, true);
-const allPrimes = primeHelper.allPrimes();
+primeHelper.initialize(1E8, true);
 
-const ZERO  = 0n;
-const ONE   = 1n;
-const TWO   = 2n;
-const THREE = 3n;
+let $powers = [];
 
-const TRACE_SPEED = 1000;
-
-function setToArray(set)
+function getSquareSumCount(C, power)
 {
-    values = [...set];
-    values.sort((a, b) => {
-        if (a < b)
-            return -1;
-        if (a > b)
-            return 1;
-        return 0;
-    })
-    return values;
-}
+    let count = 1;
 
-function loadValues(max)
-{
-    max = BigInt(max);
-    let values = new Set();
-    for(let p = 3n; 2n ** p <= max; p++)
+    primeHelper.factorize(C, (p, f) =>
     {
-        for (let v = 2n; ; v++)
+        f *= power;
+        if (f & 1 && (p % 4) === 3)
         {
-            let vv = v ** p;
-            if (vv > max)
-                break;
-            values.add(vv);
+            count = 0;
+            return false;
         }
-    }
-    values = setToArray(values);
-    return values;
+        if ((p % 4) === 1)
+        {
+            count *= (f+1);
+        }
+    });
+
+    if (count)
+        count >>= 1;
+
+    return count;
 }
 
 function loadPowers(max, power)
 {
+    if ($powers[power])
+        return $powers[power];
+
     power = BigInt(power);
     max   = BigInt(max);
 
@@ -60,56 +50,74 @@ function loadPowers(max, power)
 
         map.add(A);
     }
-    if (map.size === 0)
-        return undefined;
-
-    return [setToArray(map), map];
+    $powers[power] = map;
+    return map;
 }
 
 function F(N, trace)
 {
+    // Clear memoize
+    $powers = [];
+    $memoize= new Map();
+
     N = BigInt(N);
+
     let total = 0;
+    let traceCount = 0;
 
-    let maps  = new Map();
-
-    if (trace)
-        process.stdout.write('Loading powers ..');
-
-    let values = loadValues(N);
-
-    for (let pa = 2; ; pa++)
+    for (let pc = 3; ; pc++)
     {
-        let map = loadPowers(N, pa);
-        if (! map)
+        if (2n ** BigInt(pc) > N)
             break;
-        maps.set(pa, map);
-    }
-    if (trace)
-        console.log('.. Done');
 
-    for (let C of values)
-    {
-        if (trace)
-            process.stdout.write(`\rprocessing ${C}`);
-
-        // calculate count for powers of 2
-
-        for (let pa = 2; ; pa++)
+        for (let c = 2; ; c++)
         {
-            let As = maps.get(pa);
-            if (! As)
+            let C = BigInt(c) ** BigInt(pc);
+            if (C > N)
                 break;
 
-            let [vals, map] = As;
-            for (let A of vals)
+            if (trace)
             {
-                let B = C-A;
-                if (B < A)
-                    break;
-                if (map.has(B))
-                    total++;
+                if (traceCount++ == 0)
+                {
+                    process.stdout.write(`\r${pc} - ${N - C}   `);
+                }
+                if (traceCount > 1000)
+                    traceCount = 0;
             }
+            let subTotal = $memoize.get(C);
+            if (subTotal)
+            {
+                total += subTotal;
+                continue;
+            }
+
+            subTotal = getSquareSumCount(c, pc);
+
+            let middle = C/2n;
+            for (let pa = 3; ; pa++)
+            {
+                if (pa === pc)
+                    continue;
+                let PA = BigInt(pa);
+                if ((2n ** PA) > middle)
+                    break;
+
+                let powers = loadPowers(N, pa);
+
+                for (let a = 2n; ; a++)
+                {
+                    let A = a ** PA;
+                    let B = C - A;
+                    if (B <= A)
+                        break;
+                    if (powers.has(B))
+                        subTotal++;
+                }
+            }
+
+            $memoize.set(C, subTotal);
+            total += subTotal;
         }
     }
 
@@ -119,14 +127,13 @@ function F(N, trace)
 function analyze()
 {
     console.log(F(1E3));
-    console.log(F(1E11));
-
     console.log(F(1E4));
     console.log(F(1E5));
     console.log(F(1E6));
     console.log(F(1E7));
     console.log(F(1E8));
     console.log(F(1E9));
+    console.log(F(1E11));
 }
 
 function runTests()
@@ -134,14 +141,10 @@ function runTests()
     assert.equal(F(1E3), 7);
     assert.equal(F(1E5), 53);
     assert.equal(F(1E7), 287);
-    assert.equal(F(1E9), 1429);
-    assert.equal(F(1E10), 3231);
-
-    // 1E12 -> 16066
     console.log('Tests passed');
 }
 
-analyze();
+// analyze();
 runTests();
 
 let answer = timeLog.wrap("", () => {
