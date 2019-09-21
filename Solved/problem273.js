@@ -17,7 +17,64 @@ const assert = require('assert');
 const primeHelper = require('tools/primeHelper')(150);
 const timerLog = require('tools/timeLogger');
 
-const allPrimes = primeHelper.allPrimes().filter((p) => { return (p % 4)===1; });
+class Complex
+{
+    constructor(a, b)
+    {
+        this.a = Number(a);
+        this.b = Number(b);
+    }
+
+    mult1(other) {
+        let a = (this.a * other.a) - (this.b * other.b);
+        let b = (this.a * other.b) + (this.b * other.a);
+
+        return new Complex(a, b);
+    }
+
+    mult2(other) {
+        let a = (this.a * other.a) + (this.b * other.b);
+        let b = (this.b * other.a) - (this.a * other.b);
+
+        return new Complex(a, b);
+    }
+
+    get value() {
+        let a = Math.abs(this.a);
+        let b = Math.abs(this.b);
+        return Math.min(a, b);
+    }
+}
+
+function bruteForce(n)
+{
+    let result = undefined;
+    for (let a = 0; ; a++)
+    {
+        let A = a*a;
+        let B = n-A;
+        if (B < A) break;
+        let b = Math.round(Math.sqrt(B));
+        if (b*b === B)
+        {
+            if (result !== undefined)
+                throw "ERROR";
+            result = new Complex(a, b);
+        }
+    }
+    return result;
+}
+
+const allPrimes = timerLog.wrap('Loading primes', () => {
+    var primes = primeHelper.allPrimes().reduce((a, p) => {
+        if ((p % 4)===1)
+        {
+            a.push(bruteForce(p));
+        }
+        return a;
+    }, []);
+    return primes;
+});
 
 function generateNumbers(callback)
 {
@@ -39,78 +96,36 @@ function generateNumbers(callback)
     inner(0);
 }
 
-function force(n)
-{
-    let result = undefined;
-    for (let a = 0; ; a++)
-    {
-        let A = a*a;
-        let B = n-A;
-        if (B < A) break;
-        let b = Math.round(Math.sqrt(B));
-        if (b*b === B)
-        {
-            if (result !== undefined)
-                throw "ERROR";
-            result = {a: a, b: b};
-        }
-    }
-    return result;
-}
-
-function getABS()
-{
-    let abs = [];
-
-    for (let p of allPrimes)
-    {
-        abs[p] = force(p);
-    }
-
-    return abs;
-}
-
-const primeABS = getABS();
-
-function mult1(a1, a2)
-{
-    let a = (a1.a * a2.a) - (a1.b * a2.b);
-    let b = (a1.a * a2.b) + (a1.b * a2.a);
-
-    return {a: a, b: b};
-}
-
-function mult2(a1, a2)
-{
-    let a = (a1.a * a2.a) + (a1.b * a2.b);
-    let b = (a1.b * a2.a) - (a1.a * a2.b);
-
-    return {a: a, b: b};
-}
-
 function Sum(primes)
 {
-    let total = 0n;
+    let total = 0;
+    let extra = 0n;
 
     function inner(current, index)
     {
         if (index >= primes.length)
         {
-            let a = Math.min(Math.abs(current.a), Math.abs(current.b));
-            total += BigInt(a);
+            let a = current.value;
+            let t = total + a;
+            if (t > Number.MAX_SAFE_INTEGER)
+            {
+                extra+= BigInt(total) + BigInt(a);
+                total = 0;
+            }
+            else
+                total = t;
             return;
         }
-        let pa = primeABS[primes[index]];
-        let c1 = mult1(current, pa);
-        let c2 = mult2(current, pa);
+        let pa = primes[index];
+        let c1 = current.mult1(pa);
+        let c2 = current.mult2(pa);
         inner(c1, index+1);
         inner(c2, index+1);
     }
 
-    let pa = primeABS[primes[0]];
-    inner(pa, 1);
+    inner(primes[0], 1);
 
-    return total;
+    return extra + BigInt(total);
 }
 
 function S(n)
@@ -120,7 +135,7 @@ function S(n)
         if ((p % 4) !== 1 || f !== 1)
             throw "ERROR";
 
-        primes.push(p);
+        primes.push(bruteForce(p));
     })
     return Sum(primes);
 }
