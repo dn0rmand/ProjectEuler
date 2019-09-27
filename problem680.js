@@ -1,6 +1,7 @@
 const assert = require('assert');
 const timeLogger = require('tools/timeLogger');
 const RBTree = require('bintrees').BinTree;
+const announce = require('tools/announce');
 
 require('tools/numberHelper');
 
@@ -12,7 +13,13 @@ class Section
 {
     static compare(n1, n2)
     {
-        return n1.start - n2.start;
+        let cmp = n1.start - n2.start;
+        if (cmp > 0)
+            return 1;
+        else if (cmp < 0)
+            return -1;
+        else
+            return 0;
     }
 
     constructor(start, end)
@@ -193,8 +200,8 @@ class SpecialArray
             current = current.next;
         }
         let diff = this.count - nodes.length;
-        if (diff > 0)
-            console.log(`\n${diff} nodes reclaimed`);
+        if (diff > 1)
+            console.log(`${diff} nodes reclaimed`);
         this.count = nodes.length;
         this.tree.clear();
         this.insert(nodes, 0, nodes.length-1);
@@ -299,25 +306,16 @@ class SpecialArray
         {
             if (e === s)
             {
-                // this.tree.remove(s);
-
-                let l = s.end - s.start;
-
                 let x = s.min;
 
                 s.start = s_idx;
                 s.end   = e_idx;
                 s.min   = s.max;
                 s.max   = x;
-
-                // this.tree.insert(s);
                 break;
             }
             else
             {
-//                this.tree.remove(s);
-//                this.tree.remove(e);
-
                 let is = { len: s.end - s.start, min: s.min, max: s.max };
 
                 s.start = s_idx;
@@ -332,9 +330,6 @@ class SpecialArray
 
                 s_idx   = s.end+1n;
                 e_idx   = e.start-1n;
-
-//                this.tree.insert(s);
-//                this.tree.insert(e);
             }
         }
     }
@@ -385,7 +380,7 @@ function R(n, k, trace)
     // step 1 is a no-op
     for (let step = 1; step <= k; step++)
     {
-        if (++rebalance > 1000)
+        if (++rebalance > 10000)
         {
             rebalance = 0;
             A.rebalance();
@@ -415,5 +410,7 @@ console.log('Tests passed');
 let answer = timeLogger.wrap('', () => {
     return R(MAX, 1E6, true);
 });
-
+// 1E8, 1E4 => 941879399
+// 1E8, 1E5 => 851985380
 console.log('Answer is', answer);
+announce(680, `Answer is ${answer}`);
