@@ -1,34 +1,18 @@
 const assert = require('assert');
 const timeLogger = require('tools/timeLogger');
-const BTree = require('btreejs');
+const RBTree = require('bintrees').BinTree;
 
 require('tools/numberHelper');
 
+const MAX      = 10n**18n;
 const MODULO   = 1E9;
 const MODULO_N = BigInt(MODULO);
 
-// const MODINV_2 = Number(2).modInv(MODULO);
-// const MODINV_6 = Number(6).modInv(MODULO);
-
-function modProd(a, b)
-{
-    let x = a*b;
-    if (x > Number.MAX_SAFE_INTEGER)
-    {
-        x = Number((BigInt(a)*BigInt(b)) % MODULO_N);
-    }
-    return x;
-}
-
 class Section
 {
-    static compare(s1, s2)
+    static compare(n1, n2)
     {
-        if (s1.start < s2.start)
-            return -1;
-        if (s1.start > s2.start)
-            return 1;
-        return 0;
+        return n1.start - n2.start;
     }
 
     constructor(start, end)
@@ -49,6 +33,7 @@ class Section
         s2.prev = this;
         if (s2.next)
             s2.next.prev = s2;
+
         this.next = s2;
 
         s2.max = this.max;
@@ -123,29 +108,28 @@ class Section
 
     sum()
     {
-        let N = Number((this.end - this.start) % MODULO_N);
-        let I = Number(this.start % MODULO_N);
-        let X = Number(this.min % MODULO_N);
+        let N = (this.end - this.start) % MODULO_N;
+        let I = this.start % MODULO_N;
+        let X = this.min % MODULO_N;
 
-        let C1 = (N+1) % MODULO;
-        let C2 = N.modMul(N+1, MODULO) / 2; // .modMul(MODINV_2, MODULO);
-        let C3 = N.modMul(N+1, MODULO).modMul(N+N+1, MODULO) / 6; // .modMul(MODINV_6, MODULO);
+        let C1 = N+1n;
+        let k  = (N*C1) % MODULO_N;
+        let C2 = k / 2n;
+        let C3 = ((k*(N+N+1n))/6n) % MODULO_N;
 
-        let IX = I.modMul(X, MODULO);
+        let IX = (I * X) % MODULO_N;
 
         let total;
 
         if (this.min < this.max)
-            total = C1.modMul(IX, MODULO) + C2.modMul(X+I, MODULO) + C3;
+            total = (C1 * IX) % MODULO_N + (C2 * (X+I)) % MODULO_N + C3;
         else
-            total = C1.modMul(IX, MODULO) + C2.modMul(X-I, MODULO) - C3;
+            total = (C1 * IX) % MODULO_N + (C2 * (X-I)) % MODULO_N - C3;
 
-        total = total % MODULO;
-        return total;
+        total = total % MODULO_N;
+        return Number(total);
     }
 }
-
-const Tree = BTree.create(2, Section.compare);
 
 class SpecialArray
 {
@@ -154,10 +138,10 @@ class SpecialArray
         length = BigInt(length);
         this.length  = length;
         this.section = new Section(0n, length-1n, length);
-        this.count   = 1n;
+        this.count   = 1;
 
-        // this.tree = new Tree();
-        // this.tree.put(section);
+        this.tree = new RBTree(Section.compare);
+        this.tree.insert(this.section);
     }
 
     getFibonacci()
@@ -181,6 +165,65 @@ class SpecialArray
         return f;
     }
 
+    insert(nodes, start, end)
+    {
+        if (end < start)
+            return;
+
+        if (start === end)
+        {
+            this.tree.insert(nodes[start]);
+            return;
+        }
+        let middle = Math.ceil((end+start) / 2);
+
+        this.tree.insert(nodes[middle]);
+        this.insert(nodes, start, middle-1);
+        this.insert(nodes, middle+1, end);
+    }
+
+    rebalance()
+    {
+        let nodes = [];
+        let current = this.section;
+        while (current)
+        {
+            nodes.push(current);
+            current.joinNext();
+            current = current.next;
+        }
+        let diff = this.count - nodes.length;
+        if (diff > 0)
+            console.log(`\n${diff} nodes reclaimed`);
+        this.count = nodes.length;
+        this.tree.clear();
+        this.insert(nodes, 0, nodes.length-1);
+
+        assert.equal(this.count, this.tree.size);
+    }
+
+    search(start)
+    {
+        let res  = this.tree._root;
+        let data = {start: start};
+
+        while(res !== null)
+        {
+            if (res.data.start <= start && res.data.end >= start)
+                return res.data;
+
+            var c = this.tree._comparator(data, res.data);
+            if(c === 0) {
+                return res.data;
+            }
+            else {
+                res = res.get_child(c > 0);
+            }
+        }
+
+        return null;
+    }
+
     executeStep(i)
     {
         let start = this.getFibonacci();
@@ -192,7 +235,15 @@ class SpecialArray
         if (start > end)
             [start, end] = [end, start];
 
-        let firstSection = this.section;
+        let firstSection = this.search(start);
+
+        // Fix possible tree error
+        while (start < firstSection.start)
+        {
+            firstSection = firstSection.prev;
+            if (firstSection === null)
+                throw "ERROR";
+        }
 
         while (start > firstSection.end)
         {
@@ -205,11 +256,11 @@ class SpecialArray
         {
             firstSection.split(start);
             firstSection = firstSection.next;
-            // this.tree.put(firstSection);
+            this.tree.insert(firstSection);
             this.count++;
         }
 
-        let lastSection = firstSection;
+        let lastSection = this.search(end);
 
         while (end > lastSection.end)
         {
@@ -218,10 +269,17 @@ class SpecialArray
                 throw "ERROR";
         }
 
+        while (end < lastSection.start)
+        {
+            lastSection = lastSection.prev;
+            if (lastSection === null)
+                throw "ERROR";
+        }
+
         if (end < lastSection.end)
         {
             lastSection.split(end+1n);
-            // this.tree.put(lastSection.next);
+            this.tree.insert(lastSection.next);
             this.count++;
         }
 
@@ -230,37 +288,54 @@ class SpecialArray
             let x = firstSection.min;
             firstSection.min = firstSection.max;
             firstSection.max = x;
-
-            this.count -= firstSection.joinNext();
-            this.count -= firstSection.joinPrev();
             return;
         }
 
-        let info = [];
-        for (let s = firstSection; s != lastSection.next; s = s.next)
-        {
-            info.push({
-                len: s.end - s.start,
-                min: s.max,
-                max: s.min
-            });
-        }
-        let idx = firstSection.start;
-        for (let s = firstSection; s != lastSection.next; s = s.next)
-        {
-            let i = info.pop();
-            s.start = idx;
-            s.end   = idx + i.len;
-            s.max   = i.max;
-            s.min   = i.min;
+        let s_idx = firstSection.start;
+        let e_idx = lastSection.end;
+        let s = firstSection, e = lastSection;
 
-            idx     = s.end+1n;
-        }
-
-        this.count -= firstSection.joinPrev();
-        for (let s = firstSection; s && s.end <= end; s = s.next)
+        for (; s_idx <= e_idx; s = s.next, e = e.prev)
         {
-            this.count -= s.joinNext();
+            if (e === s)
+            {
+                // this.tree.remove(s);
+
+                let l = s.end - s.start;
+
+                let x = s.min;
+
+                s.start = s_idx;
+                s.end   = e_idx;
+                s.min   = s.max;
+                s.max   = x;
+
+                // this.tree.insert(s);
+                break;
+            }
+            else
+            {
+//                this.tree.remove(s);
+//                this.tree.remove(e);
+
+                let is = { len: s.end - s.start, min: s.min, max: s.max };
+
+                s.start = s_idx;
+                s.end   = s_idx + (e.end - e.start);
+                s.max   = e.min;
+                s.min   = e.max;
+
+                e.end   = e_idx;
+                e.start = e_idx - is.len;
+                e.max   = is.min;
+                e.min   = is.max;
+
+                s_idx   = s.end+1n;
+                e_idx   = e.start-1n;
+
+//                this.tree.insert(s);
+//                this.tree.insert(e);
+            }
         }
     }
 
@@ -305,15 +380,21 @@ function buildA(n)
 function R(n, k, trace)
 {
     let A = buildA(n);
+    let rebalance = 0;
 
-    // console.log(`0: ${A.print()}`);
     // step 1 is a no-op
     for (let step = 1; step <= k; step++)
     {
+        if (++rebalance > 1000)
+        {
+            rebalance = 0;
+            A.rebalance();
+        }
+
         if (trace)
             process.stdout.write(`\r${step} - ${A.count}`);
+
         A.executeStep(step);
-        // console.log(`${step}: ${A.print()}`);
     }
 
     let total = A.sum();
@@ -332,7 +413,7 @@ timeLogger.wrap('', () => {
 console.log('Tests passed');
 
 let answer = timeLogger.wrap('', () => {
-    return R(1E6, 1E4, true);
+    return R(MAX, 1E6, true);
 });
 
 console.log('Answer is', answer);
