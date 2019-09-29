@@ -22,7 +22,7 @@ class Section
             return 0;
     }
 
-    constructor(start, end)
+    constructor(start, end, direction)
     {
         this.start = start;
         this.end   = end;
@@ -30,6 +30,14 @@ class Section
         this.max   = end;
         this.next  = null;
         this.prev  = null;
+    }
+
+    get direction()
+    {
+        if (this.start < this.end)
+            return 1n;
+        else
+            return -1n;
     }
 
     split(index)
@@ -51,12 +59,12 @@ class Section
         if (this.min < this.max)
         {
             this.max = this.min + offset;
-            s2.min = this.max+1n;
+            s2.min   = this.max+1n;
         }
         else
         {
             this.max = this.min - offset;
-            s2.min = this.max-1n;
+            s2.min   = this.max-1n;
         }
     }
 
@@ -65,16 +73,13 @@ class Section
         let count = 0n;
         while (this.next)
         {
-            let offset1 = this.min > this.max ? -1n : 1n;
-            let offset2 = this.next.min > this.next.max ? -1n : 1n;
-
-            if (offset1 != offset2)
+            if (this.direction != this.next.direction)
                 break;
 
-            if (this.max+offset1 === this.next.min)
+            if (this.max+this.direction === this.next.min)
             {
-                this.max = this.next.max;
-                this.end = this.next.end;
+                this.max  = this.next.max;
+                this.end  = this.next.end;
                 this.next = this.next.next;
                 if (this.next)
                     this.next.prev = this;
@@ -91,17 +96,14 @@ class Section
         let count = 0n;
         while (this.prev)
         {
-            let offset1 = this.min > this.max ? -1n : 1n;
-            let offset2 = this.prev.min > this.prev.max ? -1n : 1n;
-
-            if (offset1 != offset2)
+            if (this.direction != this.prev.direction)
                 break;
 
-            if (this.prev.max + offset1 === this.min)
+            if (this.prev.max + this.direction === this.min)
             {
-                this.min = this.prev.min;
-                this.start = this.prev.start;
-                this.prev     = this.prev.prev;
+                this.min    = this.prev.min;
+                this.start  = this.prev.start;
+                this.prev   = this.prev.prev;
                 if (this.prev)
                     this.prev.next = this;
 
@@ -115,26 +117,26 @@ class Section
 
     sum()
     {
-        let N = (this.end - this.start) % MODULO_N;
-        let I = this.start % MODULO_N;
-        let X = this.min % MODULO_N;
+        let N = this.end - this.start;
+        let I = this.start;
+
+        let X = this.min;
 
         let C1 = N+1n;
-        let k  = (N*C1) % MODULO_N;
+        let k  = N*C1;
         let C2 = k / 2n;
-        let C3 = ((k*(N+N+1n))/6n) % MODULO_N;
+        let C3 = (k*(N+N+1n))/6n;
 
-        let IX = (I * X) % MODULO_N;
+        let IX = I * X;
 
         let total;
 
         if (this.min < this.max)
-            total = (C1 * IX) % MODULO_N + (C2 * (X+I)) % MODULO_N + C3;
+            total = (C1 * IX) + (C2 * (X+I)) + C3;
         else
-            total = (C1 * IX) % MODULO_N + (C2 * (X-I)) % MODULO_N - C3;
+            total = (C1 * IX) + (C2 * (X-I)) - C3;
 
-        total = total % MODULO_N;
-        return Number(total);
+        return Number(total % MODULO_N);
     }
 }
 
@@ -144,7 +146,7 @@ class SpecialArray
     {
         length = BigInt(length);
         this.length  = length;
-        this.section = new Section(0n, length-1n, length);
+        this.section = new Section(0n, length-1n, 1n);
         this.count   = 1;
 
         this.tree = new RBTree(Section.compare);
@@ -220,43 +222,45 @@ class SpecialArray
                 return res.data;
 
             var c = this.tree._comparator(data, res.data);
-            if(c === 0) {
+            if(c === 0)
                 return res.data;
-            }
-            else {
+            else
                 res = res.get_child(c > 0);
-            }
         }
 
         return null;
     }
 
-    executeStep(i)
+    doSearch()
     {
         let start = this.getFibonacci();
         let end   = this.getFibonacci();
 
         if (start === end)
-            return; // no-op
+            return { f: undefined, l: undefined }; // no-op
 
         if (start > end)
             [start, end] = [end, start];
 
-        let firstSection = this.search(start);
+        let firstSection = this.section;
 
         // Fix possible tree error
+        let fixed = 0;
         while (start < firstSection.start)
         {
             firstSection = firstSection.prev;
             if (firstSection === null)
                 throw "ERROR";
+            fixed++;
         }
+        if (fixed)
+            console.log('Fixed first', fixed);
 
         while (start > firstSection.end)
         {
             firstSection = firstSection.next;
             if (firstSection === null)
-                throw "ERROR";
+                throw "ERROR: firstSection cannot be null";
         }
 
         if (start > firstSection.start)
@@ -269,18 +273,23 @@ class SpecialArray
 
         let lastSection = this.search(end);
 
-        while (end > lastSection.end)
-        {
-            lastSection = lastSection.next;
-            if (lastSection === null)
-                throw "ERROR";
-        }
-
+        fixed = 0;
+        // Fix possible tree error
         while (end < lastSection.start)
         {
             lastSection = lastSection.prev;
             if (lastSection === null)
-                throw "ERROR";
+                throw "ERROR: lastSection cannot be null";
+            fixed++;
+        }
+        if (fixed)
+            console.log('Fixed last', fixed);
+
+        while (end > lastSection.end)
+        {
+            lastSection = lastSection.prev;
+            if (lastSection === null)
+                throw "ERROR: lastSection cannot be null";
         }
 
         if (end < lastSection.end)
@@ -290,14 +299,16 @@ class SpecialArray
             this.count++;
         }
 
-        if (lastSection === firstSection) // easy one :)
-        {
-            let x = firstSection.min;
-            firstSection.min = firstSection.max;
-            firstSection.max = x;
-            return;
-        }
+        if (start != firstSection.start)
+            throw `ERROR: firstSection.end doesn't match - ${firstSection.start} instead of ${start}`;
+        if (end != lastSection.end)
+            throw `ERROR: lastSection.end doesn't match - ${lastSection.end} instead of ${end}`;
 
+        return {f: firstSection, l: lastSection};
+    }
+
+    reverseSection(firstSection, lastSection)
+    {
         let s_idx = firstSection.start;
         let e_idx = lastSection.end;
         let s = firstSection, e = lastSection;
@@ -312,6 +323,7 @@ class SpecialArray
                 s.end   = e_idx;
                 s.min   = s.max;
                 s.max   = x;
+
                 break;
             }
             else
@@ -332,6 +344,23 @@ class SpecialArray
                 e_idx   = e.start-1n;
             }
         }
+    }
+
+    executeStep()
+    {
+        let searchResult = this.doSearch();
+        let { f:firstSection, l:lastSection } = searchResult;
+        if (firstSection === undefined)
+            return;
+
+        if (lastSection === firstSection) // easy one :)
+        {
+            let x = firstSection.min;
+            firstSection.min = firstSection.max;
+            firstSection.max = x;
+        }
+        else
+            this.reverseSection(firstSection, lastSection);
     }
 
     sum()
@@ -380,16 +409,18 @@ function R(n, k, trace)
     // step 1 is a no-op
     for (let step = 1; step <= k; step++)
     {
-        if (++rebalance > 10000)
+        if (++rebalance > 1000)
         {
             rebalance = 0;
+            if (trace)
+                process.stdout.write('\rRebalancing ..');
             A.rebalance();
         }
 
         if (trace)
             process.stdout.write(`\r${step} - ${A.count}`);
 
-        A.executeStep(step);
+        A.executeStep();
     }
 
     let total = A.sum();
@@ -410,7 +441,6 @@ console.log('Tests passed');
 let answer = timeLogger.wrap('', () => {
     return R(MAX, 1E4, true);
 });
-// 1E8, 1E4 => 941879399
-// 1E8, 1E5 => 851985380
+assert.equal(answer, 775212724);
 console.log('Answer is', answer);
-announce(680, `Answer is ${answer}`);
+// announce(680, `Answer is ${answer}`);
