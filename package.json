@@ -30,6 +30,7 @@
     "pretty-hrtime": "^1.0.3",
     "prho": "^1.0.1",
     "slack-webhook": "^1.0.0",
+    "splaytreejs": "^1.0.5",
     "written-number": "^0.8.1",
     "xmldoc": "^1.1.2"
   }

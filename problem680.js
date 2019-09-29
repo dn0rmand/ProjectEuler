@@ -1,6 +1,7 @@
 const assert = require('assert');
 const timeLogger = require('tools/timeLogger');
 const RBTree = require('bintrees').BinTree;
+// const splayTree = require("splaytreejs");
 const announce = require('tools/announce');
 
 require('tools/numberHelper');
@@ -22,7 +23,7 @@ class Section
             return 0;
     }
 
-    constructor(start, end, direction)
+    constructor(start, end)
     {
         this.start = start;
         this.end   = end;
@@ -140,6 +141,55 @@ class Section
     }
 }
 
+class TreeWrapper
+{
+    constructor(root)
+    {
+        this.tree = new RBTree(Section.compare);
+        this.tree.insert(root, root);
+    }
+
+    get size()
+    {
+        return this.tree.size;
+    }
+
+    insert(section)
+    {
+        this.tree.insert(section);
+    }
+
+    update(key, section)
+    {
+        // if (key !== section.start)
+        // {
+        //     if (! this.tree.remove({ start: key }))
+        //         throw "Cannot remove";
+        //     this.insert(section);
+        // }
+    }
+
+    search(key)
+    {
+        let res  = this.tree._root;
+        let data = {start: key};
+
+        while(res !== null)
+        {
+            if (res.data.start <= key && res.data.end >= key)
+                return res.data;
+
+            var c = this.tree._comparator(data, res.data);
+            if(c === 0)
+                return res.data;
+            else
+                res = res.get_child(c > 0);
+        }
+
+        return null;
+    }
+}
+
 class SpecialArray
 {
     constructor(length)
@@ -149,8 +199,7 @@ class SpecialArray
         this.section = new Section(0n, length-1n, 1n);
         this.count   = 1;
 
-        this.tree = new RBTree(Section.compare);
-        this.tree.insert(this.section);
+        this.tree = new TreeWrapper(this.section);
     }
 
     getFibonacci()
@@ -186,7 +235,10 @@ class SpecialArray
         }
         let middle = Math.ceil((end+start) / 2);
 
-        this.tree.insert(nodes[middle]);
+        if (this.tree === undefined)
+            this.tree = new TreeWrapper(nodes[middle]);
+        else
+            this.tree.insert(nodes[middle]);
         this.insert(nodes, start, middle-1);
         this.insert(nodes, middle+1, end);
     }
@@ -205,30 +257,10 @@ class SpecialArray
         if (diff > 1)
             console.log(`${diff} nodes reclaimed`);
         this.count = nodes.length;
-        this.tree.clear();
+        this.tree = undefined;
         this.insert(nodes, 0, nodes.length-1);
 
         assert.equal(this.count, this.tree.size);
-    }
-
-    search(start)
-    {
-        let res  = this.tree._root;
-        let data = {start: start};
-
-        while(res !== null)
-        {
-            if (res.data.start <= start && res.data.end >= start)
-                return res.data;
-
-            var c = this.tree._comparator(data, res.data);
-            if(c === 0)
-                return res.data;
-            else
-                res = res.get_child(c > 0);
-        }
-
-        return null;
     }
 
     doSearch()
@@ -242,7 +274,7 @@ class SpecialArray
         if (start > end)
             [start, end] = [end, start];
 
-        let firstSection = this.section;
+        let firstSection = this.tree.search(start);
 
         // Fix possible tree error
         let fixed = 0;
@@ -271,7 +303,7 @@ class SpecialArray
             this.count++;
         }
 
-        let lastSection = this.search(end);
+        let lastSection = this.tree.search(end);
 
         fixed = 0;
         // Fix possible tree error
@@ -317,6 +349,8 @@ class SpecialArray
         {
             if (e === s)
             {
+                let ss = s.start;
+
                 let x = s.min;
 
                 s.start = s_idx;
@@ -324,10 +358,14 @@ class SpecialArray
                 s.min   = s.max;
                 s.max   = x;
 
+                this.tree.update(ss, s);
                 break;
             }
             else
             {
+                let ss = s.start;
+                let es = e.start;
+
                 let is = { len: s.end - s.start, min: s.min, max: s.max };
 
                 s.start = s_idx;
@@ -342,6 +380,9 @@ class SpecialArray
 
                 s_idx   = s.end+1n;
                 e_idx   = e.start-1n;
+
+                this.tree.update(ss, s);
+                this.tree.update(es, e);
             }
         }
     }
