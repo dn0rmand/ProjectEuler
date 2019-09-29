@@ -399,17 +399,17 @@ function R(n, k, trace)
     return total;
 }
 
-console.time('680 tests')
+timeLogger.wrap('', () => {
     assert.equal(R(5, 4), 27);
     assert.equal(R(1E2, 1E2), 246597);
     assert.equal(R(1E4, 1E4), 249275481640 % MODULO);
-console.timeEnd('680 tests')
+});
 
 console.log('Tests passed');
 
-console.time('680 actual');
-let answer = R(MAX, 1E4, true);
-console.timeEnd('680 actual');
+let answer = timeLogger.wrap('', () => {
+    return R(MAX, 1E4, true);
+});
 // 1E8, 1E4 => 941879399
 // 1E8, 1E5 => 851985380
 console.log('Answer is', answer);
