@@ -1,75 +1,11 @@
 const assert = require('assert');
 const timeLog = require('tools/timeLogger');
+const fs = require('fs');
 
-const MODULO = 1000000007;
+const MODULO    = 1000000007;
+const MODULO_N  = BigInt(MODULO);
+
 const MAX = 1E7;
-
-/*
-class State
-{
-    constructor(p2, p3, p5)
-    {
-        this.p2 = +p2;
-        this.p3 = +p3;
-        this.p5 = +p5;
-    }
-}
-
-class Machine
-{
-    constructor(p2, p3, p5)
-    {
-        this.map = [];
-        this.newStates = [];
-        this.states = [new State(p2, p3, p5)];
-    }
-
-    record(p2, p3, p5)
-    {
-        if (p2 < 0 || p3 < 0 || p5 < 0)
-            return;
-
-        let m2 = this.map[p2];
-        if (! m2)
-            m2 = this.map[p2] = [];
-        let m3 = m2[p3];
-        if (! m3)
-            m3 = m2[p3] = [];
-
-        if (! m3[p5])
-        {
-            m3[p5] = true;
-            this.newStates.push(new State(p2, p3, p5));
-        }
-    }
-
-    process()
-    {
-        this.newStates = [];
-        this.map = [];
-        for (let state of this.states)
-        {
-            this.record(state.p2-1, state.p3  , state.p5);
-            this.record(state.p2  , state.p3-1, state.p5);
-            this.record(state.p2  , state.p3  , state.p5-1);
-        }
-        this.states = this.newStates;
-        this.map = [];
-        this.newStates = [];
-    }
-
-    execute(count)
-    {
-        count = +count;
-        while(count--)
-            this.process();
-
-        return this.result;
-    }
-
-    get result() { return this.states.length % MODULO; }
-}
-*/
 
 function part2(p5, p3, p2)
 {
@@ -96,51 +32,194 @@ function part2(p5, p3, p2)
     return r;
 }
 
-function solve(n, trace)
+let bigIntCheck = false;
+
+function shortcut2(x, z, s)
 {
-    function part1()
-    {
-        let total = 0;
-        for(let x = 0; ; x++)
-        {
-            let f2 = 5*x;
-            if (f2 > n)
-                break;
-            if (trace)
-                process.stdout.write(`\r${ n - f2 }    `);
-            let ystart = 0;
+    let t1 = (s+1)*z - (3*s*(s+1))/2;
 
-            if ((n - f2) & 1) // odd ?
-                ystart++;
-
-            for(let y = ystart; ; y += 2)
-            {
-                let f3 = 3*y;
-                let target = n - f2 - f3;
-                if (target < 0)
-                    break;
-                let z = target / 2;
-                let t = part2(x, y, z);
-                if (t)
-                    total = (total + t) % MODULO;
-            }
-        }
-
-        if (trace)
-            console.log('\r');
-        return total;
-    }
-
-    return part1();
+    return ((t1 % MODULO) * x) % MODULO;
 }
 
-assert.equal(solve(10), 4);
+function shortcut(y, z, s)
+{
+    let C1 = s+1;
+    let C2 = (s * C1);
+    let C3 = (C2*(s+s+1))/6;
+
+    C2 /= 2;
+
+    let t1 = C1*y*z + 5*C2*z;
+    let t2 = 3*C2*y + 15*C3;
+
+    if (t1 <= Number.MAX_SAFE_INTEGER && t2 <= Number.MAX_SAFE_INTEGER)
+        return (t1-t2) % MODULO;
+
+    if (! bigIntCheck)
+    {
+        console.log("BigInt needed");
+        bigIntCheck = true;
+    }
+
+    y = BigInt(y);
+    z = BigInt(z);
+    s = BigInt(s);
+
+    C1 = s+1n;
+    C2 = (s * C1);
+    C3 = (C2*(s+s+1n))/6n;
+
+    C2 /= 2n;
+
+    let t = C1*y*z - 3n*C2*y + 5n*C2*z - 15n*C3;
+
+    return Number(t % MODULO_N);
+}
+
+const FILENAME = 'problem682.state';
+const TMPFILE  = 'problem682.tmp';
+
+function load()
+{
+    if (! fs.existsSync(FILENAME))
+    {
+        return { x: 0, total: 0 };
+    }
+
+    let data = fs.readFileSync(FILENAME);
+
+    data = JSON.parse(data);
+    if (data.max != MAX)
+        return { x: 0, total: 0 };
+
+    return data;
+}
+
+function save(x, total)
+{
+    let data = JSON.stringify({ x: x, total: total, max:MAX });
+    fs.writeFileSync(TMPFILE, data);
+    if (fs.existsSync(FILENAME))
+        fs.unlinkSync(FILENAME);
+    fs.renameSync(TMPFILE, FILENAME);
+}
+
+function solve(n, trace)
+{
+    let total = 0;
+    let startX = 0;
+
+    let traceCount = 0;
+    if (trace)
+    {
+        let data = load();
+
+        startX = data.x;
+        total  = data.total;
+    }
+
+    for(let x = startX; ; x++)
+    {
+        let f2 = 2*x;
+        if (f2 > n)
+            break;
+
+        if (trace)
+        {
+            if (traceCount++ == 0)
+            {
+                process.stdout.write(`\r${ n - f2 }    `);
+                save(x, total);
+            }
+            if (traceCount >= 1000)
+                traceCount = 0;
+        }
+
+        let ystart = -1;
+        let zstart = -1;
+        let remain = n - f2;
+
+        for(let f3 = 0; ; f3 += 3)
+        {
+            let f5 = remain - f3;
+            if (f5 < 0)
+                break;
+            if (f5 % 5 == 0)
+            {
+                ystart = f3 / 3;
+                zstart = f5 / 5;
+                break;
+            }
+        }
+        if (ystart < 0 || zstart < 0)
+            continue;
+        if ((x+ystart+zstart) & 1)
+            continue;
+
+        if (n - f2 <= f2)
+        {
+            // can shortcut it
+            steps = (zstart - (zstart % 3))/3;
+
+            let t = shortcut(ystart+1, zstart+1, steps);
+            total = (total + t) % MODULO;
+            continue;
+        }
+
+        let y, z;
+
+        for(y = ystart, z = zstart; z >= 0; y += 5, z -= 3)
+        {
+            if (y >= x+z)
+            {
+                // another shortcut possible.
+                let steps = (z - (z % 3))/3;
+
+                let t = shortcut2(x+1, z+1, steps);
+                if (t)
+                    total = (total + t) % MODULO;
+                break;
+            }
+            else
+            {
+                let t = part2(x, y, z);
+                if (t)
+                    total = (total+t) % MODULO;
+            }
+        }
+    }
+
+    if (trace)
+        console.log('\r');
+
+    return total;
+}
+
 assert.equal(solve(100), 3629);
 assert.equal(solve(1000), 25808429);
 assert.equal(solve(10000), 9403972);
+assert.equal(solve(10), 4);
 console.log('Tests passed');
 
 let answer = timeLog.wrap('', () => {
     return solve(MAX, true);
 });
 console.log('Answer is', answer);
+
+/*
+
+(y)*(z)+ (y+5)*(z-3)+ (y+10)*(z-6)+ (y+15)*(z-9)
+
+yz + yz + yz + yz - 3(y + 2y + 3y) + 5z + 10z + 15z - 15 - 60 - 135
+
+4*yz - 3*(1+2+3)y + 5*(1+2+3)z - (3*5)(1^2+2^2+3^2)
+
+s = steps = 3
+
+(s+1)y*z - 3*(1..s)*y + 5*(1..s)z - 3*15*(1^2..s^2)
+
+1..s = s*(s+1) / 2
+1^2...s^2 = s(s+1)(2s+1)/6
+
+
+*/
