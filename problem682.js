@@ -36,6 +36,13 @@ function part2(p5, p3, p2)
 
 let bigIntCheck = false;
 
+function shortcut3(x, y, s)
+{
+    let t1 = (s+1)*y + (5*s*(s+1))/2;
+
+    return ((t1 % MODULO) * x) % MODULO;
+}
+
 function shortcut2(x, z, s)
 {
     let t1 = (s+1)*z - (3*s*(s+1))/2;
@@ -78,8 +85,8 @@ function shortcut(y, z, s)
     return Number(t % MODULO_N);
 }
 
-const FILENAME = 'problem682.state';
-const TMPFILE  = 'problem682.tmp';
+const FILENAME = 'problem682b.state';
+const TMPFILE  = 'problem682b.tmp';
 
 function load()
 {
@@ -181,6 +188,23 @@ function solve(n, trace)
                 if (t)
                     total = (total + t) % MODULO;
                 break;
+            }
+            else if (z > x+y)
+            {
+                let t;
+                let steps = Math.ceil((z-x-y)/8)-1;
+                if (steps < 1)
+                {
+                    t = part2(x, y, z);
+                }
+                else
+                {
+                    t = shortcut3(x+1, y+1, steps);
+                    y += 5*(steps);
+                    z -= 3*(steps);
+                }
+                if (t)
+                    total = (total + t) % MODULO;
             }
             else
             {
