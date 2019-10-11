@@ -1,5 +1,7 @@
 const assert = require('assert');
 const timeLog = require('tools/timeLogger');
+const announce = require('tools/announce');
+
 const fs = require('fs');
 
 const MODULO    = 1000000007;
@@ -205,21 +207,4 @@ let answer = timeLog.wrap('', () => {
     return solve(MAX, true);
 });
 console.log('Answer is', answer);
-
-/*
-
-(y)*(z)+ (y+5)*(z-3)+ (y+10)*(z-6)+ (y+15)*(z-9)
-
-yz + yz + yz + yz - 3(y + 2y + 3y) + 5z + 10z + 15z - 15 - 60 - 135
-
-4*yz - 3*(1+2+3)y + 5*(1+2+3)z - (3*5)(1^2+2^2+3^2)
-
-s = steps = 3
-
-(s+1)y*z - 3*(1..s)*y + 5*(1..s)z - 3*15*(1^2..s^2)
-
-1..s = s*(s+1) / 2
-1^2...s^2 = s(s+1)(2s+1)/6
-
-
-*/
+announce(682, `Answer is ${answer}`);
