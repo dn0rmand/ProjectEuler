@@ -99,6 +99,25 @@ class TimeLogger
             logger.stop();
         }
     }
+
+    static async wrapAsync(message, action)
+    {
+        var logger = new TimeLogger(message);
+        logger.start();
+        try
+        {
+            return await action();
+        }
+        catch(e)
+        {
+            logger.stop();
+            throw e;
+        }
+        finally
+        {
+            logger.stop();
+        }
+    }
 }
 
 module.exports = TimeLogger;
