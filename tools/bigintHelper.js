@@ -3,6 +3,11 @@ const bigIntHelper = function()
     BigInt.ONE  = BigInt(1);
     BigInt.ZERO = BigInt(0);
 
+    BigInt.prototype.modMul = function(value, mod)
+    {
+        return (this * BigInt(value)) % BigInt(mod);
+    }
+
     BigInt.prototype.modPow = function(exp, mod)
     {
         if (mod == 0)
