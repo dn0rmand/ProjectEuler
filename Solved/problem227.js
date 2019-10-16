@@ -1,74 +1,101 @@
+const assert = require('assert');
 const timeLog = require('tools/timeLogger');
-const DELTA   = 1E-11;
 
-function solve(PLAYERS)
+const MIN_DELTA = 1E-11
+
+const SAME   = 18/36;
+const PLUS1  = 8/36;
+const PLUS2  = 1/36;
+const MINUS1 = 8/36;
+const MINUS2 = 1/36;
+
+class StateCollection
 {
-    const MIDDLE = Math.floor(PLAYERS/2);
-
-    let result = 0;
-    let states = new Float64Array(MIDDLE+1).fill(0);
-    let newStates = new Float64Array(MIDDLE+1);
-
-    states[MIDDLE] = 1;
-
-    const PLUS1 = 8/36;
-    const PLUS2 = 1/36;
-    const MINUS1= 8/36;
-    const MINUS2= 1/36;
-    const SAME  = 18/36;
-
-    const MIN_ITERATIONS = PLAYERS*PLAYERS;
-
-    for(let turn = 1; ; turn++)
+    constructor(players)
     {
-        newStates.fill(0);
+        assert.equal(players & 1, 0);
 
-        for(let distance = 1; distance <= MIDDLE; distance++)
+        this.middle= players / 2;
+        this.inner = new Float64Array(this.middle+1).fill(0);
+        this.inner[this.middle] = 1;
+    }
+
+    clear()
+    {
+        this.inner.fill(0);
+    }
+
+    add(distance, probability)
+    {
+        if (distance < 0)
+            distance = Math.abs(distance);
+        else if (distance > this.middle)
+            distance = this.middle+this.middle-distance;
+
+        this.inner[distance] += probability;
+    }
+
+    forEach(callback)
+    {
+        this.inner.forEach((value, distance) => {
+            if (value != 0)
+                callback(distance, value);
+        });
+    }
+}
+
+function solve(players)
+{
+    assert.equal(players & 1, 0);
+
+    let states    = new StateCollection(players);
+    let newStates = new StateCollection(players);
+
+    let oldDelta = 0;
+    let result    = 0;
+
+    for(let turn = 0; ; turn++)
+    {
+        newStates.clear();
+
+        let delta = 0;
+
+        states.forEach((distance, value) =>
         {
-            let last = states[distance];
-
-            newStates[distance]   += SAME * last;
-            newStates[distance-1] += MINUS1 * last;
-
-            if (distance == 1)
+            if (distance == 0)
             {
-                newStates[distance]   += MINUS2 * last;
-                newStates[distance+1] += PLUS1 * last;
-                newStates[distance+2] += PLUS2 * last;
-            }
-            else if (distance == MIDDLE-1)
-            {
-                newStates[distance]   += PLUS2 * last;
-                newStates[distance-2] += MINUS2 * last;
-                newStates[distance+1] += PLUS1 * last;
-            }
-            else if (distance == MIDDLE)
-            {
-                newStates[distance-1] += PLUS1 * last;
-                newStates[distance-2] += (MINUS2 + PLUS2) * last;
+                delta += turn * value;
             }
             else
             {
-                newStates[distance-2] += MINUS2 * last;
-                newStates[distance+1] += PLUS1 * last;
-                newStates[distance+2] += PLUS2 * last;
+                newStates.add(distance + 0, value * SAME);// distance remain the same
+
+                newStates.add(distance - 2, value * MINUS2); // a 1 and a 6
+                newStates.add(distance + 2, value * PLUS2); // a 6 and a 1
+
+                newStates.add(distance - 1, value * MINUS1); // a 6 and neither 1 or 6
+                newStates.add(distance + 1, value * PLUS1); // a 1 and neither 1 or 6
             }
-        }
+        });
 
-        let old = states;
-        states = newStates;
-        newStates = old;
-
-        let delta = turn * states[0];
         result += delta;
-        if (turn > MIN_ITERATIONS && delta < DELTA)
-            break;
+
+        if (delta < oldDelta)
+            if (delta < MIN_DELTA)
+                break;
+
+        oldDelta = delta;
+
+        [states, newStates] = [newStates, states];
     }
 
     return result.toPrecision(10);
 }
 
-let answer = timeLog.wrap('', () => {
-    return solve(100);
+const PLAYERS = 100;
+
+let answer = timeLog.wrap(`Solving for ${PLAYERS} players`, () => {
+    return solve(PLAYERS);
 });
+
 console.log("Answer is", answer);
