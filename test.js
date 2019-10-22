@@ -17,42 +17,98 @@ const assert = {
     }
 }
 
-const players = ['Louise', 'Richard']
-// Complete the counterGame function below.
-function counterGame(n) {
-    if (n == 1)
-        return players[1];
+// Complete the countLuck function below.
+function countLuck(matrix, k)
+{
+    let $waved;
+    let $visited = {};
 
-    let player = 1;
-    while (n > 1)
+    function get(x, y)
     {
-        player = (player+1) % 2;
+        if (x < 0 || x >= matrix.length)
+            return 'X';
+        if (y < 0 || y >= matrix[x].length)
+            return 'X';
+        let k = x+'.'+y;
+        if ($visited[k])
+            return $visited[k];
+        return matrix[x][y];
+    }
 
-        let ref = 2n;
-        let p = 0;
-        while (n > ref)
+    function set(x, y, value)
+    {
+        if (x < 0 || x >= matrix.length)
+            return;
+        if (y < 0 || y >= matrix[x].length)
+            return;
+        let k = x+'.'+y;
+        $visited[k] = value;
+    }
+
+    function findPath(x, y, waved)
+    {
+        if ($waved) // already found path
+            return $waved;
+
+        if (get(x, y) == 'X')
+            return;
+        if (get(x, y) == '*')
         {
-            p++;
-            ref *= 2n;
+            $waved = waved;
+            return;
         }
-        if (ref == n)
+        let w = -1;
+        if (get(x+1, y) != 'X') w++;
+        if (get(x-1, y) != 'X') w++;
+        if (get(x, y+1) != 'X') w++;
+        if (get(x, y-1) != 'X') w++;
+
+        if (w > 1)
+            w = 1;
+        if (w < 0)
+            w = 0;
+
+        set(x, y, 'X'); // prevent going in a loop
+        findPath(x+1, y, waved+w);
+        findPath(x-1, y, waved+w);
+        findPath(x, y+1, waved+w);
+        findPath(x, y-1, waved+w);
+        set(x, y, '.');
+    }
+
+    let x, y;
+
+    for (let i = 0; i < matrix.length; i++)
+    {
+        if (x != undefined && y != undefined)
+            break;
+        for (let j = 0; j < matrix[i].length; j++)
         {
-            // it's a power of 2
-            player = (player+p) % 2;
-            n      = 1;
-        }
-        else
-        {
-            ref /= 2n;
-            n -= ref;
+            if (matrix[i][j] == 'M')
+            {
+                x = i;
+                y = j;
+                break;
+            }
         }
     }
 
-    return players[player];
+    if (x == undefined || y == undefined)
+        return "What?"
+
+    findPath(x, y, 0);
+    if ($waved == k)
+        return "Impressed"
+    else
+        return "Oops!"
 }
 
-assert.equal(counterGame(6n), "Richard");
-
+assert.equal(countLuck(['*.M', '.X.'], 1), "Impressed");
+assert.equal(countLuck(['.X.X......X',
+                        '.X*.X.XXX.X',
+                        '.XX.X.XM...',
+                        '......XXXX.'], 3), "Impressed");
+assert.equal(countLuck(['*..', 'X.X', '..M'], 1), "Oops!");
 
 process.exit(0);
 

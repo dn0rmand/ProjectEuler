@@ -23,7 +23,7 @@ function s(n)
 
 const $lastS = { k: 0n, total: 0 };
 
-function S(k)
+function S1(k)
 {
     k = BigInt(k);
     let start = $lastS.k + 1n;
@@ -35,27 +35,28 @@ function S(k)
         total = 0;
     }
 
-    let startValue = s(start);
-
-    while(/*start % 9n != 0 &&*/ start <= k)
+    while(start % 9n != 0 && start <= k)
     {
-        startValue = s(start);
+        let value = s(start);
 
-        total = (total + startValue) % MODULO;
+        total = (total + value) % MODULO;
 
         start++;
     }
-/*
+
+    // Faster
     if (start <= k)
     {
         const H = 1+2+3+4+5+6+7+8+9;
 
-        let power = 10;
-        let previous = startValue;
+        let previous = s(start);
+        let power    = (previous+1) % MODULO;
 
+        total = (total + previous) % MODULO;
+        start++;
         while (start+9n <= k)
         {
-            let value    = (previous.modMul(9, MODULO) + H.modMul(power, MODULO)) % MODULO;
+            let value = (previous.modMul(9, MODULO) + H.modMul(power, MODULO)) % MODULO;
 
             total = (total + value) % MODULO;
 
@@ -64,9 +65,35 @@ function S(k)
             start   += 9n;
         }
     }
-*/
+
+    // Finish
+    while(start <= k)
+    {
+        let value = s(start);
+
+        total = (total + value) % MODULO;
+
+        start++;
+    }
+
     $lastS.k = k;
     $lastS.total = total;
+
+    return total;
+}
+
+function S(k)
+{
+    let n     = k - (k % 9n);
+    let total = 10n.modPow(n/9n, MODULO_N).modMul(6n, MODULO_N) - ((6n + n) % MODULO_N);
+
+    while (total < 0)
+        total += MODULO_N;
+
+    total = Number(total % MODULO_N);
+
+    for(let m = n + 1n; m <= k; m++)
+        total = (total + s(m)) % MODULO;
 
     return total;
 }
@@ -80,7 +107,6 @@ function solve(max)
 
     for (let i = 2; i <= max; i++)
     {
-        process.stdout.write(`\r  ${max-i}  \r`);
         let f = f0+f1;
         f0 = f1;
         f1 = f;
@@ -88,22 +114,22 @@ function solve(max)
         let v = S(f);
         total = (total + v) % MODULO;
     }
-    console.log('\r');
     return total;
 }
 
 assert.equal(s(10n), 19);
 assert.equal(S(20n), 1074);
-// assert.equal(S(1234567n), 312087128);
+assert.equal(S(1234567n), 312087128);
+assert.equal(solve(30), 159166760);
+assert.equal(solve(31), 979170050);
+assert.equal(solve(32), 725966949);
+assert.equal(solve(33), 319026893);
 
-// console.log('S(9)', S(9));
-// console.log('S(19)', S(19));
-// console.log('S(29)', S(29));
-// console.log('S(39)', S(39));
-// console.log('S(49)', S(49));
-// console.log('S(59)', S(59));
+console.log('Tests passed');
+
+const MAX = 90;
 
 let answer = timeLog.wrap('', () => {
-    return solve(34);
+    return solve(MAX, true);
 });
-console.log('Answer is', answer);
+console.log("Answer for", MAX, "is", answer);

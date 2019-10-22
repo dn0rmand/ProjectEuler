@@ -21,6 +21,7 @@
     "es6-shim": "^0.35.5",
     "gcd": "0.0.1",
     "glob": "^7.1.4",
+    "google-busy-hours": "^1.0.1",
     "is-number-prime": "^1.0.1",
     "js-roman-numerals": "^1.1.0",
     "matrice": "^0.1.0",

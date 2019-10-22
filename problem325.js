@@ -6,7 +6,7 @@ require('tools/numberHelper');
 require('tools/bigintHelper');
 
 const MODULO =  7n ** 10n;
-const MAX    = 10n ** 18n;
+const MAX    = MODULO; // 10n ** 18n;
 
 function S(N, trace)
 {
