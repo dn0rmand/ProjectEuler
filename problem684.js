@@ -1,5 +1,6 @@
 const assert = require('assert');
 const timeLog = require('tools/timeLogger');
+const {Matrix} = require('ml-matrix');
 
 require('tools/bigintHelper');
 require('tools/numberHelper');
@@ -7,6 +8,100 @@ require('tools/numberHelper');
 const MODULO   = 1000000007;
 const MODULO_N = BigInt(MODULO);
 const TEN      = 10n;
+
+class DNMatrix extends Matrix
+{
+    static get [Symbol.species]() 
+    {
+      return this;
+    }
+
+    mmul(other) 
+    {
+        other = this.constructor.checkMatrix(other);
+        if (this.columns !== other.rows)
+        {
+            // eslint-disable-next-line no-console
+            console.warn('Number of columns of left matrix are not equal to number of rows of right matrix.');
+        }
+
+        var m = this.rows;
+        var n = this.columns;
+        var p = other.columns;
+
+        var result = new this.constructor[Symbol.species](m, p);
+
+        var Bcolj = new Array(n);
+        for (var j = 0; j < p; j++)
+        {
+            for (var k = 0; k < n; k++)
+            {
+                Bcolj[k] = other.get(k, j);
+            }
+
+            for (var i = 0; i < m; i++)
+            {
+                var s = 0;
+                for (k = 0; k < n; k++)
+                {
+                    let v = this.get(i, k).modMul(Bcolj[k], MODULO);
+                    s = (s + v) % MODULO;
+                }
+
+                result.set(i, j, s);
+            }
+        }
+
+        return result;
+    }
+
+    static create()
+    {
+        let matrix = this.zeros(3, 3);
+
+        matrix.set(0, 0,  1);
+        matrix.set(1, 0, 54);
+        matrix.set(2, 0, -9);
+        matrix.set(2, 2,  1);
+
+        return matrix;
+    }
+
+    pow(pow)
+    {
+        let m  = this;
+        let mm = undefined;
+
+        if (pow == 1)
+            return m;
+
+        while (pow > 1)
+        {
+            if ((pow & 1n) != 0)
+            {
+                if (mm === undefined)
+                    mm = m;
+                else
+                    mm = mm.mmul(m);
+
+                pow--;
+            }
+
+            while (pow > 1 && (pow & 1n) == 0)
+            {
+                pow /= 2n;
+                m =  m.mmul(m);
+            }
+        }
+
+        if (mm !== undefined)
+        {
+            m = m.mmul(mm);
+        }
+
+        return m;
+    }
+}
 
 function s(n)
 {
@@ -82,7 +177,7 @@ function S1(k)
     return total;
 }
 
-function S(k)
+function S2(k)
 {
     let n     = k - (k % 9n);
     let total = 10n.modPow(n/9n, MODULO_N).modMul(6n, MODULO_N) - ((6n + n) % MODULO_N);
@@ -95,6 +190,21 @@ function S(k)
     for(let m = n + 1n; m <= k; m++)
         total = (total + s(m)) % MODULO;
 
+    return total;
+}
+
+function S(k)
+{
+    let matrix = DNMatrix.create();
+    let p = k - (k % 9n);
+
+    matrix.pow(p);
+    let total = (matrix.get(0, 0) + matrix.get(1, 0) + matrix.get(2, 0)) % MODULO;
+
+    for (let i = p+1n; i <= k; i++)
+    {
+        total = (total + s(i)) % MODULO;
+    }
     return total;
 }
 

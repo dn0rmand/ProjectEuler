@@ -1,25 +1,21 @@
 const timeLog = require('tools/timeLogger');
-const DELTA   = 1E-11;
+const assert  = require('assert');
 
-function chase(maxDistance, startingDistance)
+let DELTA   = 1E-7;
+
+function chase(maxDistance, players)
 {
+    let odd = (players & 1) != 0;
+
     let result = 0;
     let states = new Float64Array(maxDistance+1).fill(0);
     let newStates = new Float64Array(maxDistance+1);
 
-    states[startingDistance] = 1;
+    for (let i = 1; i <= maxDistance; i++)
+        states[i] = 2/players;
 
-    //   1 - 2,3,4,5 - 6
-    // 1/6 -   4/6   - 1/6
-
-    // const SAME   = 18/36;
-    // const PLUS1  = 8/36;
-    // const PLUS2  = 1/36;
-    // const MINUS1 = 8/36;
-    // const MINUS2 = 1/36;
-
-    // 1,2 - 3,4 - 5,6
-    // 2/6 - 2/6 - 2/6
+    if (!odd)
+        states[maxDistance] = 1/players
 
     const PLUS1 = 8/36;
     const PLUS2 = 4/36;
@@ -38,7 +34,7 @@ function chase(maxDistance, startingDistance)
                 distance = -distance;
             if (distance > maxDistance)
             {
-                distance = maxDistance - (distance - maxDistance);
+                distance = (maxDistance+odd) - (distance - maxDistance);
                 if (distance < 0)
                     distance = -distance;
             }
@@ -77,40 +73,31 @@ function chase(maxDistance, startingDistance)
     return result;
 }
 
-function solve(players, trace)
+function solve(players, precision, trace)
 {
     let total = 0;
 
     while(players > 1)
     {
-        let subTotal = 0;
+        if (trace)
+            process.stdout.write(`\r${players} `);
         let maxDistance = Math.floor(players / 2);
-        let prob = 1 / (players-1);
-
-        for (let distance = 1; distance <= maxDistance; distance++)
-        {
-            if (trace)
-                process.stdout.write(`\r  ${ players } - ${ distance }  \r`)
-            let r = chase(maxDistance, distance);
-
-            if ((players & 1) == 0 && distance == maxDistance)
-                subTotal += r*prob;
-            else
-                subTotal += r*2*prob;
-        }
-
-        total += subTotal;
+        total += chase(maxDistance, players);
         players--;
     }
 
     if (trace)
         console.log('\r');
-    return total.toPrecision(9);
+    total = total.toPrecision(precision);
+    return total.replace('+', '');
 }
 
-console.log(solve(5));
+assert.equal(solve(5, 5), "96.544");
+assert.equal(solve(50, 9), "2824917.88");
+
+DELTA = 1E-4;
 
 let answer = timeLog.wrap('', () => {
-    return solve(100);
+    return solve(500, 9, true);
 });
 console.log("Answer is", answer);
