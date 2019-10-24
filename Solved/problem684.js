@@ -62,6 +62,7 @@ class DNMatrix extends Matrix
         matrix.set(0, 0,  1);
         matrix.set(1, 0, 54);
         matrix.set(2, 0, -9);
+        matrix.set(1, 1, 10);
         matrix.set(2, 2,  1);
 
         return matrix;
@@ -193,13 +194,20 @@ function S2(k)
     return total;
 }
 
-function S(k)
-{
-    let matrix = DNMatrix.create();
-    let p = k - (k % 9n);
+const refMatrix = DNMatrix.create();
 
-    matrix.pow(p);
-    let total = (matrix.get(0, 0) + matrix.get(1, 0) + matrix.get(2, 0)) % MODULO;
+function S3(k)
+{
+    let total = 0;
+    let p = (k - (k % 9n));
+    if (p > 0n)
+    {
+        let m = refMatrix.pow(p / 9n);
+        total = (m.get(1, 0) + m.get(2, 0)) % MODULO;
+
+        while (total < 0)
+            total += MODULO;
+    }
 
     for (let i = p+1n; i <= k; i++)
     {
@@ -207,6 +215,8 @@ function S(k)
     }
     return total;
 }
+
+const S = S3; // using Matrix
 
 function solve(max)
 {
@@ -229,7 +239,6 @@ function solve(max)
 
 assert.equal(s(10n), 19);
 assert.equal(S(20n), 1074);
-assert.equal(S(1234567n), 312087128);
 assert.equal(solve(30), 159166760);
 assert.equal(solve(31), 979170050);
 assert.equal(solve(32), 725966949);
