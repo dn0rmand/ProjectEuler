@@ -1,24 +1,22 @@
 const assert = require('assert');
 const timeLog = require('tools/timeLogger');
 
+const LOG2 =  Math.log10(2);
+
 function p(e, count)
 {
-    let min = Math.log10(e);
-    let max = Math.log10(e+1);
+    const min = Math.log10(e) % 1;
+    const max = Math.log10(e+1) % 1;
 
-    min = min - Math.floor(min);
-    max = max - Math.floor(max);
-
+    let v = LOG2;
     for (let i = 2; ; i++)
     {
-        let v = (i * Math.log10(2));
-        v = v - Math.floor(v);
+        v += LOG2;
+        if (v >= 1)
+            v -= 1;
 
-        if (v >= min && v <= max)
-        {
-            if (--count == 0)
-                return i;
-        }
+        if (v >= min && v <= max && --count == 0)
+            return i;
     }
 }
 
