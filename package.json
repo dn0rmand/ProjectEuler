@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "@types/node": "^11.13.21",
+    "asciichart": "^1.5.9",
     "atlas-pretty-hrtime": "^1.0.0",
     "big-integer": "^1.6.45",
     "bignumber.js": "^7.2.1",
@@ -30,6 +31,7 @@
     "pixels-please": "^1.0.3",
     "pretty-hrtime": "^1.0.3",
     "prho": "^1.0.1",
+    "rollup": "^1.26.3",
     "slack-webhook": "^1.0.0",
     "splaytreejs": "^1.0.5",
     "workerpool": "^5.0.0",
