@@ -3,6 +3,21 @@ const bigIntHelper = function()
     BigInt.ONE  = BigInt(1);
     BigInt.ZERO = BigInt(0);
 
+    BigInt.prototype.gcd = function(b)
+    {
+        let a = this;
+        if (a < b)
+            [a, b] = [b, a];
+
+        while (b !== 0n)
+        {
+            let c = a % b;
+            a = b;
+            b = c;
+        }
+        return a;
+    }
+
     BigInt.prototype.modMul = function(value, mod)
     {
         return (this * BigInt(value)) % BigInt(mod);
