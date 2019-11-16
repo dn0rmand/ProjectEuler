@@ -57,17 +57,22 @@ function isProgressive(n, idx)
 function solve(max, trace)
 {
     let total = 0;
+    let tcount = 0
     let count = squares.length;
 
-    for(let i = 1; ; i++)
+    for(let i = 1; i < count; i++)
     {
         let s = squares[i];
         if (s >= max)
             break;
 
         if (trace)
-            process.stdout.write(`\r${count--} `);
-
+        {
+            if (tcount === 0)
+                process.stdout.write(`\r${count-i} `);
+            if (++tcount >= 1000)
+                tcount = 0;
+        }
         if (isProgressive(s, i))
             total += s;
     }
