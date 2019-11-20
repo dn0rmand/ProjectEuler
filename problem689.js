@@ -1,8 +1,12 @@
 const assert    = require('assert');
 const timeLog   = require('tools/timeLogger');
+const chart     = require('asciichart');
 
 const bigNumber = require('bignumber.js');
-bigNumber.set({ DECIMAL_PLACES: 570 });
+
+const DIGITS = 80;
+
+bigNumber.set({ DECIMAL_PLACES: DIGITS });
 
 function smallNumber(value)
 {
@@ -21,20 +25,46 @@ function smallNumber(value)
 }
 
 // const FLOAT = bigNumber;
-const FLOAT = smallNumber;
+const FLOAT = bigNumber;
 const DOUBLE= bigNumber;
 
 const ONE = FLOAT(1);
 const ZERO= FLOAT(0);
 
-let maxLength = 0;
+const CALCULATED = (function() {
+    const values = [];
+
+    for (let i = 1; i < 500; i++)
+    {
+        values[i] = ONE.dividedBy(i*i);
+    }
+
+    return values;
+}());
 
 function *binary(value)
 {
+    // let v = ONE;
+    // let count = 2;
+
+    // while (value.gt(0) && count < DIGITS+2)
+    // {
+    //     v = v.dividedBy(2);
+    //     if (value.gte(v))
+    //     {
+    //         value = value.minus(v);
+    //         // assert.equal(1, +(s[count]));
+    //         yield 1;
+    //     }
+    //     else
+    //     {
+    //         // assert.equal(0, +(s[count]));
+    //         yield 0;
+    //     }
+    //     count++;
+    // }
+
     let s = DOUBLE(value).toString(2);
-
-    maxLength = Math.max(s.length-2, maxLength);
-
     for(let i = 2; i < s.length; i++)
         yield +(s[i]);
 }
@@ -49,8 +79,16 @@ function f(x, max)
     for (let d of binary(x))
     {
         idx++;
+        if (idx >= 500)
+            break;
+
         if (d)
-            sum = sum.plus(ONE.dividedBy(idx*idx));
+        {
+            sum = sum.plus(CALCULATED[idx]);
+
+            if (max && sum.gt(max))
+                return true;
+        }
     }
 
     if (max)
@@ -63,7 +101,7 @@ function f(x, max)
 
 function $p(a)
 {
-    const precision = 8;
+    const precision = 9;
 
     const STEP  = 10**-precision;
     const COUNT = 10**precision;
@@ -72,16 +110,16 @@ function $p(a)
     let last   = 0;
     let traceCount = 0;
 
-    for(let x = 0.374; x < 1; x += STEP)
+    for(let x = 0.36; x < 1; x += STEP)
     {
-        if (x > 0.473)
+        if (x > 0.5)
         {
             total++;
         }
         else if (f(x, a))
         {
             if (total == 0)
-                console.log(`\r\nFirst = ${x}`);
+                console.log(`\r\nFirst = ${x.valueOf()}`);
 
             total++;
         }
@@ -103,19 +141,8 @@ function $p(a)
 
 function p(a, MAX_DEEP, trace)
 {
-    // for(let i = 0; ; i++)
-    // {
-    //     let v = 1/(2**i);
-    //     if (v < 1E-30)
-    //     {
-    //         console.log('Need',i+1,'levels');
-    //         break;
-    //     }
-    // }
-    if (!MAX_DEEP)
-        MAX_DEEP = 45;
-
     const MAX_SIZE = 1E4;
+    const MAX_LIMITS = 60;
 
     let RESULT = 0;
 
@@ -124,7 +151,7 @@ function p(a, MAX_DEEP, trace)
         let total = (Math.PI*Math.PI)/6;
         let limits = [];
 
-        for (let i = 1; i <= MAX_DEEP; i++)
+        for (let i = 1; i <= MAX_LIMITS; i++)
         {
             limits[i] = total;
             total -= 1/(i*i);
@@ -136,7 +163,7 @@ function p(a, MAX_DEEP, trace)
     const preCalculation =  (function()
     {
         const preCalculation = [];
-        for (let i = 1; i <= MAX_DEEP+1; i++)
+        for (let i = 1; i <= MAX_LIMITS; i++)
             preCalculation[i] = 1 / (i*i);
         return preCalculation;
     })();
@@ -144,8 +171,8 @@ function p(a, MAX_DEEP, trace)
     const probabilities =  (function()
     {
         const probabilities = [];
-        for (let i = 0; i <= MAX_DEEP; i++)
-        probabilities[i+1] = 1 / (2**i);
+        for (let i = 0; i <= MAX_LIMITS; i++)
+            probabilities[i+1] = 1 / (2**i);
         return probabilities;
     })();
 
@@ -159,12 +186,15 @@ function p(a, MAX_DEEP, trace)
 
     function add(i)
     {
+        if (i > MAX_LIMITS)
+            return;
+
         RESULT += probabilities[i];
         if (trace)
         {
             if (traceCount == 0)
                 process.stdout.write(`\r${RESULT.toFixed(8)}  `);
-            if (++traceCount > 1000)
+            if (++traceCount > 200000)
                 traceCount = 0;
         }
     }
@@ -178,7 +208,17 @@ function p(a, MAX_DEEP, trace)
         }
 
         if (i > MAX_DEEP)
+        {
+            if (possible(value, i))
+            {
+                while (i <= MAX_LIMITS && value <= a)
+                {
+                    value += preCalculation[i++];
+                }
+                add(i-1);
+            }
             return;
+        }
 
         if  (possible(value, i+1))
         {
@@ -249,16 +289,14 @@ function p(a, MAX_DEEP, trace)
 
     RESULT = 0;
     inner1(0, 1);
-    // inner2([0], 1, 0, 1);
-
     return RESULT.toFixed(8);
 }
 
-assert.equal(p(0.5, 30), 0.54888289);
+//assert.equal(p(0.5, 30), 0.54888289);
 
 console.log('Test passed');
 
-let answer = timeLog.wrap('', () => p(0.5, 45, true));
+let answer = timeLog.wrap('', () => $p(0.5, 33, true));
 
 console.log("Answer is", answer);
 
@@ -271,3 +309,6 @@ console.log("Answer is", answer);
 // 0.55620026
 // 0.55619609
 // 0.55619785
+// 0.55710785
+// 0.55923956
+// 0.55923519
