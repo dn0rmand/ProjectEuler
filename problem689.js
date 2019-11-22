@@ -2,7 +2,7 @@ const assert    = require('assert');
 const timeLog   = require('tools/timeLogger');
 const FS        = require('fs');
 
-const MAX_LIMITS = 100;
+const MAX_LIMITS = 10000;
 const TARGET     = 0.5
 
 const limits = (function()
@@ -101,70 +101,69 @@ function p(MAX_DEEP, trace)
     return RESULT[MAX_DEEP+1].toFixed(8);
 }
 
-assert.equal(p(30), 0.54888289);
-console.log('Test passed');
-
-const path1 = [];
-const path2 = [];
-const path3 = [];
-const labels= [];
-
-const SCALE = 100;
-const MAX   = 45;
-
-timeLog.wrap('', () => p(MAX, true));
-
-for (let i = 20; i <= MAX+1; i++)
+function makeChar(MAX)
 {
-    labels.push(i);
-    path1.push(SCALE * RESULT[i]);
-    path2.push(SCALE * (1-FAILED[i]));
-    path3.push((SCALE * RESULT[i]) / (RESULT[i] + FAILED[i]));
+    const path1 = [];
+    const path2 = [];
+    const path3 = [];
+    const labels= [];
+    
+    const SCALE = 100;
+
+    p(MAX);
+
+    for (let i = 20; i <= MAX+1; i++)
+    {
+        labels.push(i);
+        path1.push(SCALE * RESULT[i]);
+        path2.push(SCALE * (1-FAILED[i]));
+        path3.push((SCALE * RESULT[i]) / (RESULT[i] + FAILED[i]));
+    }
+    
+    const html = `
+    <html>
+        <head>
+            <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.min.js"></script>
+        </head>
+        <body>
+            <canvas id="myChart" width="auto" height="auto"></canvas>
+    
+            <script>
+                var ctx = document.getElementById('myChart').getContext('2d');
+                var myChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: [${labels.join(', ')}],
+                        datasets: [{
+                            label: 'Pass',
+                            fill: false,
+                            borderColor: "rgb(255, 99, 132)",
+                            data: [ ${ path1.join(', ')} ]
+                        },
+                        {
+                            label: '1-Fail',
+                            fill: false,
+                            borderColor: "rgb(54, 162, 235)",
+                            data: [ ${ path2.join(', ')} ]
+                        },
+                        {
+                            label: 'Pass/(Pass+Fail)',
+                            fill: false,
+                            borderColor: "rgb(54, 235, 162)",
+                            data: [ ${ path3.join(', ')} ]
+                        }
+                    ]
+                    },
+                });
+            </script>
+        </body>
+    </html>
+    `;
+    
+    FS.writeFileSync("chart.html", html);
+    
+    console.log('\rChart generated');
 }
 
-const html = `
-<html>
-    <head>
-        <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.min.js"></script>
-    </head>
-    <body>
-        <canvas id="myChart" width="auto" height="auto"></canvas>
-
-        <script>
-            var ctx = document.getElementById('myChart').getContext('2d');
-            var myChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: [${labels.join(', ')}],
-                    datasets: [{
-                        label: 'Pass',
-                        fill: false,
-                        borderColor: "rgb(255, 99, 132)",
-                        data: [ ${ path1.join(', ')} ]
-                    },
-                    {
-                        label: '1-Fail',
-                        fill: false,
-                        borderColor: "rgb(54, 162, 235)",
-                        data: [ ${ path2.join(', ')} ]
-                    },
-                    {
-                        label: 'Pass/(Pass+Fail)',
-                        fill: false,
-                        borderColor: "rgb(54, 235, 162)",
-                        data: [ ${ path3.join(', ')} ]
-                    }
-                ]
-                },
-            });
-        </script>
-    </body>
-</html>
-`;
-
-FS.writeFileSync("chart.html", html);
-
-console.log('\rChart generated');
-// let answer = timeLog.wrap('', () => p(35, true));
-
-// console.log("Answer is", answer);
+let answer = timeLog.wrap('', () => p(35, true));
+console.log("Answer is", answer);
