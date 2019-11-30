@@ -1,8 +1,6 @@
-const assert    = require('assert');
-const timeLog   = require('tools/timeLogger');
-const FS        = require('fs');
+const timeLog = require('tools/timeLogger');
 
-const MAX_LIMITS = 10000;
+const MAX_LIMITS = 100;
 const TARGET     = 0.5
 
 const limits = (function()
@@ -39,131 +37,34 @@ const probabilities =  (function()
     return probabilities;
 })();
 
-const FAILED = [];
-const RESULT = [];
-
-function p(MAX_DEEP, trace)
+function p(MAX_DEEP)
 {
-    function addPass(i)
-    {
-        for (let j = i; j <= MAX_DEEP+1; j++)
-            RESULT[j] += probabilities[i];
-    }
+    let result = 0;
 
-    function addFailed(i)
-    {
-        for(let j = i; j <= MAX_DEEP+1; j++)
-            FAILED[j] += probabilities[i];
-    }
-
-    function inner(value, i)
+    const inner = (value, i) =>
     {
         if (value > TARGET)
         {
-            addPass(i);
+            result += probabilities[i];
+            return;
         }
-        else if (i > MAX_DEEP)
-        {
-            if ((value + limits[i]) <= TARGET)
-                addFailed(MAX_DEEP+1);
-        }
-        else if ((value + limits[i+1]) > TARGET)
-        {
-            inner(value + preCalculation[i], i+1);
-            inner(value, i+1);
-        }
-        else if ((value + limits[i]) > TARGET)
-        {
-            addFailed(i+1);
-            inner(value + preCalculation[i], i+1);
-        }
-        else
-        {
-            addFailed(i);
-        }
-    }
 
-    for (let i = 0; i <= MAX_DEEP+1; i++)
-    {
-        RESULT[i] = 0;
-        FAILED[i] = 0;
+        if (i >= MAX_DEEP)
+            return;
+
+        if ((value + limits[i+1]) > TARGET)
+            inner(value, i+1);
+        else if ((value + limits[i]) < TARGET)
+            return;
+
+        inner(value + preCalculation[i], i+1);
     }
 
     inner(0, 1);
 
-    if (trace)
-    {
-        console.log('DEEPNESS:', MAX_DEEP);
-        console.log('VALID: ',   RESULT[MAX_DEEP]);
-        console.log('FAILED:',   FAILED[MAX_DEEP]);
-    }
-
-    return RESULT[MAX_DEEP+1].toFixed(8);
+    return result.toFixed(8);
 }
 
-function makeChar(MAX)
-{
-    const path1 = [];
-    const path2 = [];
-    const path3 = [];
-    const labels= [];
-    
-    const SCALE = 100;
+let answer = timeLog.wrap('', () => p(30));
 
-    p(MAX);
-
-    for (let i = 20; i <= MAX+1; i++)
-    {
-        labels.push(i);
-        path1.push(SCALE * RESULT[i]);
-        path2.push(SCALE * (1-FAILED[i]));
-        path3.push((SCALE * RESULT[i]) / (RESULT[i] + FAILED[i]));
-    }
-    
-    const html = `
-    <html>
-        <head>
-            <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.min.js"></script>
-        </head>
-        <body>
-            <canvas id="myChart" width="auto" height="auto"></canvas>
-    
-            <script>
-                var ctx = document.getElementById('myChart').getContext('2d');
-                var myChart = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: [${labels.join(', ')}],
-                        datasets: [{
-                            label: 'Pass',
-                            fill: false,
-                            borderColor: "rgb(255, 99, 132)",
-                            data: [ ${ path1.join(', ')} ]
-                        },
-                        {
-                            label: '1-Fail',
-                            fill: false,
-                            borderColor: "rgb(54, 162, 235)",
-                            data: [ ${ path2.join(', ')} ]
-                        },
-                        {
-                            label: 'Pass/(Pass+Fail)',
-                            fill: false,
-                            borderColor: "rgb(54, 235, 162)",
-                            data: [ ${ path3.join(', ')} ]
-                        }
-                    ]
-                    },
-                });
-            </script>
-        </body>
-    </html>
-    `;
-    
-    FS.writeFileSync("chart.html", html);
-    
-    console.log('\rChart generated');
-}
-
-let answer = timeLog.wrap('', () => p(35, true));
-console.log("Answer is", answer);
+console.log('Answer is', answer);
