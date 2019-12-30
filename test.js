@@ -110,7 +110,7 @@ assert.equal(countLuck(['.X.X......X',
                         '......XXXX.'], 3), "Impressed");
 assert.equal(countLuck(['*..', 'X.X', '..M'], 1), "Oops!");
 
-process.exit(0);
+// process.exit(0);
 
 function luckyNumbers()
 {
@@ -159,12 +159,10 @@ function luckyNumbers()
 
 function triangleNumbers()
 {
-    for (let n = 1; ; n++)
+    for (let n = 1; n <= 25 ; n++)
     {
         let v = (n*(n+1))/2;
-        if (v > 700)
-            break;
-        if (v > 125)
+        if (v > 171)
             console.log(v);
     }
 
