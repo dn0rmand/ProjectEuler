@@ -1,4 +1,4 @@
-module.exports = function(maxPrime)
+module.exports = function(maxPrime, noMap)
 {
     const $isNumberPrime = require('is-number-prime');
     const BitArray = require('tools/bitArray');
@@ -394,6 +394,6 @@ module.exports = function(maxPrime)
     }
 
     if (maxPrime !== undefined)
-        result.initialize(maxPrime);
+        result.initialize(maxPrime, noMap);
     return result;
 }
