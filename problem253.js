@@ -1,13 +1,13 @@
 const assert = require('assert');
 const timeLogger = require('tools/timeLogger');
+require('tools/bigintHelper');
 
 const MASKS = [0];
 const MIDPOINT = 21; // 1..20 & 21..40
-const MAXSTATES = 10000000; // 10 millions
 
 for(let i = 1, m = 1; i <= 40; i++, m *= 2)
 {
-    if (i == MIDPOINT)
+    if (i === MIDPOINT)
         m = 1; // reset
 
     MASKS[i] = m;
@@ -15,14 +15,16 @@ for(let i = 1, m = 1; i <= 40; i++, m *= 2)
 
 MASKS[41] = 0;
 
-const FACTOR1  = 2**7;
-const FACTOR2  = (2**27);
-
 const statePool = [];
 
 class State
 {
     constructor()
+    {
+        this.init();
+    }
+
+    init()
     {
         this.segments = 0;
         this.pieces1  = 0;
@@ -51,20 +53,28 @@ class State
 
         for (let piece = 1; piece <= maxPiece && piece < MIDPOINT; piece++, m *= 2)
         {
-            if ((this.pieces1 & m) == 0)
-                callback(piece);
+            if ((this.pieces1 & m) === 0)
+                if (callback(piece) === true)
+                    return;
         }
 
         m = MASKS[MIDPOINT];
         for (let piece = MIDPOINT; piece <= maxPiece; piece++, m *= 2)
         {
-            if ((this.pieces2 & m) == 0)
-                callback(piece);
+            if ((this.pieces2 & m) === 0)
+                if (callback(piece) === true)
+                    return;
         }
     }
 
-    addPiece(piece)
+    addPiece(piece, inPlace)
     {
+        if (inPlace === true)
+        {
+            this.$addPiece(piece);
+            return this;
+        }
+
         let state       = State.create();
 
         state.pieces1  = this.pieces1;
@@ -87,13 +97,13 @@ class State
         let piece;
         for (piece = 1; piece <= maxPiece; piece++, m*=2)
         {
-            if (piece == MIDPOINT)
+            if (piece === MIDPOINT)
             {
                 v = this.pieces2;
                 m = MASKS[MIDPOINT];
             }
 
-            if ((v & m) == 0)
+            if ((v & m) === 0)
             {
                 if (++c > 2)
                     break;
@@ -102,7 +112,7 @@ class State
                 c = 0;
         }
 
-        if (c == 2 && piece > 10)
+        if (c === 2 && piece > 10)
             c = 3;
 
         return c;
@@ -117,7 +127,7 @@ class State
             this.pieces2 += MASKS[piece];
 
             v3 = this.pieces2;
-            if (piece == MIDPOINT)
+            if (piece === MIDPOINT)
                 v1 = this.pieces1;
             else
                 v1 = this.pieces2;
@@ -127,7 +137,7 @@ class State
             this.pieces1 += MASKS[piece];
 
             v1 = this.pieces1;
-            if (piece == MIDPOINT-1)
+            if (piece === MIDPOINT-1)
                 v3 = this.pieces2
             else
                 v3 = this.pieces1;
@@ -141,7 +151,7 @@ class State
                 this.segments--;
             }
         }
-        else if ((v3 & MASKS[piece+1]) == 0)
+        else if ((v3 & MASKS[piece+1]) === 0)
         {
             // Neither side are used so it's a new segment
             if (++this.segments > this.max)
@@ -149,10 +159,41 @@ class State
         }
     }
 
-    getKey()
+    getKey(size)
     {
-        let k = this.pieces1*FACTOR1 + this.pieces2*FACTOR2 + this.max;
-        // let k = `${this.max}:${this.pieces[0]}:${this.pieces[1]}`;
+        let spaces = []
+        let v = this.pieces1;
+        let m = MASKS[1];
+        let c = 0;
+
+        for (let piece = 1; piece <= size; piece++, m*=2)
+        {
+            if (piece === MIDPOINT)
+            {
+                v = this.pieces2;
+                m = MASKS[MIDPOINT];
+            }
+
+            if ((v & m) === 0)
+                c++;
+            else
+            {
+                if (c !== 0)
+                    spaces.push(c);
+                else if (piece === 1)
+                    spaces.push(0);
+                c = 0;
+            }
+        }
+        let end = c;
+        let start = spaces.shift();
+        spaces.sort((a, b) => a-b);
+        if (start > end)
+            [start, end] = [end, start];
+
+        let k = BigInt(this.max) * 100n + BigInt(start);
+        k = spaces.reduce((a, v) => a*100n+BigInt(v), k);
+        k = (k*100n) + BigInt(end);
         return k;
     }
 }
@@ -166,23 +207,11 @@ function factorial(n)
     return total;
 }
 
-function divise(total, size, trace)
+function divise(total, divisor)
 {
-    let divisor = factorial(size);
-
-    for (let i = BigInt(size); i > 1n; i--)
-    {
-        if (total % i === 0n)
-        {
-            total /= i;
-            divisor /= i;
-        }
-    }
-
-    if (trace && (total > Number.MAX_SAFE_INTEGER || divisor > Number.MAX_SAFE_INTEGER))
-    {
-        console.log(`\nTotal = ${total} - Possibilities = ${divisor}`);
-    }
+    const g = total.gcd(divisor);
+    total /= g;
+    divisor /= g;
 
     const coef = 1E7;
     const p1   = total % divisor;
@@ -203,85 +232,77 @@ function solve(size, trace)
 
     sizeCounts.fill(0n);
 
-    function inner(states, length, deep, start)
+    function calculateResult()
     {
-        let map1   = new Map();
-        let map2   = new Map();
+        const total = sizeCounts.reduce((a, v, max) => a + v*BigInt(max), 0n);
+        const result = divise(total, factorial(size));
+        return result.toFixed(6);
+    }
 
-        for(let i = start; i <= size; i++)
+    let states = [new State()];
+
+    let length = 1;
+    let map1   = new Map();
+    let map2   = new Map();
+
+    for(let i = 1; i <= size; i++)
+    {
+        if (trace)
+            process.stdout.write(`\r${i} - ${length.toLocaleString()}       `);
+
+        // Swap maps
         {
-            if (trace)
-                process.stdout.write(`\r${deep}:${i} - ${length.toLocaleString()}        `);
-
-            // Swap maps
-            {
-                const tmp = map1;
-                map1 = map2;
-                map2 = tmp;
-            }
-    
-            const newStates = map1;
-            map1.clear();
-    
-            for (let state of states)
-            {
-                if (state.max >= maxSegments || state.maxSpace(size) < 3) // reached the max possible
-                {
-                    const zeros = size - state.used;
-                    const pos = factorial(zeros) * state.count;
-                    sizeCounts[state.max] += pos;
-                }
-                else
-                {
-                    state.forEach(size, (piece) =>
-                    {
-                        const ns = state.addPiece(piece);
-                        const k  = ns.getKey();
-        
-                        const oldState = newStates.get(k);
-                        if (oldState === undefined)
-                        {
-                            newStates.set(k, ns);
-                        }
-                        else
-                        {
-                            oldState.count += ns.count;
-                            ns.release();
-                        }
-                    });
-                }
-                state.release();
-
-                if (newStates.size > MAXSTATES)
-                {
-                    inner(newStates.values(), newStates.size, deep+1, i+1);
-                    newStates.clear();
-                    if (trace)
-                        process.stdout.write(`\r${deep}:${i} - ${length.toLocaleString()}        `);
-                }
-            }
-
-            states = newStates.values()
-            length = newStates.size;
+            const tmp = map1;
+            map1 = map2;
+            map2 = tmp;
         }
+
+        const newStates = map1;
+        map1.clear();
 
         for (let state of states)
         {
-            sizeCounts[state.max] += state.count;
+            if (state.max >= maxSegments || state.maxSpace(size) < 3) // reached the max possible
+            {
+                const zeros = size - state.used;
+                const pos = factorial(zeros) * state.count;
+                sizeCounts[state.max] += pos;
+            }
+            else
+            {
+                state.forEach(size, (piece) =>
+                {
+                    const ns = state.addPiece(piece);
+                    const k  = ns.getKey(size);
+
+                    const oldState = newStates.get(k);
+                    if (oldState === undefined)
+                    {
+                        newStates.set(k, ns);
+                    }
+                    else
+                    {
+                        oldState.count += ns.count;
+                        ns.release();
+                    }
+                });
+            }
             state.release();
         }
 
-        map1.clear();
-        map2.clear();
+        states = newStates.values()
+        length = newStates.size;
     }
 
-    inner([new State()], 1, 1, 1);
+    for (let state of states)
+    {
+        sizeCounts[state.max] += state.count;
+    }
+
     if (trace)
         process.stdout.write(`\r                                    \r`);
 
-    const total = sizeCounts.reduce((a, v, max) => a + v*BigInt(max), 0n);
-    const result = divise(total, size, trace);
-    return result.toFixed(6);
+    return calculateResult();
 }
 
 timeLogger.wrap('Tests', () => {
@@ -289,6 +310,6 @@ timeLogger.wrap('Tests', () => {
     assert.equal(solve(20), "6.156946");
 });
 
-let answer = timeLogger.wrap('', () => { return solve(25, true); });
+let answer = timeLogger.wrap('', () => { return solve(40, true); });
 
 console.log(`Answer is ${answer}`);
