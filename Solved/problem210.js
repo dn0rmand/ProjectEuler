@@ -1,20 +1,15 @@
 const assert = require('assert');
 const timeLogger = require('tools/timeLogger');
-const BigNumber = require('bignumber.js');
 
 const MAX = 1E9;
 
-BigNumber.set({ DECIMAL_PLACES: 20 });
-
 function SQRT1(a)
 {
-    // return BigNumber(a).sqrt().integerValue().toNumber()+1;
     return Math.floor(Math.sqrt(Number(a))) + 1;
 }
 
 function SQRT2(a)
 {
-    // let A = BigNumber(a).sqrt().integerValue().toNumber();
     let A = Math.floor(Math.sqrt(Number(a))) + 1;
     A = BigInt(A) + 1n;
     while (A > 0 && A*A >= a)
@@ -38,7 +33,7 @@ function solve(N, trace)
 
         let traceCount = 0;
 
-        for (let x = r; x >= 0; x--)
+        for (let x = BigInt(r); x >= 0n; x--)
         {
             if (trace)
             {
@@ -48,7 +43,7 @@ function solve(N, trace)
                     traceCount = 0;
             }
 
-            const xx  = BigInt(x)*BigInt(x);
+            const xx    = x*x;
             const maxYY = r2 - xx;
 
             if (maxYY <= 0)
@@ -61,7 +56,7 @@ function solve(N, trace)
             const add = maxY+maxY+1n;
 
             insideCircle += add;
-            if (x !== 0)
+            if (x !== 0n)
                 insideCircle += add;
         }
         insideCircle -= BigInt(C-1);
