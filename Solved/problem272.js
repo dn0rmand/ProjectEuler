@@ -4,8 +4,8 @@
 // -----------
 
 const assert = require('assert');
-const bigInt = require('big-integer');
 const primeHelper = require('tools/primeHelper')();
+const timelogger = require('tools/timeLogger');
 
 const MAX_PRIME = 6426323;
 const MAX_TEST = 300000000;
@@ -81,7 +81,7 @@ function solve(MAX)
     const   allPrimes = primeHelper.allPrimes();
     const   specialPrimes = mapPrimes(allowedPrimes);
 
-    let     extra   = bigInt.zero;
+    let     extra   = 0n;
     let     total   = 0;
 
     function moreSeed(value, index, usedPrimes)
@@ -92,7 +92,7 @@ function solve(MAX)
         let t = total + value;
         if (t > Number.MAX_SAFE_INTEGER)
         {
-            extra = extra.plus(total).plus(value);
+            extra = extra + BigInt(total) + BigInt(value);
             total = 0;
         }
         else   
@@ -105,8 +105,6 @@ function solve(MAX)
             let v = value * p;
             if (v > MAX)
                 break;
-
-            let multiple = true;
 
             if (p === 3 && ! usedPrimes.includes(9))
             {
@@ -129,12 +127,12 @@ function solve(MAX)
         moreSeed(value, 0, usedPrimes);
     });
 
-    return extra.plus(total).toString();
+    return extra + BigInt(total);
 }
 
 let test = solve(MAX_TEST);
-assert.equal(test, "19543219365706");
+assert.equal(test, 19543219365706n);
 
-let answer = solve(MAX_REAL);
-console.log('Answer is', answer);
+let answer = timelogger.wrap('', () => solve(MAX_REAL));
+console.log(`Answer is ${ answer }`);
 console.log('Done');
