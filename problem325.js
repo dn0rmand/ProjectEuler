@@ -5,7 +5,7 @@ require('tools/numberHelper');
 require('tools/bigintHelper');
 
 const MODULO = 7n ** 10n;
-const MAX    = 10n ** 9n;
+const MAX    = 10n ** 16n;
 
 const GOLDEN_RATIO = (3+Math.sqrt(5))/2;
 
@@ -90,14 +90,15 @@ function bruteForce(N)
             }
         }
     }
+
     let dots = 0;
-    for (let i = graph.length-1; i > 2 ; i--)
+    for (let x = graph.length-1; x > 2 ; x--)
     {
-        var a = graph[i];
+        var a = graph[x];
         if (a)
         {
-            let d = a.reduce((a, v) => a += (v == '.' ? 1 : 0), 0);
-            console.log(a.join(''), ':', F(i));
+            let d = a.reduce((a, v, y) => a += (v == '.' ? x+y : 0), 0);
+            console.log(a.join(''), ':', F(x));
             dots += d;
         }
     }
@@ -214,77 +215,165 @@ function S0(N, trace)
     return Number(total);
 }
 
-function S2(N, trace)
+class Fib
 {
-    let F0 = { area: 2n, width: 2n, height: 1n };
-    let F1 = { area: 4n, width: 3n, height: 2n };
-
-    let s2    = F0.area + F1.area + (F1.width* F0.height);
-    let y     = 6n;
-    let x     = 10n;
-
-    while (x < N)
+    constructor(x, y, width, height, area)
     {
-        let F = {
-            width:  F0.width  + F1.width,
-            height: F0.height + F1.height,
-            area:  (F0.width  * F1.height) + F0.area + F1.area
-        };
-
-        F0 = F1;
-        F1 = F;
-
-        let s = (F.width * (y-3n));
-        s2 += s + F.area;
-
-        y += F.height;
-        x += F.width;
+        this.area = area;
+        this.x    = x;
+        this.y    = y;
+        this.width = width;
+        this.height= height;
     }
 
-    return s2;
+    get right() { return this.x + this.width - 1n; }
+
+    fits(n)
+    {
+        return this.right <= n;
+    }
+
+    moveTo(x, y)
+    {
+        let F = new Fib(x, y, this.width, this.height, this.area);
+
+        F.sum = this.moveSum(x, y);
+
+        return F;
+    }
+
+    moveSum(x, y)
+    {
+        let offset = (x - this.x) + (y - this.y);
+        return this.sum + this.area * offset;
+    }
+
+    get totalSum()
+    {
+        const H = (this.y - 3n);
+        const W = this.width;
+
+        const C = this.x * W * H;
+        const X = H * ((W*(W-1n)) / 2n)
+        const Y = W * (((this.y * (this.y - 1n)) / 2n) - 3n);
+
+        return this.sum + C + X + Y;
+    }
+
+    mergeSums(F0, x, y)
+    {
+        const A = F0.width * this.height;
+        const B = 2n * (x + y + this.width) + (F0.width + this.height - 2n);
+        const s = (A * B) / 2n;
+
+        return s;
+    }
+
+    merge(F0)
+    {
+        let F = new Fib(this.x + this.width,
+                         this.y + this.height,
+                         this.width + F0.width,
+                         this.height + F0.height,
+                         (F0.width  * this.height) + F0.area + this.area);
+
+        F.sum = F0.moveSum(F.x + this.width, F.y + this.height) +
+                this.moveSum(F.x, F.y) +
+                this.mergeSums(F0, F.x, F.y);
+
+        return F;
+    };
+}
+
+function S2(N)
+{
+    let F0 = new Fib(5n, 3n, 2n, 1n, 2n);
+    let F1 = new Fib(7n, 4n, 3n, 2n, 4n);
+
+    F0.sum = 2n*3n + (5n+6n);
+    F1.sum = 3n*4n + (7n+8n+9n) + 5n + 9n;
+
+    let s2 = F0.sum + F1.totalSum;
+
+    const fibonacci = [F0, F1];
+
+    while (true)
+    {
+        let F = F1.merge(F0);
+
+        if (! F.fits(N))
+        {
+            let {x, y} = F;
+
+            while (x <= N && fibonacci.length > 0)
+            {
+                let f = fibonacci.pop();
+                f = f.moveTo(x, y);
+
+                if (f.fits(N))
+                {
+                    s2 += f.totalSum;
+                    x += f.width;
+                    y += f.height;
+                }
+            }
+
+            if (x-1n !== N)
+                throw "ERROR";
+
+            return s2;
+        }
+        else
+        {
+            fibonacci.push(F);
+
+            F0 = F1;
+            F1 = F;
+
+            s2 += F.totalSum;
+
+            if (F.right === N)
+                return s2;
+        }
+    }
 }
 
 function S(N, trace)
 {
     N = BigInt(N);
 
-    const s1 = ((N**3n - 2n*N**2n - 9n*N + 18n) / 2n) % MODULO;
+    const s1 = ((N**3n - 2n*N**2n - 9n*N + 18n) / 2n) + 5n;
     const s2 = S2(N, trace);
 
-    let total;
+    const total = (s1 - s2) % MODULO;
 
-    if (s1 < s2)
-        total = s1 - s2 + Number(MODULO);
-    else
-        total = s1 - s2;
-
-    return {total, dots: s2};
+    return Number(total);
 }
 
 function analyse(n)
 {
-    const { total: total1, dots: dots1 } = bruteForce(n); // 39983
-    const { total: total2, dots: dots2 } = S(n);
+    const totalRef = S0(n);
+    const total    = S(n);
 
-    assert.equal(dots2, dots1);
+    assert.equal(total, totalRef);
 }
 
 analyse(35);
 analyse(56);
+analyse(90);
+analyse(832041);
 
-assert.equal(S(10), 211);
+analyse(50);
+
+
+// assert.equal(S(10), 211);
 assert.equal(S(50), 28389);
-assert.equal(S(10000), 230312207313n % MODULO);
+// assert.equal(S(10000), 230312207313n % MODULO);
 assert.equal(S(1000000), 131546468);
 assert.equal(S(10000000), 38318073);
 
-process.exit(0);
-
 let timer = process.hrtime();
 let answer = S(MAX, true);
-
-// 1E8 => 258929048 46 seconds
-// 1E9 => 139748287 7 minutes 4 seconds
 
 timer = process.hrtime(timer);
 console.log('Answer is', answer, "calculated in ", prettyTime(timer, {verbose:true}));
