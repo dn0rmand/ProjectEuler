@@ -1,65 +1,193 @@
 const assert = require('assert');
+const timeLogger = require('tools/timeLogger');
 
-let WIDTH     = 6;
+const GC = {
+    collect: () => {
+        if (global.gc)
+            global.gc();
+    }
+}
+
 let MAX_WIDTH = 3;
-let A_CODE    = 'A'.charCodeAt(0);
-let a_CODE    = 'a'.charCodeAt(0);
+const A_CODE    = 'A'.charCodeAt(0);
+const a_CODE    = 'a'.charCodeAt(0);
+
+class BigMap
+{
+    static maxSize = (2**24 - 100);
+    static pool = [];
+
+    static createMap()
+    {
+        if (BigMap.pool.length > 0)
+        {
+            const m = BigMap.pool.pop();
+            return m;
+        }
+        else
+            return new Map();
+    }
+
+    constructor()
+    {
+        this.maps = [];
+        this.map  = BigMap.createMap();
+    }
+
+    has(key)
+    {
+        if (this.map.has(key))
+            return true;
+        for (let m of this.maps)
+            if (m.has(key))
+                return true;
+    }
+
+    set(key, value)
+    {
+        this.map.set(key, value);
+        if (this.map.size >= BigMap.maxSize)
+        {
+            console.log('\nNew map needed');
+            this.maps.push(this.map);
+            this.map = BigMap.createMap();
+        }
+    }
+
+    clear()
+    {
+        for(let m of this.maps)
+        {
+            m.clear();
+            BigMap.pool.push(m);
+        }
+
+        this.maps = [];
+        this.map.clear();
+    }
+
+    *values(autoClear)
+    {
+        for (let m of this.maps)
+        {
+            yield *m.values();
+            if (autoClear)
+            {
+                m.clear();
+                BigMap.pool.push(m);
+            }
+        }
+        if (autoClear && this.maps.length > 0)
+            this.maps = [];
+
+        yield *(this.map.values());
+        if (autoClear)
+            this.map.clear();
+    }
+
+    get size()
+    {
+        return this.maps.reduce((a, m) => a+m.size, this.map.size);
+    }
+}
 
 class State
 {
+    static Pool = [];
+
+    static create(parent, x, y)
+    {
+        if (State.Pool.length > 0)
+        {
+            const state  = State.Pool.pop();
+
+            state.data   = { xy: State.getXY(x, y), parent: parent.data };
+            state.maxX   = Math.max(x, parent.maxX);
+            state.minX   = Math.min(x, parent.minX)
+            state.level  = parent.level + x;
+
+            return state;
+        }
+        else
+            return new State(parent, x, y);
+    }
+
+    release()
+    {
+        this.data = undefined;
+        State.Pool.push(this);
+    }
+
+    static splitXY(xy)
+    {
+        if (xy < 0)
+        {
+            xy = -xy;
+            const y = xy % 100;
+            const x = -((xy - y) / 100);
+
+            return {x, y};
+        }
+        else
+        {
+            const y = xy % 100;
+            const x = (xy - y) / 100;
+            return {x, y};
+        }
+    }
+
+    static getXY(x, y)
+    {
+        if (x < 0)
+            return -(y - x*100);
+        else
+            return  (y + x*100);
+    }
     constructor(parent, x, y)
     {
         if (parent === undefined)
         {
-            this.data  = { x: 0, y: 0 };
+            this.data  = { xy: 0 };
             this.minX  = 0;
             this.maxX  = 0;
             this.level = 0;
         }
         else
         {
-            if (x === undefined || y === undefined)
-                throw "ERROR";
-
-            this.data   = { x, y, parent: parent.data };
+            this.data   = { xy: State.getXY(x, y) , parent: parent.data };
             this.maxX   = Math.max(x, parent.maxX);
             this.minX   = Math.min(x, parent.minX)
             this.level  = parent.level + x; // (x < 0 ? -1 : (x > 0 ? 1 : 0));
         }
     }
 
-    forEach(callback)
-    {
-        for (let node = this.data; node !== undefined; node = node.parent)
-        {
-            if (callback(node.x, node.y) === true)
-                return true;
-        }
-    }
-
     getKey()
     {
-        function getID(x, y)
-        {
-            const cy = String.fromCharCode(A_CODE + y);
-            if (x === 0)
-                return cy;
-
-            if (y === 0)
-                throw "ERROR";
-
-            const cx = x < 0 ? String.fromCharCode(a_CODE - x) : String.fromCharCode(A_CODE + x);
-
-            return cx+cy;
-        }
-
         let key1 = [];
         let key2 = [];
 
-        this.forEach((x, y) => {
-            key1.push(getID(x, y));
-            key2.push(getID(-x, y));
-        });
+        for (let node = this.data; node !== undefined; node = node.parent)
+        {
+            const {x, y} = State.splitXY(node.xy);
+
+            const cy = String.fromCharCode(A_CODE + y);
+            if (x === 0)
+            {
+                key1.push(cy);
+                key2.push(cy);
+            }
+            else
+            {
+                if (y === 0)
+                    throw "ERROR";
+
+                const cx = x < 0 ? String.fromCharCode(a_CODE - x) : String.fromCharCode(A_CODE + x);
+                const Cx = x > 0 ? String.fromCharCode(a_CODE + x) : String.fromCharCode(A_CODE - x);
+
+                key1.push(cx+cy);
+                key2.push(Cx+cy);
+            }
+        }
 
         key1 = key1.sort().join(':');
         key2 = key2.sort().join(':');
@@ -75,10 +203,15 @@ class State
         if (x > MAX_WIDTH || x < -MAX_WIDTH)
             return true;
 
-        return this.forEach((xRef, yRef) => {
-            if (x === xRef && y === yRef)
+        const xy = State.getXY(x, y);
+
+        for (let node = this.data; node !== undefined; node = node.parent)
+        {
+            if (xy === node.xy)
                 return true;
-        }) === true;
+        }
+
+        return false;
     }
 
     neighbors(callback)
@@ -94,25 +227,27 @@ class State
             return ! this.isUsed(x, y);
         }
 
-        this.forEach((x, y) =>
+        for (let node = this.data; node !== undefined; node = node.parent)
         {
-            if (isValid(x-1, y))
+            const {x, y} = State.splitXY(node.xy);
+
+            if (y > 0 && isValid(x-1, y))
             {
-                callback(new State(this, x-1, y));
+                callback(State.create(this, x-1, y));
             }
-            if (isValid(x+1, y))
+            if (y > 0 && isValid(x+1, y))
             {
-                callback(new State(this, x+1, y));
+                callback(State.create(this, x+1, y));
             }
             if (isValid(x, y+1))
             {
-                callback(new State(this, x, y+1));
+                callback(State.create(this, x, y+1));
             }
-            if (isValid(x, y-1))
+            if (y > 1 && isValid(x, y-1))
             {
-                callback(new State(this, x, y-1));
+                callback(State.create(this, x, y-1));
             }
-        });
+        }
     }
 }
 
@@ -121,56 +256,102 @@ function solve(n, trace)
     WIDTH = n;
     MAX_WIDTH = Math.floor(n / 2);
 
-    let states = [new State()];
+    let states    = new BigMap();
+    let newStates = new BigMap();
+
+    states.set('A', new State());
 
     while (n--)
     {
-        let newStates = [];
-        let visited   = {};
+        const length = states.size;
 
-        if (trace)
-            process.stdout.write(`\r${n}:${states.length}    `);
+        let traceCount = 0;
+        let gcCount = 0;
 
-        for (let state of states)
+        let i = 0;
+        for (let state of states.values(true)) // true to clear/release maps as we go
         {
+            if (trace)
+            {
+                if (traceCount === 0)
+                {
+                    process.stdout.write(`\r${n}:${length-i} - ${newStates.size}    `);
+                }
+                if (++traceCount >= 10000)
+                    traceCount = 0;
+
+                i++;
+            }
+
             state.neighbors((newState) =>
             {
+                if (++gcCount >= 2000000)
+                {
+                    gcCount = 0;
+                    GC.collect();
+                }
+
+                if (n === 0 && newState.level != 0)
+                {
+                    newState.release();
+                    return;
+                }
                 if (newState.level > 0)
                 {
                     let level = newState.level;
                     level += (n * newState.minX) - ((n*(n+1)) / 2);
                     if (level > 0)
+                    {
+                        newState.release();
                         return; // No chance
+                    }
                 }
                 else if (newState.level < 0)
                 {
                     let level = newState.level;
                     level += (n * newState.maxX) + ((n*(n+1)) / 2);
                     if (level < 0)
+                    {
+                        newState.release();
                         return; // No chance
+                    }
                 }
 
                 const {key1, key2} = newState.getKey();
-                if (visited[key1] !== undefined)
+                if (newStates.has(key1) || newStates.has(key2))
                     return;
 
-                visited[key1] = 1;
-                visited[key2] = 1;
-                newStates.push(newState);
+                if (n === 0)
+                {
+                    // Don't add but mark a ok to reuse because there won't be another loop
+                    newState.release();
+                    newStates.set(key1, undefined);
+                }
+                else
+                    newStates.set(key1, newState);
             });
+
+            state.release();
         }
 
-        states = newStates;
+        [states, newStates] = [newStates, states];
+        newStates.clear();
+        GC.collect();
+        gcCount = 0;
     }
 
-    return states.reduce((a, s) => s.level === 0 ? a+1 : a, 0);
+    if (trace)
+        console.log('');
+        
+    return states.size;
 }
 
-assert.equal(solve(6), 18);
-assert.equal(solve(10), 964);
-assert.equal(solve(15, true), 360505);
+timeLogger.wrap('', () => {
+    assert.equal(solve(6), 18);
+    assert.equal(solve(10), 964);
+    assert.equal(solve(15, true), 360505);
+    console.log("Tests passed");
+});
 
-console.log("Tests passed");
-
-const answer = solve(18, true);
+const answer = timeLogger.wrap('', () => solve(18, true));
 console.log('Answer is', answer);
