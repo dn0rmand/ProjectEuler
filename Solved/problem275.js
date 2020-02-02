@@ -9,8 +9,7 @@ const GC = {
 }
 
 let MAX_WIDTH = 3;
-const A_CODE    = 'A'.charCodeAt(0);
-const a_CODE    = 'a'.charCodeAt(0);
+const A_CODE  = 33;
 
 class BigMap
 {
@@ -48,7 +47,7 @@ class BigMap
         this.map.set(key, value);
         if (this.map.size >= BigMap.maxSize)
         {
-            console.log('\nNew map needed');
+            console.log('... New map needed');
             this.maps.push(this.map);
             this.map = BigMap.createMap();
         }
@@ -93,13 +92,13 @@ class BigMap
 
 class State
 {
-    static Pool = [];
+    static pool = [];
 
     static create(parent, x, y)
     {
-        if (State.Pool.length > 0)
+        if (State.pool.length > 0)
         {
-            const state  = State.Pool.pop();
+            const state  = State.pool.pop();
 
             state.data   = { xy: State.getXY(x, y), parent: parent.data };
             state.maxX   = Math.max(x, parent.maxX);
@@ -115,7 +114,8 @@ class State
     release()
     {
         this.data = undefined;
-        State.Pool.push(this);
+        if (State.pool.length < 1000) // Don't keep too many
+            State.pool.push(this);
     }
 
     static splitXY(xy)
@@ -157,7 +157,7 @@ class State
             this.data   = { xy: State.getXY(x, y) , parent: parent.data };
             this.maxX   = Math.max(x, parent.maxX);
             this.minX   = Math.min(x, parent.minX)
-            this.level  = parent.level + x; // (x < 0 ? -1 : (x > 0 ? 1 : 0));
+            this.level  = parent.level + x;
         }
     }
 
@@ -170,9 +170,10 @@ class State
         {
             const {x, y} = State.splitXY(node.xy);
 
-            const cy = String.fromCharCode(A_CODE + y);
+            let cy = 18*y;
             if (x === 0)
             {
+                cy = String.fromCharCode(A_CODE + cy);
                 key1.push(cy);
                 key2.push(cy);
             }
@@ -181,16 +182,16 @@ class State
                 if (y === 0)
                     throw "ERROR";
 
-                const cx = x < 0 ? String.fromCharCode(a_CODE - x) : String.fromCharCode(A_CODE + x);
-                const Cx = x > 0 ? String.fromCharCode(a_CODE + x) : String.fromCharCode(A_CODE - x);
+                const cx = x + MAX_WIDTH;
+                const Cx = MAX_WIDTH - x;
 
-                key1.push(cx+cy);
-                key2.push(Cx+cy);
+                key1.push(String.fromCharCode(A_CODE + cx+cy));
+                key2.push(String.fromCharCode(A_CODE + Cx+cy));
             }
         }
 
-        key1 = key1.sort().join(':');
-        key2 = key2.sort().join(':');
+        key1 = key1.sort().join('');
+        key2 = key2.sort().join('');
 
         return { key1, key2 };
     }
@@ -253,7 +254,6 @@ class State
 
 function solve(n, trace)
 {
-    WIDTH = n;
     MAX_WIDTH = Math.floor(n / 2);
 
     let states    = new BigMap();
@@ -319,7 +319,10 @@ function solve(n, trace)
 
                 const {key1, key2} = newState.getKey();
                 if (newStates.has(key1) || newStates.has(key2))
+                {
+                    newState.release();
                     return;
+                }
 
                 if (n === 0)
                 {
