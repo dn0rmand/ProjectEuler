@@ -68,18 +68,23 @@ class CompressedState
             }
         }
         state.data = old;
+
+        this.$state = state;
+
+        // state.dump();
+        // console.log(this.maxArea,': ', this.vKey.join(''), '-', this.hKey.join(''), ' - ', this.areas.join(','));
     }
 
     get key()
     {
         if (this.vKey && this.hKey)
-            return `${this.maxArea}:${this.vKey.join('-')}:${this.hKey.join('-')}:${this.areas.join('-')}`;
+            return `${this.$state.data}:${this.maxArea}:${this.vKey.join('-')}:${this.hKey.join('-')}:${this.areas.join('-')}`;
         else if (this.vKey)
-            return `${this.maxArea}:${this.vKey.join('-')}:${this.areas.join('-')}`;
+            return `${this.$state.data}:${this.maxArea}:${this.vKey.join('-')}:${this.areas.join('-')}`;
         else if (this.hKey)
-            return `${this.maxArea}:${this.hKey.join('-')}:${this.areas.join('-')}`;
+            return `${this.$state.data}:${this.maxArea}:${this.hKey.join('-')}:${this.areas.join('-')}`;
         else
-            return `${this.maxArea}:${this.areas.join('-')}`;
+            return `${this.$state.data}:${this.maxArea}:${this.areas.join('-')}`;
     }
 
     get leftKey()
@@ -104,14 +109,61 @@ class CompressedState
         return k;
     }
 
-    static mergeLR(left, right)
+    static stitchLR(left, right)
     {
+        let h = left.height;
+        let w = left.width + right.width - 1;
+
+        let S = new State(w, h);
+
+        for(let y = 0; y < h; y++)
+        {
+            for(let x = 0; x < left.width; x++)
+            {
+                S.set(x, y, left.get(left.width-1-x, y));
+            }
+            assert.equal(S.get(left.width-1, y), right.get(0, y));
+            for(let x = 1; x < left.width; x++)
+            {
+                S.set(left.width-1+x, y, right.get(x, y));
+            }
+        }
+
+        return S;
+    }
+
+    static stitchTB(top, bottom)
+    {
+        let h = top.height + bottom.height - 1;
+        let w = top.width;
+
+        let S = new State(w, h);
+
+        for(let x = 0; x < w; x++)
+        {
+            let y = 0;
+            for(; y < top.height; y++)
+            {
+                S.set(x, y, top.get(x, top.height-1-y));
+            }
+            assert.equal(S.get(x, y-1 ), bottom.get(x, 0));
+            for(let i = 1; i < top.height; i++, y++)
+            {
+                S.set(x, y, bottom.get(x, i));
+            }
+        }
+
+        return S;
+    }
+
+    static mergeLR(left, right)
+    {        
         assert.equal(left.width, right.width);
         assert.equal(left.height, right.height);
 
         let state = new CompressedState();
 
-        state.width   = left.width + right.width - 1;
+        state.width  = left.width + right.width - 1;
         state.height = left.height;
         state.maxArea= Math.max(left.maxArea, right.maxArea);
         state.count  = left.count * right.count;
@@ -142,12 +194,17 @@ class CompressedState
             if (lmap[l] !== undefined)
             {
                 i = lmap[l];
+                if (rmap[r] === undefined)
+                    state.areas[i-1] = right.areas[r-1];
+
                 rmap[r] = i;
                 state.areas[i-1]--;
             }
             else if (rmap[r] !== undefined)
             {
                 i = rmap[r];
+                if (lmap[l] === undefined)
+                    state.areas[i-1] = left.areas[l-1];
                 lmap[l] = i;
                 state.areas[i-1]--;
             }
@@ -171,7 +228,7 @@ class CompressedState
                     i = ++id;
                     state.areas[i-1] = left.areas[l-1];
                 }
-                state.hKey[x+left.width-1] = i;
+                state.hKey[left.width-1 - x] = i;
             }
             if (r != 0)
             {
@@ -181,11 +238,22 @@ class CompressedState
                     i = ++id;
                     state.areas[i-1] = right.areas[r-1];
                 }
-                state.hKey[left.width-1-x] = i;
+                state.hKey[left.width-1 + x] = i;
             }
         }
 
         state.maxArea = Math.max(state.maxArea, ... state.areas);
+
+        state.$state = CompressedState.stitchLR(left.$state, right.$state);
+
+        if (state.maxArea != state.$state.getMaxArea())
+        {
+            state.$state.dump();
+            console.log(state.maxArea, state.$state.getMaxArea(), ': ', state.hKey.join(''), ' - ', state.areas.join(','));
+            left.$state.dump();
+            right.$state.dump();
+        }
+
         return state;
     }
     
@@ -204,62 +272,84 @@ class CompressedState
         state.hKey   = undefined; // not needed
 
         let id = 0;
-        let lmap = [];
-        let rmap = [];
+        let tmap = [];
+        let bmap = [];
 
         for(let x = 0; x < state.width; x++)
         {
-            let l = top.hKey[x];
-            let r = bottom.hKey[x];
+            let t = top.hKey[x];
+            let b = bottom.hKey[x];
 
-            if (l === 0)
+            if (t === 0)
             {
-                assert.equal(r, 0);
+                assert.equal(b, 0);
                 continue;
             }
-            if (r === 0)
+            if (b === 0)
             {
-                assert.equal(l, 0);
+                assert.equal(t, 0);
                 continue;
             }
 
             let i;
 
-            if (lmap[l] !== undefined)
+            if (tmap[t] !== undefined)
             {
-                i = lmap[l];
-                rmap[r] = i;
+                i = tmap[t];
+                if (bmap[b] === undefined)
+                    state.areas[i-1] += bottom.areas[b-1];
+
+                bmap[b] = i;
                 state.areas[i-1]--;
             }
-            else if (rmap[r] !== undefined)
+            else if (bmap[b] !== undefined)
             {
-                i = rmap[r];
-                lmap[l] = i;
+                i = bmap[b];
+                if (tmap[t] === undefined)
+                    state.areas[i-1] += top.areas[t-1];
+                tmap[t] = i;
                 state.areas[i-1]--;
             }
             else 
             {
                 i = ++id;
-                rmap[r] = lmap[l] = i;
-                state.areas[i-1] = top.areas[l-1] + bottom.areas[r-1] - 1;
+                bmap[b] = tmap[t] = i;
+                state.areas[i-1] = top.areas[t-1] + bottom.areas[b-1] - 1;
             }
         }
 
         state.maxArea = Math.max(state.maxArea, ... state.areas);
+
+        state.$state = CompressedState.stitchTB(top.$state, bottom.$state);
+
+        if (state.maxArea != state.$state.getMaxArea())
+        {
+            state.$state.dump();
+            console.log(state.maxArea, state.$state.getMaxArea());
+            console.log(top.maxArea, bottom.maxArea);
+            console.log(top.hKey.join(''), top.areas.join(', '));
+            console.log(bottom.hKey.join(''), bottom.areas.join(', '));
+            top.$state.dump();
+            bottom.$state.dump();
+
+            // Try again for debugging
+            let X = CompressedState.mergeTB(top, bottom);
+        }
+
         return state;
-     }    
+    }    
 }
 
 class State
 {
-    constructor(width, height)
+    constructor(width, height, data)
     {
         assert.notEqual(width, undefined);
         assert.notEqual(height, undefined);
 
         this.width = width;
         this.height= height;
-        this.data = 0n;
+        this.data  = data || 0n ;
     }
 
     clone()
@@ -313,6 +403,18 @@ class State
         }
         this.data = old;
         return max;
+    }
+
+    dump()
+    {
+        console.log('');
+        for(let y = 0; y < this.height; y++)
+        {
+            let v = [];
+            for (let x = 0; x < this.width; x++)
+                v.push(this.get(x, y) ? '◼︎' : '◻︎');
+            console.log(v.join(''));
+        }
     }
 }
 
@@ -469,12 +571,16 @@ function solve(size, trace)
         return a+c;
     }, 0);
 
-    const answer = (total / count).toFixed(8);    
+    const answer = (total / count).toFixed(8);
+
+    console.log(areas.join(', '));
+    console.log("1, 62, 100, 102, 84, 69, 52, 32, 9, 1");
+
     return +answer;    
 }
 
 assert.equal(solve(3), 3.64453125);
-assert.equal(solve(5, true), 8.14696828);
+// assert.equal(solve(5, true), 8.14696828);
 // solve(7, true);
 
 // assert.equal(solve(2), 1.875);
