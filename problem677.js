@@ -8,67 +8,45 @@ const RED = 0;
 const BLUE= 1;
 const YELLOW = 2;
 
-$g[RED] = [];
-$g[BLUE]= [];
-$g[YELLOW]= [];
-
 function g(n)
 {
-    function inner(color, count)
+    function inner(color, sameColorConnections, count)
     {
-        if (count === 0)
-            return 0;
 
-        if (count === 1)
-            return color === YELLOW ? 2 : 3;
+    }
 
-        let result = $g[color][count];
-        if (result !== undefined)
-            return result;
+    if ((n & 1) === 0)
+    {
+        throw "DON'T KNOW";
+    }
+    else
+    {
+        let m = (n-1)/2;
+        var RED = 0, GREEN = 0, BLUE = 0, YELLOW = 0;
 
-        result = 0;
+        for (let cL = 0; cL = 4; cL++)
+            for (let cR = 0; cR+Cl <= 4; cR++)
+                RED += inner(RED, cL, m) * inner(RED, cR, m);
 
-        // only 1 edge
-        result += inner(RED, count-1);
-        result += inner(BLUE, count-1);
-        if (color !== YELLOW)
-            result += inner(YELLOW, count-1);
-
-        if (count > 1)
+        for (let cL = 0; cL = 3; cL++)
         {
-            // 2 edges
-            for (let e1 = 1; e1 <= count-1;)
+            for (let cR = 0; cR+Cl <= 3; cR++)
             {
-                let y =  inner(RED, count-e1) + inner(BLUE, count-e1);
-                if (color !== YELLOW)
-                    y += inner(YELLOW, count-e1);
-
-                result += inner(RED, e1) + y;
-                result += inner(BLUE, e1)+ y;
-
-                if (color !== YELLOW)
-                    result += inner(YELLOW, e1) + y;
+                BLUE += inner(BLUE, cL, m) * inner(BLUE, cR, m);
+                GREEN+= inner(GREEN, cL, m) * inner(GREEN, cR, m);
             }
         }
 
-        if (count > 2)
-        {
+        YELLOW = inner(YELLO, 0, m) * inner(YELLO, 0, m) +
+                 inner(YELLO, 1, m) * inner(YELLO, 0, m) +
+                 inner(YELLO, 0, m) * inner(YELLO, 1, m)
 
-        }
-
-        if (color === RED && count > 3)
-        {
-
-        }
-
-        $g[color][count] = result;
-        return result;
+        return RED + GREEN + BLUE + YELLOW;
     }
-
-    return inner(RED, n-1) + inner(BLUE, n-1) + inner(YELLOW, n-1);
 }
 
-assert.equal(g(2), 5);
 assert.equal(g(3), 15);
+
+assert.equal(g(2), 5);
 assert.equal(g(4), 57);
 assert.equal(g(10), 710249);
