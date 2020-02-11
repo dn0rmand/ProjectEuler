@@ -72,7 +72,14 @@ class CompressedState
 
     get key()
     {
-        return `${this.maxArea}:${this.vKey.join('-')}:${this.hKey.join('-')}:${this.areas.join('-')}`;
+        if (this.vKey && this.hKey)
+            return `${this.maxArea}:${this.vKey.join('-')}:${this.hKey.join('-')}:${this.areas.join('-')}`;
+        else if (this.vKey)
+            return `${this.maxArea}:${this.vKey.join('-')}:${this.areas.join('-')}`;
+        else if (this.hKey)
+            return `${this.maxArea}:${this.hKey.join('-')}:${this.areas.join('-')}`;
+        else
+            return `${this.maxArea}:${this.areas.join('-')}`;
     }
 
     get leftKey()
@@ -164,7 +171,7 @@ class CompressedState
                     i = ++id;
                     state.areas[i-1] = left.areas[l-1];
                 }
-                state.hKey[x] = i;
+                state.hKey[x+left.width-1] = i;
             }
             if (r != 0)
             {
@@ -174,7 +181,7 @@ class CompressedState
                     i = ++id;
                     state.areas[i-1] = right.areas[r-1];
                 }
-                state.hKey[state.width-x-1] = i;
+                state.hKey[left.width-1-x] = i;
             }
         }
 
@@ -253,7 +260,6 @@ class State
         this.width = width;
         this.height= height;
         this.data = 0n;
-        this.$next = undefined;
     }
 
     clone()
@@ -338,7 +344,7 @@ class StateCollection
         let s = this.states.get(k);
         if (s !== undefined)
         {
-            s.count++;
+            s.count += value.count;
         }
         else
         {
@@ -442,7 +448,7 @@ function solve(size, trace)
             {
                 let newState = CompressedState.mergeTB(top, bottom);
                 callback(newState);
-                count++;
+                count += newState.count;
             }
         }
 
@@ -467,9 +473,9 @@ function solve(size, trace)
     return +answer;    
 }
 
-// assert.equal(solve(3), 3.64453125);
-// assert.equal(solve(5, true), 8.14696828);
-solve(7, true);
+assert.equal(solve(3), 3.64453125);
+assert.equal(solve(5, true), 8.14696828);
+// solve(7, true);
 
 // assert.equal(solve(2), 1.875);
 // assert.equal(solve(3), 3.64453125);
