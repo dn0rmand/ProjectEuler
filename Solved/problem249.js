@@ -22,10 +22,11 @@ const MAX_PRIME = (() => {
 
 function solve(max, trace)
 {
-    const   states = new Map();
-    let     count  = 0n;
+    const   states   = new Array(MAX_PRIME+1).fill(0n);
+    let     count    = 0n;
+    let     maxValue = 0;
 
-    states.set(0, 1n);
+    states[0] = 1n;
 
     for(let p of allPrimes)
     {        
@@ -33,19 +34,26 @@ function solve(max, trace)
             break;
 
         if (trace)
-            process.stdout.write(`\r${p} : ${count} - ${states.size} `);
+            process.stdout.write(`\r${p} : ${count}`);
 
-        const entries = [...states.entries()];
-        for(let entry of entries)
+        const maxVal = maxValue;
+        
+        for(let value = maxValue; value >= 0; value--)
         {
-            const v = entry[0] + p;
-            const c = entry[1];
+            const c = states[value];
+            if (c === 0n)
+                continue;
+
+            const v = value + p;
+            if (v > MAX_PRIME)
+                continue;
+            if (v > maxValue)
+                maxValue = v;
 
             if (primeHelper.isKnownPrime(v))
                 count = (count + c) % MODULO;
 
-            const o = states.get(v) || 0n;
-            states.set(v, (o + c) % MODULO);
+            states[v] = (states[v] + c) % MODULO;
         }
     }
 
