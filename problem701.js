@@ -1,7 +1,9 @@
 const assert = require('assert');
-const BigMap = require('tools/BigMap');
-const BigSet = require('tools/BigSet');
+// const BigMap = require('tools/BigMap');
+// const BigSet = require('tools/BigSet');
 const timeLogger = require('tools/timeLogger');
+
+const DEBUG = 0
 
 class CompressedState
 {
@@ -20,7 +22,34 @@ class CompressedState
             this.init(state);
     }
 
-    init(state)
+    sort()
+    {
+        if (! DEBUG)
+            return;
+
+        if (this.areas.length <= 1)
+            return;
+
+        let m = this.areas.map((value, index) => { return { value, index: index+1} })
+                          .sort((a, b) => a.value - b.value)
+                          .reduce((a, v, index) => { a[v.index] = index+1; return a; }, [0]);
+
+        this.areas.sort((a, b) => a - b);
+
+        if (this.vKey)
+            for(let k = 0; k < this.vKey.length; k++)
+            {
+                this.vKey[k] = m[this.vKey[k]];
+            }
+
+        if (this.hKey)
+            for(let k = 0; k < this.hKey.length; k++)
+            {
+                this.hKey[k] = m[this.hKey[k]];
+            }
+    }
+
+    init(state) 
     {
         this.width   = state.width;
         this.height  = state.height;
@@ -63,28 +92,31 @@ class CompressedState
             if (state.get(x, 0))
             {
                 id++;
-                let m = calculate(x, 0);
-                this.areas[id-1] = m;
+                this.areas[id-1] = calculate(x, 0);
             }
         }
         state.data = old;
-
-        this.$state = state;
-
-        // state.dump();
-        // console.log(this.maxArea,': ', this.vKey.join(''), '-', this.hKey.join(''), ' - ', this.areas.join(','));
+        
+        if (DEBUG)
+        {
+            this.$state = state;
+        }
+        state.sort;
     }
 
     get key()
     {
+        let extra = '';
+        if (DEBUG)
+            extra = `${this.$state.data}:`
         if (this.vKey && this.hKey)
-            return `${this.$state.data}:${this.maxArea}:${this.vKey.join('-')}:${this.hKey.join('-')}:${this.areas.join('-')}`;
+            return `${extra}${this.maxArea}:${this.vKey.join('-')}:${this.hKey.join('-')}:${this.areas.join('-')}`;
         else if (this.vKey)
-            return `${this.$state.data}:${this.maxArea}:${this.vKey.join('-')}:${this.areas.join('-')}`;
+            return `${extra}${this.maxArea}:${this.vKey.join('-')}:${this.areas.join('-')}`;
         else if (this.hKey)
-            return `${this.$state.data}:${this.maxArea}:${this.hKey.join('-')}:${this.areas.join('-')}`;
+            return `${extra}${this.maxArea}:${this.hKey.join('-')}:${this.areas.join('-')}`;
         else
-            return `${this.$state.data}:${this.maxArea}:${this.areas.join('-')}`;
+            return `${extra}${this.maxArea}:${this.areas.join('-')}`;
     }
 
     get leftKey()
@@ -111,10 +143,10 @@ class CompressedState
 
     static stitchLR(left, right)
     {
-        let h = left.height;
-        let w = left.width + right.width - 1;
+        const h = left.height;
+        const w = left.width + right.width - 1;
 
-        let S = new State(w, h);
+        const S = new State(w, h);
 
         for(let y = 0; y < h; y++)
         {
@@ -134,10 +166,10 @@ class CompressedState
 
     static stitchTB(top, bottom)
     {
-        let h = top.height + bottom.height - 1;
-        let w = top.width;
+        const h = top.height + bottom.height - 1;
+        const w = top.width;
 
-        let S = new State(w, h);
+        const S = new State(w, h);
 
         for(let x = 0; x < w; x++)
         {
@@ -161,7 +193,7 @@ class CompressedState
         assert.equal(left.width, right.width);
         assert.equal(left.height, right.height);
 
-        let state = new CompressedState();
+        const state = new CompressedState();
 
         state.width  = left.width + right.width - 1;
         state.height = left.height;
@@ -171,13 +203,13 @@ class CompressedState
         state.hKey   = new Array(state.width).fill(0);
 
         let id = 0;
-        let lmap = [];
-        let rmap = [];
+        const lmap = [];
+        const rmap = [];
 
         for(let y = 0; y < state.height; y++)
         {
-            let l = left.vKey[y];
-            let r = right.vKey[y];
+            const l = left.vKey[y];
+            const r = right.vKey[y];
             if (l === 0)
             {
                 assert.equal(r, 0);
@@ -195,8 +227,15 @@ class CompressedState
             {
                 i = lmap[l];
                 if (rmap[r] === undefined)
-                    state.areas[i-1] = right.areas[r-1];
-
+                {
+                    state.areas[i-1] += right.areas[r-1];
+                }
+                else if (rmap[r] != i)
+                {                
+                    state.areas[i-1] += state.areas[rmap[r]-1];
+                    state.areas[rmap[r]-1] = 0; // To fix key
+                }
+    
                 rmap[r] = i;
                 state.areas[i-1]--;
             }
@@ -204,7 +243,14 @@ class CompressedState
             {
                 i = rmap[r];
                 if (lmap[l] === undefined)
-                    state.areas[i-1] = left.areas[l-1];
+                {
+                    state.areas[i-1] += left.areas[l-1];
+                }
+                else if (lmap[l] != i)
+                {                    
+                    state.areas[i-1] += state.areas[lmap[l]-1];
+                    state.areas[lmap[l]-1] = 0; // To fix key
+                }
                 lmap[l] = i;
                 state.areas[i-1]--;
             }
@@ -218,8 +264,8 @@ class CompressedState
 
         for(let x = 0; x < left.width; x++)
         {
-            let l = left.hKey[x];
-            let r = right.hKey[x];
+            const l = left.hKey[x];
+            const r = right.hKey[x];
             if (l != 0)
             {
                 let i = lmap[l];
@@ -227,6 +273,7 @@ class CompressedState
                 {
                     i = ++id;
                     state.areas[i-1] = left.areas[l-1];
+                    lmap[l] = i;
                 }
                 state.hKey[left.width-1 - x] = i;
             }
@@ -237,6 +284,7 @@ class CompressedState
                 {
                     i = ++id;
                     state.areas[i-1] = right.areas[r-1];
+                    rmap[r] = i;
                 }
                 state.hKey[left.width-1 + x] = i;
             }
@@ -244,16 +292,26 @@ class CompressedState
 
         state.maxArea = Math.max(state.maxArea, ... state.areas);
 
-        state.$state = CompressedState.stitchLR(left.$state, right.$state);
-
-        if (state.maxArea != state.$state.getMaxArea())
+        if (DEBUG)
         {
-            state.$state.dump();
-            console.log(state.maxArea, state.$state.getMaxArea(), ': ', state.hKey.join(''), ' - ', state.areas.join(','));
-            left.$state.dump();
-            right.$state.dump();
+            state.$state = CompressedState.stitchLR(left.$state, right.$state);
+
+            if (state.maxArea != state.$state.getMaxArea() ||
+                (state.areas.length > 1 && state.areas[0] === state.areas[1] && state.hKey.join('') === "00012"))
+            {
+                state.$state.dump();
+                console.log(state.maxArea, state.$state.getMaxArea(), ': ', state.hKey.join(''), ' - ', state.areas.join(','));
+                console.log(left.maxArea, right.maxArea);
+                console.log(left.vKey.join(''), left.areas.join(', '));
+                console.log(right.vKey.join(''), right.areas.join(', '));
+                left.$state.dump();
+                right.$state.dump();
+
+                CompressedState.mergeLR(left, right);
+            }
         }
 
+        state.sort();
         return state;
     }
     
@@ -262,7 +320,7 @@ class CompressedState
         assert.equal(top.width, bottom.width);
         assert.equal(top.height, bottom.height);
 
-        let state = new CompressedState();
+        const state = new CompressedState();
 
         state.width  = top.width
         state.height = top.height + bottom.height - 1;
@@ -272,13 +330,13 @@ class CompressedState
         state.hKey   = undefined; // not needed
 
         let id = 0;
-        let tmap = [];
-        let bmap = [];
+        const tmap = [];
+        const bmap = [];
 
         for(let x = 0; x < state.width; x++)
         {
-            let t = top.hKey[x];
-            let b = bottom.hKey[x];
+            const t = top.hKey[x];
+            const b = bottom.hKey[x];
 
             if (t === 0)
             {
@@ -297,8 +355,14 @@ class CompressedState
             {
                 i = tmap[t];
                 if (bmap[b] === undefined)
+                {
                     state.areas[i-1] += bottom.areas[b-1];
-
+                }
+                else if (bmap[b] != i)
+                {                    
+                    state.areas[i-1] += state.areas[bmap[b]-1];
+                    state.areas[bmap[b]-1] = 0; // To fix key
+                }
                 bmap[b] = i;
                 state.areas[i-1]--;
             }
@@ -306,7 +370,14 @@ class CompressedState
             {
                 i = bmap[b];
                 if (tmap[t] === undefined)
+                {
                     state.areas[i-1] += top.areas[t-1];
+                }
+                else if (tmap[t] != i)
+                {                    
+                    state.areas[i-1] += state.areas[tmap[t]-1];
+                    state.areas[tmap[t]-1] = 0; // To fix key
+                }
                 tmap[t] = i;
                 state.areas[i-1]--;
             }
@@ -320,22 +391,25 @@ class CompressedState
 
         state.maxArea = Math.max(state.maxArea, ... state.areas);
 
-        state.$state = CompressedState.stitchTB(top.$state, bottom.$state);
-
-        if (state.maxArea != state.$state.getMaxArea())
+        if (DEBUG)
         {
-            state.$state.dump();
-            console.log(state.maxArea, state.$state.getMaxArea());
-            console.log(top.maxArea, bottom.maxArea);
-            console.log(top.hKey.join(''), top.areas.join(', '));
-            console.log(bottom.hKey.join(''), bottom.areas.join(', '));
-            top.$state.dump();
-            bottom.$state.dump();
+            state.$state = CompressedState.stitchTB(top.$state, bottom.$state);
 
-            // Try again for debugging
-            let X = CompressedState.mergeTB(top, bottom);
+            if (state.maxArea != state.$state.getMaxArea())
+            {
+                state.$state.dump();
+                console.log(state.maxArea, state.$state.getMaxArea());
+                console.log(top.maxArea, bottom.maxArea);
+                console.log(top.hKey.join(''), top.areas.join(', '));
+                console.log(bottom.hKey.join(''), bottom.areas.join(', '));
+                top.$state.dump();
+                bottom.$state.dump();
+
+                CompressedState.mergeTB(top, bottom);
+            }
         }
 
+        state.sort();
         return state;
     }    
 }
@@ -354,7 +428,7 @@ class State
 
     clone()
     {
-        let newState = new State(this.width, this.height);
+        const newState = new State(this.width, this.height);
         
         newState.data = this.data;
 
@@ -386,7 +460,7 @@ class State
     {
         let max = 0;
 
-        let calculate = (x, y) =>
+        const calculate = (x, y) =>
         {
             if (! this.get(x, y))
                 return 0;
@@ -410,7 +484,7 @@ class State
         console.log('');
         for(let y = 0; y < this.height; y++)
         {
-            let v = [];
+            const v = [];
             for (let x = 0; x < this.width; x++)
                 v.push(this.get(x, y) ? '◼︎' : '◻︎');
             console.log(v.join(''));
@@ -441,9 +515,9 @@ class StateCollection
             values.push(value);
         };
 
-        let k = value.key;
+        const k = value.key;
 
-        let s = this.states.get(k);
+        const s = this.states.get(k);
         if (s !== undefined)
         {
             s.count += value.count;
@@ -466,7 +540,8 @@ class StateCollection
 
 function loadStates(size, trace)
 {
-    console.log(`Loading states for size ${size}x${size}`);
+    if (trace)
+        console.log(`Loading states for size ${size}x${size}`);
 
     const states = [new State(size, size)];
 
@@ -485,7 +560,8 @@ function loadStates(size, trace)
         }
     }
     
-    console.log(`\rStates loaded => ${states.length} states`);
+    if (trace)
+        console.log(`\rStates loaded => ${states.length} states`);
 
     const states2 = new StateCollection();
     for(let state of states)
@@ -495,7 +571,8 @@ function loadStates(size, trace)
         states2.push(state2);
     }
 
-    console.log(`\rStates compressed => ${states2.size} states`);
+    if (trace)
+        console.log(`\rStates compressed => ${states2.size} states`);
     
     return states2;
 }
@@ -504,63 +581,92 @@ function solve(size, trace)
 {
     assert.equal(size & 1, 1);
 
+    const MAX_AREA = size*size;
+
     function pass1(states)
     {
-        console.log('Merging left and right states');
+        if (trace)
+            console.log('Merging left and right states');
 
-        let newStates = new StateCollection();
+        const newStates = new StateCollection();
         let total = states.length;
         for(let left of states.values())
         {
             if (trace)
                 process.stdout.write(`\r${ total-- } : ${ newStates.length } `);
 
-            let rights = states.lefts.get(left.leftKey);
+            const rights = states.lefts.get(left.leftKey);
             if (rights === undefined)
                 continue;
 
             for(let right of rights)
             {
-                let newState = CompressedState.mergeLR(left, right);
+                const newState = CompressedState.mergeLR(left, right);
                 newStates.push(newState);
             }
         }
 
-        console.log(`\rLeft and right states merged => ${newStates.length} states`);
+        if (trace)
+            console.log(`\rLeft and right states merged => ${newStates.length} states`);
 
         return newStates;
     }
 
     function pass2(states, callback)
     {
-        console.log('Merging top and bottom states');
+        if (trace)
+            console.log('Merging top and bottom states');
 
         let count = 0;
         let total = states.length;
+        let traceCount = 0;
+
         for(let top of states.values())
         {
             if (trace)
-                process.stdout.write(`\r${total--} : ${count} `);
+            {
+                total--;
+                if (traceCount === 0)
+                    process.stdout.write(`\r${total} : ${count} `);
+                if (++traceCount >= 1000)
+                    traceCount = 0;
+            }
 
-            let bottoms = states.tops.get(top.topKey);
+            const bottoms = states.tops.get(top.topKey);
             if (bottoms === undefined)
                 continue;
 
             for(let bottom of bottoms)
             {
-                let newState = CompressedState.mergeTB(top, bottom);
+                const newState = CompressedState.mergeTB(top, bottom);
                 callback(newState);
-                count += newState.count;
+                count++;
             }
         }
 
-        console.log(`\rTop and bottom states merged => ${count} states`);
+        if (trace)
+            console.log(`\rTop and bottom states merged => ${count} states`);
         return count;
     }
 
     const areas = [];
-    const COUNT = pass2( pass1( loadStates((size+1)/2, trace) ), (state) => {
-        let area = state.maxArea;
+    let ignoredAreas = [];
+    let ignoredCount= 0;
+
+    pass2( pass1( loadStates((size+1)/2, trace) ), (state) => {
+        const area = state.maxArea;
+        if (area > MAX_AREA)
+        {
+            if (DEBUG)
+                throw "ERROR";
+            else
+            {
+                ignoredAreas[area-MAX_AREA-1] = (ignoredAreas[area-MAX_AREA-1] || 0) + area;
+                ignoredCount += state.count;
+
+                return; // IGNORE
+            }
+        }
         areas[area] = (areas[area] || 0) + state.count;
     });
 
@@ -571,23 +677,93 @@ function solve(size, trace)
         return a+c;
     }, 0);
 
+    if (count > Number.MAX_SAFE_INTEGER || total > Number.MAX_SAFE_INTEGER)
+        throw "ERROR";
+
+    if (size == 7)
+    {
+        if (count != 2**49)
+            console.log(`MISSING = ${ 2**49 - count} `);
+        console.log(`Actual answer = ${ total / count }`);
+        if (ignoredCount > 0)
+        {
+            console.log(`Ignored Count = ${ ignoredCount }`);
+            console.log(`Ignored Areas = ${ ignoredAreas.join(', ') }`);
+        }
+
+        const expected = [
+            1,
+            1280128949,
+            176229287225,
+            2370172541160,
+            9326182280866,
+            19456218353604,
+            29180787054751,
+            36097936854979,
+            39770482398634,
+            40623636302296,
+            39600310721716,
+            37509706588390,
+            34927356524950,
+            32178686371964,
+            29421912139916,
+            26746561753300,
+            24218963812296,
+            21883682102512,
+            19749565785812,
+            17795455788742,
+            15990850820922,
+            14307976499256,
+            12723830222506,
+            11220743506424,
+            9787395461370,
+            8419384731456,
+            7118865766410,
+            5893497890598,
+            4755089510429,
+            3718037391496,
+            2797571528190,
+            2007848049708,
+            1359698792275,
+            857702706964,
+            496867869514,
+            260563213706,
+            122088582016,
+            50569493669,
+            18367605400,
+            5814206412,
+            1595064629,
+            376790971,
+            75969780,
+            12911930,
+            1817335,
+            206449,
+            18212,
+            1172,
+            49,
+            1
+        ];
+        
+        for(let i = 0; i <= MAX_AREA; i++)
+        {
+            let v = areas[i] || 0;
+            if (v != expected[i])
+                console.log(`${i}: ${v} instead of ${expected[i]}`);
+        }
+    }
+
     const answer = (total / count).toFixed(8);
 
-    console.log(areas.join(', '));
-    console.log("1, 62, 100, 102, 84, 69, 52, 32, 9, 1");
+    if (DEBUG)
+        console.log(areas.join(', '));
 
-    return +answer;    
+    return +answer;
 }
 
 assert.equal(solve(3), 3.64453125);
-// assert.equal(solve(5, true), 8.14696828);
-// solve(7, true);
-
-// assert.equal(solve(2), 1.875);
-// assert.equal(solve(3), 3.64453125);
-// assert.equal(solve(4), 5.76487732);
+assert.equal(solve(5), 8.14696828);
 
 console.log("Tests passed");
 
-// const answer = timeLogger.wrap('', () => solve(4, true)); // 8.14696828
-// console.log(`Answer is ${answer}`);
+const answer = timeLogger.wrap('', () => solve(7, true));
+console.log(`Answer is ${answer}`);
