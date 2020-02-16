@@ -11,8 +11,8 @@ class CompressedState
         this.maxArea= 0;
         this.areas  = [];    
 
-        this.vKey = [];
-        this.hKey = [];
+        this.vKey = undefined;
+        this.hKey = undefined;
 
         if (state)
             this.init(state);
@@ -101,189 +101,277 @@ class CompressedState
         return k;
     }
 
+    fixHKey()
+    {
+        let used = [];
+        let pos  = [];
+
+        for(let p in this.hKey)
+        {
+            p = +p;
+            let i = this.hKey[p];
+
+            if (i > 0 && used[i-1] === undefined)
+            {
+                pos[i-1]  = p;
+                used[i-1] = i-1;
+            }
+        }
+
+        // Remove unused areas and sort 
+
+        let changed = false;
+
+        used = used.sort((a, b) => {
+            if (a === undefined)
+                return b === undefined ? 0 : 1;
+            else if (b === undefined)
+                return 1;
+            let s = this.areas[a]-this.areas[b]; 
+            if (s === 0)
+                return pos[a]-pos[b];
+            else
+                return s;
+        });
+        
+        used = used.reduce((a, v, i) => { 
+            a[v] = i; 
+            if (i !== v)
+                changed = true;
+            return a; 
+        }, []);
+
+        if (! changed)
+        {
+            if (used.length < this.areas.length)
+                this.areas.length = used.length;
+
+            return;
+        }
+
+        for(let i = 0; i < this.hKey.length; i++)
+        {
+            if (this.hKey[i])
+            {
+                this.hKey[i] = used[this.hKey[i]-1]+1;
+            }
+        }
+
+        const oldAreas = [... this.areas];
+        this.areas.fill(0);
+
+        for(let i = 0; i < used.length; i++)
+            if (used[i] !== undefined)
+                this.areas[used[i]] = oldAreas[i];
+
+        while (this.areas.length > 0 && this.areas[this.areas.length-1] === 0)
+            this.areas.pop();
+    }
+
     static mergeLR(left, right)
     {        
         assert.equal(left.width, right.width);
         assert.equal(left.height, right.height);
 
-        const state = new CompressedState();
+        const width = left.width + right.width - 1;
 
-        state.width  = left.width + right.width - 1;
-        state.height = left.height;
-        state.maxArea= Math.max(left.maxArea, right.maxArea);
-        state.count  = left.count * right.count;
-        state.vKey   = undefined; // won't need it anymore
-        state.hKey   = new Array(state.width).fill(0);
+        const connections = {};
 
-        let id = 0;
-        const lmap = [];
-        const rmap = [];
-
-        for(let y = 0; y < state.height; y++)
+        for(let x = 0; x < left.width; x++)
         {
-            const l = left.vKey[y];
-            const r = right.vKey[y];
-            if (l === 0)
+            const l = left.vKey[x];
+            const r = right.vKey[x];
+
+            if (l === 0 || r === 0)
             {
-                assert.equal(r, 0);
+                assert.equal(l, r);
                 continue;
             }
-            if (r === 0)
-            {
-                assert.equal(l, 0);
-                continue;
-            }
+            const k = `${l}_${r}`;
+            connections[k] = 1 + (connections[k] || 0);
+        }
+
+        const lmap        = [];
+        const rmap        = [];
+        const leftAreas   = [0, ... left.areas];   // copy and make it starts at index 1
+        const rightAreas  = [0, ... right.areas];  // copy and make it starts at index 1
+        const areas       = new Array(width+1).fill(0);
+        const hKey        = new Array(width).fill(0);
+
+        let id = 1;
+
+        for(let k in connections)
+        {
+            const l = +(k[0]);
+            const r = +(k[2]);
+            const points = connections[k];
 
             let i;
 
-            if (lmap[l] !== undefined)
+            if (lmap[l])
             {
                 i = lmap[l];
-                if (rmap[r] === undefined)
+                if (rmap[r])
                 {
-                    state.areas[i-1] += right.areas[r-1];
+                    // add bmap[b] to area
+                    areas[i] += areas[rmap[r]] - points;
+                    areas[rmap[r]] = 0;
+
+                    rmap[r] = i;
                 }
-                else if (rmap[r] != i)
-                {                
-                    state.areas[i-1] += state.areas[rmap[r]-1];
-                    state.areas[rmap[r]-1] = 0; // To fix key
+                else
+                {
+                    assert.notEqual(rightAreas[r], 0);
+
+                    areas[i] += rightAreas[r] - points;
+                    rmap[r] = i;
+                    rightAreas[r] = 0; // mark as used
                 }
-    
-                rmap[r] = i;
-                state.areas[i-1]--;
             }
-            else if (rmap[r] !== undefined)
+            else if (rmap[r])
             {
                 i = rmap[r];
-                if (lmap[l] === undefined)
-                {
-                    state.areas[i-1] += left.areas[l-1];
-                }
-                else if (lmap[l] != i)
-                {                    
-                    state.areas[i-1] += state.areas[lmap[l]-1];
-                    state.areas[lmap[l]-1] = 0; // To fix key
-                }
+
+                assert.notEqual(leftAreas[l], 0);
+
+                areas[i] += leftAreas[l] - points;
                 lmap[l] = i;
-                state.areas[i-1]--;
+                leftAreas[l] = 0; // Mark as used
             }
-            else 
+            else
             {
-                i = ++id;
-                rmap[r] = lmap[l] = i;
-                state.areas[i-1] = left.areas[l-1] + right.areas[r-1] - 1;
+                i = id++;
+                assert.notEqual(leftAreas[l], 0);
+                assert.notEqual(rightAreas[r], 0);
+
+                rmap[r]  = lmap[l] = i;
+                areas[i]+= leftAreas[l] + rightAreas[r] - points;
+
+                leftAreas[l] = rightAreas[r] = 0; // Mark as used
             }
         }
+
+        // Build new Key
 
         for(let x = 0; x < left.width; x++)
         {
             const l = left.hKey[x];
-            const r = right.hKey[x];
+            
             if (l != 0)
             {
                 let i = lmap[l];
                 if (i === undefined)
                 {
-                    i = ++id;
-                    state.areas[i-1] = left.areas[l-1];
+                    i = id++;
+                    areas[i] = leftAreas[l];
                     lmap[l] = i;
                 }
-                state.hKey[left.width-1 - x] = i;
+                hKey[left.width-1 - x] = i;
             }
+
+            const r = right.hKey[x];
+
             if (r != 0)
             {
                 let i = rmap[r];
                 if (i === undefined)
                 {
-                    i = ++id;
-                    state.areas[i-1] = right.areas[r-1];
+                    i = id++;
+                    areas[i] = rightAreas[r];
                     rmap[r] = i;
                 }
-                state.hKey[left.width-1 + x] = i;
+                hKey[left.width-1 + x] = i;
             }
         }
 
-        state.maxArea = Math.max(state.maxArea, ... state.areas);
-        return state;
-    }
-    
-    static mergeTB(top, bottom)
-    {
-        assert.equal(top.width, bottom.width);
-        assert.equal(top.height, bottom.height);
+        // Trim areas
+
+        areas.shift(); // remove prefix 0
+        while (areas.length > 0 && areas[areas.length-1] === 0)
+            areas.pop();
 
         const state = new CompressedState();
+        state.maxArea = Math.max(left.maxArea, right.maxArea, ... areas);
+        state.areas   = areas;
+        state.width   = width;
+        state.height  = left.height;
+        state.count   = left.count * right.count;
+        state.hKey    = hKey;
 
-        state.width  = top.width
-        state.height = top.height + bottom.height - 1;
-        state.maxArea= Math.max(top.maxArea, bottom.maxArea);
-        state.count  = top.count * bottom.count;
-        state.vKey   = undefined; // not needed
-        state.hKey   = undefined; // not needed
+        state.fixHKey();
 
-        let id = 0;
-        const tmap = [];
-        const bmap = [];
+        return state;
+    }
 
-        for(let x = 0; x < state.width; x++)
+    static mergeTB(top, bottom, callback)
+    {
+        assert.equal(top.width, bottom.width);
+
+        const topAreas    = [0, ... top.areas];     // copy and make it starts at index 1
+        const bottomAreas = [0, ... bottom.areas];  // copy and make it starts at index 1
+
+        const topKey    = [... top.hKey];
+        const bottomKey = [... bottom.hKey];
+
+        const followBottomTop = (id) =>
         {
-            const t = top.hKey[x];
-            const b = bottom.hKey[x];
+            let area = 0;
 
-            if (t === 0)
+            for(let i = 0; i < bottomKey.length; i++)
             {
-                assert.equal(b, 0);
-                continue;
-            }
-            if (b === 0)
-            {
-                assert.equal(t, 0);
-                continue;
-            }
-
-            let i;
-
-            if (tmap[t] !== undefined)
-            {
-                i = tmap[t];
-                if (bmap[b] === undefined)
+                if (bottomKey[i] === id)
                 {
-                    state.areas[i-1] += bottom.areas[b-1];
+                    const id2 = topKey[i];
+
+                    assert.notEqual(id2, 0);
+
+                    area     += topAreas[id2] + bottomAreas[id] - 1;
+                    topKey[i] = bottomKey[i] = 0; // processed;
+                    topAreas[id2] = bottomAreas[id] = 0; // already counted
+                    area += followTopBottom(id2)
                 }
-                else if (bmap[b] != i)
-                {                    
-                    state.areas[i-1] += state.areas[bmap[b]-1];
-                    state.areas[bmap[b]-1] = 0; // To fix key
-                }
-                bmap[b] = i;
-                state.areas[i-1]--;
             }
-            else if (bmap[b] !== undefined)
+
+            return area;
+        };
+
+        const followTopBottom = (id) =>
+        {
+            let area = 0;
+
+            for(let i = 0; i < topKey.length; i++)
             {
-                i = bmap[b];
-                if (tmap[t] === undefined)
+                if (topKey[i] === id)
                 {
-                    state.areas[i-1] += top.areas[t-1];
+                    const id2 = bottomKey[i];
+
+                    assert.notEqual(id2, 0);
+
+                    area     += topAreas[id] + bottomAreas[id2] - 1;
+                    topKey[i] = bottomKey[i] = 0; // processed;
+                    topAreas[id] = bottomAreas[id2] = 0; // already counted
+
+                    area += followBottomTop(id2)
                 }
-                else if (tmap[t] != i)
-                {                    
-                    state.areas[i-1] += state.areas[tmap[t]-1];
-                    state.areas[tmap[t]-1] = 0; // To fix key
-                }
-                tmap[t] = i;
-                state.areas[i-1]--;
             }
-            else 
+
+            return area;
+        };
+
+        let maxArea  = Math.max(top.maxArea, bottom.maxArea);
+
+        for(let id of topKey)
+        {
+            if (id !== 0)
             {
-                i = ++id;
-                bmap[b] = tmap[t] = i;
-                state.areas[i-1] = top.areas[t-1] + bottom.areas[b-1] - 1;
+                const area = followTopBottom(id);
+                if (area > maxArea)
+                    maxArea = area;
             }
         }
 
-        state.maxArea = Math.max(state.maxArea, ... state.areas);
-        return state;
-    }    
+        callback(maxArea, top.count * bottom.count);
+    }
 }
 
 class State
@@ -350,18 +438,6 @@ class State
         this.data = old;
         return max;
     }
-
-    dump()
-    {
-        console.log('');
-        for(let y = 0; y < this.height; y++)
-        {
-            const v = [];
-            for (let x = 0; x < this.width; x++)
-                v.push(this.get(x, y) ? '◼︎' : '◻︎');
-            console.log(v.join(''));
-        }
-    }
 }
 
 class StateCollection
@@ -412,8 +488,8 @@ class StateCollection
 
 function loadStates(size, trace)
 {
-    if (trace)
-        console.log(`Loading states for size ${size}x${size}`);
+    if (trace && trace !== 10)
+        console.debug(`Loading states for size ${size}x${size}`);
 
     const states = [new State(size, size)];
 
@@ -433,7 +509,7 @@ function loadStates(size, trace)
     }
     
     if (trace)
-        console.log(`\rStates loaded => ${states.length} states`);
+        console.debug(`\rStates loaded => ${states.length} states`);
 
     const states2 = new StateCollection();
     for(let state of states)
@@ -444,7 +520,7 @@ function loadStates(size, trace)
     }
 
     if (trace)
-        console.log(`\rStates compressed => ${states2.size} states`);
+        console.debug(`\rStates compressed => ${states2.size} states`);
     
     return states2;
 }
@@ -458,15 +534,29 @@ function solve(size, trace)
     function pass1(states)
     {
         if (trace)
-            console.log('Merging left and right states');
+            console.debug('Merging left and right states');
 
         const newStates = new StateCollection();
-        let total = states.length;
+        let todo = states.length;
+
+        let traceCount = 0;
+        let total = 0;
+        let count = 0;
+        let w, h;
+
+        let areas = [];
         for(let left of states.values())
         {
             if (trace)
-                process.stdout.write(`\r${ total-- } : ${ newStates.length } `);
+            {
+                if (traceCount === 0)
+                    process.stdout.write(`\r${ todo } : ${ newStates.length } `);
 
+                if (++traceCount >= 500)
+                    traceCount = 0;
+
+                todo--;
+            }
             const rights = states.lefts.get(left.leftKey);
             if (rights === undefined)
                 continue;
@@ -475,11 +565,17 @@ function solve(size, trace)
             {
                 const newState = CompressedState.mergeLR(left, right);
                 newStates.push(newState);
+
+                total += newState.count * newState.maxArea;
+                count += newState.count;
+                w = newState.width;
+                h = newState.height;
+                areas[newState.maxArea] = (areas[newState.maxArea] || 0) + newState.count;
             }
         }
 
         if (trace)
-            console.log(`\rLeft and right states merged => ${newStates.length} states`);
+            console.info(`\rLeft and right states merged => ${newStates.length} states`);
 
         return newStates;
     }
@@ -487,7 +583,7 @@ function solve(size, trace)
     function pass2(states, callback)
     {
         if (trace)
-            console.log('Merging top and bottom states');
+            console.debug('Merging top and bottom states');
 
         let count = 0;
         let total = states.length;
@@ -495,7 +591,7 @@ function solve(size, trace)
 
         for(let top of states.values())
         {
-            if (trace)
+            if (trace && trace !== 10)
             {
                 total--;
                 if (traceCount === 0)
@@ -510,37 +606,25 @@ function solve(size, trace)
 
             for(let bottom of bottoms)
             {
-                const newState = CompressedState.mergeTB(top, bottom);
-                callback(newState);
+                CompressedState.mergeTB(top, bottom, callback);
                 count++;
             }
         }
 
         if (trace)
-            console.log(`\rTop and bottom states merged => ${count} states`);
+            console.debug(`\rTop and bottom states merged => ${count} states`);
         return count;
     }
 
-    const areas = [];
+    let totalArea = 0;
+    let totalCount = 0;
 
-    pass2( pass1( loadStates((size+1)/2, trace) ), (state) => {
-        const area = state.maxArea;
-        if (area > MAX_AREA)
-            throw "ERROR";
-        areas[area] = (areas[area] || 0) + state.count;
+    pass2( pass1( loadStates((size+1)/2, trace) ), (area, count) => {
+        totalArea += area * count;
+        totalCount += count;
     });
 
-    let total = 0; 
-
-    const count = areas.reduce((a, c, i) => {
-        total += (c * i);
-        return a+c;
-    }, 0);
-
-    if (count > Number.MAX_SAFE_INTEGER || total > Number.MAX_SAFE_INTEGER)
-        throw "ERROR";
-
-    const answer = (total / count).toFixed(8);
+    const answer = (totalArea / totalCount).toFixed(8);
 
     return +answer;
 }
@@ -548,7 +632,7 @@ function solve(size, trace)
 assert.equal(solve(3), 3.64453125);
 assert.equal(solve(5), 8.14696828);
 
-console.log("Tests passed");
+console.debug("Tests passed");
 
-const answer = timeLogger.wrap('', () => solve(7, true));
-console.log(`Answer is ${answer}`);
+const answer = timeLogger.wrap('', () => solve(7, true)); // 13.510998363327158
+console.info(`Answer is ${answer}`);
