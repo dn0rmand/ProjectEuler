@@ -372,6 +372,90 @@ class CompressedState
 
         callback(maxArea, top.count * bottom.count);
     }
+
+    static mergeTB_V1(top, bottom, callback)
+    {
+        assert.equal(top.width, bottom.width);
+        assert.equal(top.height, bottom.height);
+
+        const width  = top.width
+        const tmap = [];
+        const bmap = [];
+        const areas= [0];
+
+        let id = 0;
+
+        const updateMaps = (from, to) => {
+            tmap.reduce((a, v, i) => {
+                if (v === from)
+                    tmap[i] = to;
+                return a;
+            }, 0);
+            bmap.reduce((a, v, i) => {
+                if (v === from)
+                    bmap[i] = to;
+                return a;
+            }, 0);
+        };
+
+        for(let x = 0; x < width; x++)
+        {
+            const t = top.hKey[x];
+            const b = bottom.hKey[x];
+
+            if (t === 0 || b === 0)
+            {
+                assert.equal(b, 0);
+                continue;
+            }
+
+            let i;
+
+            if (tmap[t] !== undefined)
+            {
+                i = tmap[t];
+                if (bmap[b] === undefined)
+                {
+                    areas[i] += bottom.areas[b-1];
+                }
+                else if (bmap[b] != i)
+                {                    
+                    areas[i] += areas[bmap[b]];
+                    areas[bmap[b]] = 0; // To fix key
+
+                    updateMaps(bmap[b], i);
+                }
+                bmap[b] = i;
+                areas[i]--;
+            }
+            else if (bmap[b] !== undefined)
+            {
+                i = bmap[b];
+                if (tmap[t] === undefined)
+                {
+                    areas[i] += top.areas[t-1];
+                }
+                else if (tmap[t] != i)
+                {                    
+                    areas[i] += areas[tmap[t]];
+                    areas[tmap[t]] = 0; // To fix key
+
+                    updateMaps(tmap[t], i);
+                }
+                tmap[t] = i;
+                areas[i]--;
+            }
+            else 
+            {
+                i = ++id;
+                bmap[b] = tmap[t] = i;
+                areas[i] = top.areas[t-1] + bottom.areas[b-1] - 1;
+            }
+        }
+
+        const maxArea = Math.max(top.maxArea, bottom.maxArea, ... areas);
+        callback(maxArea, top.count * bottom.count);
+    }
 }
 
 class State
@@ -529,8 +613,6 @@ function solve(size, trace)
 {
     assert.equal(size & 1, 1);
 
-    const MAX_AREA = size*size;
-
     function pass1(states)
     {
         if (trace)
@@ -540,11 +622,6 @@ function solve(size, trace)
         let todo = states.length;
 
         let traceCount = 0;
-        let total = 0;
-        let count = 0;
-        let w, h;
-
-        let areas = [];
         for(let left of states.values())
         {
             if (trace)
@@ -565,12 +642,6 @@ function solve(size, trace)
             {
                 const newState = CompressedState.mergeLR(left, right);
                 newStates.push(newState);
-
-                total += newState.count * newState.maxArea;
-                count += newState.count;
-                w = newState.width;
-                h = newState.height;
-                areas[newState.maxArea] = (areas[newState.maxArea] || 0) + newState.count;
             }
         }
 
@@ -606,7 +677,7 @@ function solve(size, trace)
 
             for(let bottom of bottoms)
             {
-                CompressedState.mergeTB(top, bottom, callback);
+                CompressedState.mergeTB_V1(top, bottom, callback);
                 count++;
             }
         }
