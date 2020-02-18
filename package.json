@@ -34,6 +34,7 @@
     "prho": "^1.0.1",
     "rollup": "^1.26.3",
     "slack-webhook": "^1.0.0",
+    "sorted": "^0.1.1",
     "splaytreejs": "^1.0.5",
     "workerpool": "^5.0.0",
     "written-number": "^0.8.1",
