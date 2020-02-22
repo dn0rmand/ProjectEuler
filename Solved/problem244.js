@@ -1,4 +1,5 @@
 const assert = require('assert');
+const timeLogger = require('tools/timeLogger');
 
 const MODULO = 100000007;
 
@@ -87,7 +88,6 @@ class State
         s.set(x, y, 0);
         s.x = x;
         s.y = y;
-        s.moves++;
         s.checksum = (s.checksum * 243 + value) % MODULO;
 
         return s;
@@ -143,13 +143,17 @@ function solve()
 {
     const target = getTarget();
 
-    let states   = [ new State() ];
-    let visited  = new Set();
+    let states  = [ new State() ];
+    let visited = new Map();
+    let total   = 0;
+    let moves   = 0;
 
-    let total = 0;
+    visited.set(states[0].key, 0);
 
     while (total === 0)
     {
+        moves++;
+
         let newStates = [];
 
         for(let state of states)
@@ -166,10 +170,18 @@ function solve()
                     total += s.checksum;
                     continue;
                 }
-                else if (total == 0 && !visited.has(k)) // already visited so not the minimum moves
+                else if (total == 0)
                 {
-                    newStates.push(s);
-                    visited.add(k);
+                    const mv = visited.get(k);
+                    if (mv === undefined)
+                    {
+                        newStates.push(s);
+                        visited.set(k, moves);
+                    }
+                    // else if (mv >= moves)
+                    // {
+                    //     newStates.push(s);
+                    // }
                 }
             }
         }
@@ -183,6 +195,6 @@ function solve()
 assert.equal(check(), 19761398);
 console.log('Test passed');
 
-let answer = solve();
+let answer = timeLogger.wrap('', () => solve());
 
 console.log(`Answer is ${answer}`);
