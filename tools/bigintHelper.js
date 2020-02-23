@@ -9,7 +9,7 @@ const bigIntHelper = function()
         if (a < b)
             [a, b] = [b, a];
 
-        while (b !== 0n)
+        while (b != BigInt.ZERO)
         {
             let c = a % b;
             a = b;
