@@ -18,6 +18,23 @@ const bigIntHelper = function()
         return a;
     }
 
+    BigInt.prototype.divise = function(divisor, precision)
+    {
+        const g = this.gcd(divisor);
+        
+        let value = this / g;
+
+        divisor /= g;
+    
+        const coef = 10 ** precision;
+        const p1   = value % divisor;
+        const a    = (value - p1) / divisor;
+        const p2   = (p1 * BigInt(coef));
+        const b    = (p2 - (p2 % divisor)) / divisor;
+    
+        return Number(a) + (Number(b) / coef);
+    }
+
     BigInt.prototype.modMul = function(value, mod)
     {
         return (this * BigInt(value)) % BigInt(mod);

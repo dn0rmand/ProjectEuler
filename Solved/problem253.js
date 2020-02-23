@@ -207,21 +207,6 @@ function factorial(n)
     return total;
 }
 
-function divise(total, divisor)
-{
-    const g = total.gcd(divisor);
-    total /= g;
-    divisor /= g;
-
-    const coef = 1E7;
-    const p1   = total % divisor;
-    const a    = (total - p1) / divisor;
-    const p2   = (p1 * BigInt(coef));
-    const b    = (p2 - (p2 % divisor)) / divisor;
-
-    return Number(a) + (Number(b) / coef);
-}
-
 function solve(size, trace)
 {
     if (trace)
@@ -235,7 +220,7 @@ function solve(size, trace)
     function calculateResult()
     {
         const total = sizeCounts.reduce((a, v, max) => a + v*BigInt(max), 0n);
-        const result = divise(total, factorial(size));
+        const result = total.divise(factorial(size), 7);
         return result.toFixed(6);
     }
 
