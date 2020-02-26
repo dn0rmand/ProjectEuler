@@ -1,12 +1,14 @@
+const BITS = 6;
+
 const connections = (function()
 {
     const map  = [];
-    const mask = (2**6)-1;
-    const A    = 2**5;
-    const B    = 2**4;
-    const C    = 2**3;
+    const mask =(2 ** BITS)-1;
+    const A    = 2 ** (BITS-1);
+    const B    = 2 ** (BITS-2);
+    const C    = 2 ** (BITS-3);
 
-    for(let i = 0; i < 2 ** 6; i++)
+    for(let i = 0; i < 2 ** BITS; i++)
     {
         const a = (i & A) === 0 ? 0 : 1;
         const b = (i & B) === 0 ? 0 : 1;
@@ -21,7 +23,7 @@ const connections = (function()
 
 const lucas = (function()
 {
-    const max = 2**6;
+    const max = 2 ** BITS;
     const map = [2, 1];
 
     let l0 = 2;
@@ -59,7 +61,7 @@ function getCycles()
     }
 
     const cycles = [];
-    for(let i = 0; i < 2**6; i++)
+    for(let i = 0; i < 2 ** BITS; i++)
     {
         if (processed[i])
             continue;
