@@ -63,7 +63,8 @@ function getCycles()
     {
         if (processed[i])
             continue;
-        cycles.push(follow(i));
+        const l = follow(i);
+        cycles.push(l);
     }
     return cycles;
 }
