@@ -13,9 +13,10 @@ const primeHelper = require('tools/primeHelper')();
 const MAX         = 1E12;
 const MAX_PRIME   = Math.ceil(Math.sqrt(MAX));
 
-primeHelper.initialize(MAX_PRIME, false);
+primeHelper.initialize(MAX_PRIME, true);
+primeHelper.countPrimes(MAX);
 
-function f(max, progress)
+function f(max)
 {
     let total  = 0;
 
