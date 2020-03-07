@@ -23,6 +23,7 @@ module.exports = function(maxPrime, noMap)
         if (count !== undefined)
             return count;
 
+        process.stdout.write(`\rSeeding prime ..`);
         let r = Math.floor(Math.sqrt(num));
         let v = [];
 
@@ -56,8 +57,15 @@ module.exports = function(maxPrime, noMap)
             }
         }
 
+        for(let i in s)
+        {
+            i = +i;
+            if (i > _maxPrime)
+                _memoizePrimeCount.set(i, s[i]);
+        }
         count = s[num];
-        _memoizePrimeCount.set(num, count);
+        process.stdout.write(`\r                 \r`);
+
         return count;
     }
 
