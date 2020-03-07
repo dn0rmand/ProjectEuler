@@ -99,7 +99,7 @@ async function test()
 
 async function solve()
 {
-    timeLog("Problem 643", async () => {    
+    timeLog.wrap("Problem 643", async () => {    
         let answer = await F(MAX, true);
         // await announce(643, "Answer is " + answer);
         console.log('Answer is', answer);
