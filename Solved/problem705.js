@@ -39,39 +39,54 @@ function countSortSteps(values)
     return steps;
 }
 
-function countSteps(sequence)
+function countSteps(sequence, trace)
 {
-    let state = {
-        count:  1,
-        digits: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        swaps:  0
-    };
+    let total = primeHelper.allPrimes().length;
+    let traceCount = 0;
 
-    for(let digit of sequence)
+    let count  = 1;
+    let digits = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+    let swaps  = 0;
+
+    for(const digit of sequence)
     {
-        const divisors = digitDivisors[digit].length;
-
-        let newState = {
-            count:  (state.count * divisors) % MODULO,
-            digits: state.digits.map(a => (divisors * a) % MODULO),
-            swaps:  (state.swaps * divisors) % MODULO
-        };
-
-        for(let divisor of digitDivisors[digit])
+        if (digit === 0)
         {
-            for(let divisorDigit = divisor+1; divisorDigit < state.digits.length; divisorDigit++)
-                newState.swaps = (newState.swaps + state.digits[divisorDigit]) % MODULO;
-
-            newState.digits[divisor] = (newState.digits[divisor] + state.count) % MODULO;
+            if (trace)
+            {
+                total--;
+                if (traceCount === 0)
+                    process.stdout.write(`\r${total} `);
+                if (traceCount++ >= 123456)
+                    traceCount = 0;
+            }
+            continue;
         }
 
-        state = newState;
+        const divisors = digitDivisors[digit].length;
+        const newDigits= digits.map(a => (divisors * a) % MODULO);
+
+        swaps = (swaps * divisors) % MODULO;
+
+        for(const divisor of digitDivisors[digit])
+        {
+            for(let divisorDigit = divisor+1; divisorDigit < 10; divisorDigit++)
+                swaps = (swaps + digits[divisorDigit]) % MODULO;
+
+            newDigits[divisor] = (newDigits[divisor] + count) % MODULO;
+        }
+
+        count  = (count * divisors) % MODULO;
+        digits = newDigits;
     }
 
-    return state.swaps;
+    if (trace)
+        process.stdout.write('\r               \r');
+        
+    return swaps;
 }
 
-function *getSequence(maxPrime)
+function *getSequence(maxPrime, trace)
 {
     function *addDigits(value)
     {
@@ -84,8 +99,8 @@ function *getSequence(maxPrime)
                 digits.push(d);
         }
 
-        while (digits.length > 0)
-            yield digits.pop();
+        for(let i = digits.length-1; i >= 0; i--)
+            yield digits[i];
     }
 
     for(const p of primeHelper.allPrimes())
@@ -94,6 +109,8 @@ function *getSequence(maxPrime)
             break;
 
         yield *addDigits(p);
+        if (trace)
+            yield 0;
     }
 }
 
@@ -103,10 +120,10 @@ function G(N)
     return [...sequence];
 }
 
-function F(N)
+function F(N, trace)
 {
-    const sequence = getSequence(N);
-    const total    = countSteps(sequence);
+    const sequence = getSequence(N, trace);
+    const total    = countSteps(sequence, trace);
 
     return total;
 }
@@ -118,5 +135,5 @@ assert.equal(F(50), 338079744);
 
 console.log('Tests passed');
 
-const answer = timeLogger.wrap('', () => F(MAX));
+const answer = timeLogger.wrap('', () => F(MAX, true));
 console.log(`Answer is ${answer}`);
