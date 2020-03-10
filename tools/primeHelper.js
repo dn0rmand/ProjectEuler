@@ -230,6 +230,7 @@ module.exports = function(maxPrime, noMap)
         _primes.push(7);
 
         let n = max;
+        let root = Math.floor(Math.sqrt(n));
 
         let sieve = BitArray(max+1);
 
@@ -256,10 +257,12 @@ module.exports = function(maxPrime, noMap)
             if (_primeMap !== undefined)
                 _primeMap.add(i);
             _maxPrime = i;
-
-            for(let j = i+i; j <= n; j += i)
+            if (i <= root)
             {
-                sieve.set(j, 1);
+                for(let j = i+i; j <= n; j += i)
+                {
+                    sieve.set(j, 1);
+                }
             }
         }
 
