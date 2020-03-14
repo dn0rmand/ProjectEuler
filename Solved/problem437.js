@@ -37,18 +37,14 @@ function solve(max, trace)
         {
             total += p;
 
-            for(const d of divisors(p-1, primeHelper.isPrime))
-            {
-                if (d === 1 || d === p-1)
-                    continue;
-
-                const { f0, f1 } = fibonacci(d, p);
+            primeHelper.factorize(p-1, (a) => {
+                const { f0, f1 } = fibonacci((p-1) / a, p);
                 if (f0 === 0 && f1 === 1)
                 {
                     total -= p;
-                    break;
+                    return false;
                 }
-            }
+            });
         }
     }
 
