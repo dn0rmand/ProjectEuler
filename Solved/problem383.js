@@ -5,7 +5,9 @@ const MAX    = 10n ** 18n
 // A180168		
 // a(0) = 1, a(1) = 3.
 // a(n) = 2*a(n-1) + 5*a(n-2) 
-const powersOfFive = (function() {
+
+const powersOfFive = (function() 
+{
     const map = new Map();
 
     map.set(5n, 1n);
@@ -43,32 +45,27 @@ function f5(n)
     return x;
 }
 
-function slowT5(N, C)
+function f(n)
 {
-    if (N === 2n**18n * 5n**6n)
-        return 7812294n;
-    else if (N === 2n**18n * 5n**7n)
-        return 26948412n;
-
-    function f(n)
+    let n5 = n;
+    let s  = 0;
+    while (n5 > 0)
     {
-        let n5 = n;
-        let s  = 0n;
-        while (n5 > 0n)
-        {
-            const d = (n5 % 5n);
-            n5 = (n5-d) / 5n;
-            s += d;
-        }
-
-        const k = (n-s) / 4n; // 5-1
-        return k;
+        const d = (n5 % 5);
+        n5 = (n5-d) / 5;
+        s += d;
     }
 
+    const k = (n-s) / 4; // 5-1
+    return k;
+}
+
+function slowT5(N, trace)
+{
     N = BigInt(N);
 
-    let start  = 5n;
-    let end    = 5n;
+    let previous= -1n;
+    let start   = 5n;
 
     for(let p of powersOfFive.keys())
     {
@@ -77,55 +74,68 @@ function slowT5(N, C)
             // N is a power of five, how convenient!
             return powersOfFive.get(p);
         }
-        end = p;
         if (p > N)
             break;
-        start = p
+        previous = start;
+        start    = p
     }
 
-    let c = N / start;
-    if (C)
-        assert.equal(c, C);
+    // move further
 
-    if (end - N < N - start) // bad idea ... somehow slower
+    const a0 = powersOfFive.get(previous); 
+    const a1 = powersOfFive.get(start);
+
+    const vs = [
+        a1,
+        3n * a0, 
+        a0, 
+        a0
+    ];
+
+    let answer   = a1;
+    let position = start;
+
+    while (position+start <= N && vs.length > 0)
     {
-        let answer = powersOfFive.get(end);
+        answer    += vs.shift();
+        position  += start;
+    }
 
-        for(let i = end; i > N; i -= 5n)
+    if (position === N) // right on the dot :)
+        return answer;
+
+    N = Number(N);
+    // finish up
+
+    let  traceCount = 0;
+    for(let i = Number(position)+5; i <= N; i += 5)
+    {
+        if (trace)
         {
-            let v1 = f(2n*i - 1n);
-            let v2 = 2n*f(i);
-            if (v1 < v2)
-                answer--;
+            if (traceCount === 0)
+                process.stdout.write(`\r${trace} - ${N-i}   `);
+            if (traceCount++ > 100000)
+                traceCount = 0;
         }
 
-        return answer;
+        let v1 = f(2*i - 1);
+        let v2 = 2*f(i);
+        if (v1 < v2)
+            answer++;
     }
-    else
-    {
-        let answer = powersOfFive.get(start);
 
-        for(let i = start+5n; i <= N; i += 5n)
-        {
-            let v1 = f(2n*i - 1n);
-            let v2 = 2n*f(i);
-            if (v1 < v2)
-                answer++;
-        }
-
-        return answer;
-    }
+    if (trace)
+        process.stdout.write('\r             \r');
+    return answer;
 }
 
-let $A = [];
-let $N = undefined;
-
-function T5(N)
+function T5(N, trace)
 {
     if (powersOfFive.get(N))
         return powersOfFive.get(N);
 
     let minPower = 1;
+    let $A = [];
 
     function get(power)
     {
@@ -136,7 +146,7 @@ function T5(N)
 
         if (i <= minPower)
         {
-            $A[i] = slowT5(N * (5n ** BigInt(power)));
+            $A[i] = slowT5(N * (5n ** BigInt(power)), trace ? i : false);
             return $A[i];
         }
 
@@ -148,17 +158,11 @@ function T5(N)
     if (N < 5)
         return 0n;
 
-    let power = 0n;
+    let power  = 0n;
     while (N % 5n === 0n) 
     {
         power++;
         N /= 5n;
-    }
-
-    if (N !== $N)
-    {
-        $A = [];
-        $N = N;
     }
 
     minPower = 0;
@@ -209,16 +213,18 @@ function analyze()
     process.exit(0);
 }
 
-analyze();
+// analyze();
 
 assert.equal(f5(625000), 7);
 
-assert.equal(time.wrap('T5(1E3)', () => T5(1000)), 68);
+assert.equal(T5(1600), 104);
 assert.equal(time.wrap('T5(1E9)', () => T5(1E9)), 2408210);
+assert.equal(time.wrap('T5(1E3)', () => T5(1000)), 68);
+assert.equal(T5(3124),  128);
 
 console.log('Tests passed');
 
-const answer = time.wrap('', () => T5(MAX));
+const answer = time.wrap('', () => T5(MAX, true));
 
 console.log(`Answer is ${answer}`);
 console.log('Should be 22173624649806');
