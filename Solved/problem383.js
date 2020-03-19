@@ -182,34 +182,17 @@ function T5(N, trace)
 
 function analyze()
 {
-    let values = [];
-    let counts = [];
-    let previous= -1;
-    let count  = 0 ;
-
-    for (let i = 5; ; i++)
+    for (let i = 0; i < 10; i++)
     {
-        if (i > 200)
-            if (count < 2)
-                break;
+        let values = [];
 
-        let k = slowT5(i);
-        if (previous != k)
+        for (let p = 5; p < 5**8; p *= 5)
         {
-            if (count)
-            {
-                values.push(previous);
-                counts.push(count.toString(5));
-            }
-
-            previous = k;
-            count    = 1;
+            let k = slowT5(2**i * p);
+            values.push(k);
         }
-        else
-            count++;
+        console.log(`${i} => ${ values.join(', ') }`);
     }
-    console.log(values.join(', '));
-    console.log(counts.join(', '));
     process.exit(0);
 }
 
