@@ -27,16 +27,30 @@ def calculate(a, b):
     return total
 
 def generate():
-    max    = 100000
-    min    = 1E-8
+    max    = 200000
+    min    = 1E-10
     values = {}
-    count  = 0
+    count  = 4
+    values[2] = 1
+    values[5] = 1
+    values[21]= 1
+    values[42]= 1
 
-    for a in range(1,max):
+    yield 2
+    yield 5
+    yield 21
+    yield 42
+
+    a = 92406
+    while count < 7:
+        a += 1
+        if count > 6:
+            return
+
         print(f"\r{max-a}: {a}", end="")
 
-        start = int(a * 1.6)
-        end   = int(a * 2)
+        start = int(a * 1.6155)
+        end   = int(a * 1.6667)
         step  = 1
         if (a % 2) == 0:
             if (start % 2) == 0:
@@ -44,10 +58,6 @@ def generate():
             step = 2
 
         for b in range(start, end+step, step):
-            # if b < start:
-            #     continue
-            # if b > end:
-            #     break
 
             if math.gcd(a, b) != 1:
                 continue
@@ -65,8 +75,6 @@ def generate():
                 count = count+1
                 values[n] = n
                 yield n
-                if count >= 5:
-                    return
 
 
 def solve():
