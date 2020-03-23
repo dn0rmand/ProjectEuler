@@ -33,9 +33,9 @@ class BigSet
         this.map.add(key);
         if (this.map.size >= BigSet.maxSize)
         {
-            console.log(`... extending map for ${this.name}`);
+            // console.log(`... extending map for ${this.name}`);
             this.maps.push(this.map);
-            this.map = new Map();
+            this.map = new Set();
         }
     }
 

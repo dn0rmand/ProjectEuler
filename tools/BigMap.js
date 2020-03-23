@@ -46,7 +46,7 @@ class BigMap
         this.map.set(key, value);
         if (this.map.size >= BigMap.maxSize)
         {
-            console.log(`... extending map for ${this.name}`);
+            // console.log(`... extending map for ${this.name}`);
             this.maps.push(this.map);
             this.map = new Map();
         }
