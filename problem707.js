@@ -1,56 +1,21 @@
 const assert = require('assert');
 const BigSet = require('tools/BigSet');
-const BigMap = require('tools/BigMap');
 
 class State
 {
-    static pool = [];
-
     constructor(w, h, map)
     {
         this.width = w;
         this.height= h;
-        if (map)
-        {
-            this.map = map.slice();
-        }
-        else
-        {
-            this.map = new Array(h);
-            this.map.fill(0n);
-        }
-    }
-
-    static create(from)
-    {
-        if (State.pool.length > 0)
-        {
-            const s = State.pool.pop();
-
-            s.width  = from.width;
-            s.height = from.height;
-            s.map    = from.map.slice();
-
-            return s;
-        }
-        else
-        {
-            return new State(from.width ,from.height, from.map);
-        }
-    }
-
-    release()
-    {
-        if (State.pool.length < 1000)
-            State.pool.push(this);
+        this.map = map;
     }
 
     get(x, y)
     {
         if (x < 0 || x >= this.width || y < 0 || y >= this.height)
             return 0;
-        const mask = 2n ** BigInt(x);
-        if (this.map[y] & mask)
+        const mask = 2n ** BigInt((this.width * y) + x);
+        if (this.map & mask)
             return 1;
         else
             return 0;
@@ -61,82 +26,58 @@ class State
         if (x < 0 || x >= this.width || y < 0 || y >= this.height)
             return;
         
-        const mask   = 2n ** BigInt(x);
-        this.map[y] ^= mask;
+        const mask   = 2n ** BigInt((this.width * y) + x);
+        this.map ^= mask;
     }
 
     select(x, y)
     {
-        let n = State.create(this);
-
-        n.switch(x, y);
-
-        n.switch(x+1, y);
-        n.switch(x-1, y);
-
-        n.switch(x, y+1);
-        n.switch(x, y-1);
-
-        return n;
+        this.switch(x, y);
+        this.switch(x+1, y);
+        this.switch(x-1, y);
+        this.switch(x, y+1);
+        this.switch(x, y-1);
     }
 
     get key()
-    {                
-        let k = 0n;
-        let w = BigInt(this.width);
-        for(let r of this.map)
-        {
-            k = (k << w) + r;
-        }
-        return k;
-    }
-
-    get shortKey()
-    {
-        let w = BigInt(this.width);
-
-        return (this.map[0] << w) + this.map[this.height-1];
+    { 
+        return this.map;
     }
 }
 
 function calculate(w, h, trace)
 {
-    let states      = new BigMap();
-    let newStates   = new BigMap();
+    let states      = new BigSet();
+    let newStates   = new BigSet();
 
-    const counted     = new BigSet();
-    const shortStates = new BigMap();
+    const counted   = new BigSet();
 
     counted.add(0n);
+    states.add(0n);
 
-    states.set(0n, new State(w, h));
-    shortStates.set(0n, 1n);
+    const state = new State(w, h, 0n);
 
     while(states.size > 0)
     {
         if (trace)
-            process.stdout.write(`\r${states.size}    `);
+            process.stdout.write(`\r${states.size} : ${counted.size}   `);
 
-        for(const state of states.values())
+        for(const map of states.keys())
         {
             for(let x = 0; x < w; x++)
             for(let y = 0; y < h; y++)
             {
-                const n = state.select(x, y);
-                const k = n.key;
+                state.map = map;
+                state.select(x, y);
+
+                const k = state.map;
 
                 if (! counted.has(k))
                 {
                     counted.add(k);
-                    newStates.set(k, n);
-
-                    // const k2 = n.shortKey;
-                    // shortStates.set(k2, (shortStates.get(k2) || 0n)+1n);
+                    newStates.add(k);
                 }
-                else
-                    n.release();
             }
-            state.release();
         }
 
         [states, newStates] = [newStates, states];
@@ -146,34 +87,12 @@ function calculate(w, h, trace)
     if (trace)
         process.stdout.write(`\r           \r`);
 
-    for(const s of states.values())
-        s.release();
-
-    // let BITS = BigInt(w);
-    // let m1 = (2n ** BITS) - 1n;
-    // let m2 = m1 << BITS;
-
-    // let total = 0n;
-
-    // for(let k1 of shortStates.keys())
-    // {
-    //     let c1 = shortStates.get(k1);
-    //     let kk1 = k1 & m1;
-    //     for(let k2 of shortStates.keys())
-    //     {
-    //         let c2 = shortStates.get(k2);
-    //         let kk2 = (k2 & m2) >> BITS;
-    //         if (kk1 == kk2)
-    //             total += c1*c2;
-    //     }
-    // }
-
-    return {count: counted.size } ;//, short: total};
+    return counted.size;
 }
 
-assert.equal(calculate(2,1).count, 2);
-assert.equal(calculate(3,3).count, 512);
-assert.equal(calculate(4,4).count, 4096);
+assert.equal(calculate(2,1), 2);
+assert.equal(calculate(3,3), 512);
+assert.equal(calculate(4,4), 4096);
 
 console.log("Tests passed");
 
@@ -207,6 +126,6 @@ console.log(`
 4x5: 1048576
 4x6: 16777216`);
 
-console.log('4x3:', calculate(4, 3, true).count)
-console.log('4x7:', calculate(4, 7, true).count);
-console.log('4x8:', calculate(4, 8, true).count);
+console.log('4x5:', calculate(4, 5, true))
+console.log('4x7:', calculate(4, 7, true));
+console.log('4x8:', calculate(4, 8, true));
