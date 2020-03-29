@@ -1,29 +1,68 @@
 module.exports = function(maxPrime, noMap)
 {
-    const $isNumberPrime = require('is-number-prime');
+    const Database = require('better-sqlite3');
     const BitArray = require('tools/bitArray');
+
+    let $db = undefined;
+
+    function openDB()
+    {
+        if ($db)
+            return $db;
+
+        $db  = new Database('primeCounts.sqlite');
+        $db.exec(`
+        CREATE TABLE IF NOT EXISTS "prime_counts" 
+        (
+            "value" INTEGER PRIMARY KEY,
+            "primes" INTEGER NOT NULL
+        )
+        `);
+
+        return $db;
+    }
+
+    function getPrimeCount(num)
+    {
+        let db = openDB();
+        let count = db.prepare('SELECT primes FROM prime_counts WHERE "value"=?').get(num);
+        if (count !== undefined)
+        {
+            count = +(count.primes);
+            return count;
+        }
+    }
+
+    function setPrimeCount(num, value)
+    {
+        if (getPrimeCount(num) === undefined)
+        {
+            let db = openDB();
+            db.prepare('REPLACE INTO prime_counts ("value", "primes") VALUES (?, ?)').run(num, value);
+            return true;
+        }
+        else
+            return false;
+    }
 
     let   _primeMap    = new Set();
     let   _primes      = [];
     let   _extraPrimes = [];
     let   _maxPrime    = 0;
-    let   _memoizePrimeCount = new Map();
 
     function reset()
     {
         _primeMap = new Set();
         _primes   = [];
         _maxPrime = 0;
-        _memoizePrimeCount = new Map();
     }
 
-    function countPrimes(num)
+    function countPrimes(num, trace)
     {
-        let count = _memoizePrimeCount.get(num);
+        let count = getPrimeCount(num);
         if (count !== undefined)
             return count;
 
-//        process.stdout.write(`\rSeeding prime ..`);
         let r = Math.floor(Math.sqrt(num));
         let v = [];
 
@@ -43,6 +82,9 @@ module.exports = function(maxPrime, noMap)
 
         for (let p = 2; p <= r + 1; p++)
         {
+            if (trace)
+                process.stdout.write(`\r${r+1-p}  `);
+
             let sp = s[p - 1];
             if (s[p] > sp)
             {
@@ -57,14 +99,25 @@ module.exports = function(maxPrime, noMap)
             }
         }
 
-        for(let i in s)
-        {
-            i = +i;
-            _memoizePrimeCount.set(i, s[i]);
-        }
         count = s[num];
-        _memoizePrimeCount.set(num, count);
-//        process.stdout.write(`\r                 \r\n`);
+        if (trace)
+            process.stdout.write(`\rSaving results .....`);
+
+        let added = 0;
+        openDB().transaction( () => {
+            for(let i in s)
+            {
+                i = +i;
+                if (setPrimeCount(i, s[i]))
+                    added++;
+            }
+
+            if (setPrimeCount(num, count))
+                added++;
+        })();
+
+        if (trace)
+            console.log(`\r${added} values added to database          `);
 
         return count;
     }
@@ -345,7 +398,9 @@ module.exports = function(maxPrime, noMap)
             return isKnownPrime(value);
         },
         next: function(p) { return next(p); },
-        countPrimes: function(to) { return countPrimes(to); },
+        countPrimes: function(to, trace) { 
+            return countPrimes(to, trace); 
+        },
         factorize: function (n, callback) {
             factorize(n, callback);
         },
