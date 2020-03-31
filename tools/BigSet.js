@@ -28,8 +28,24 @@ class BigSet
         return false;
     }
 
+    delete(key)
+    {
+        let removed = false;
+
+        removed |= this.map.delete(key);
+        for (let m of this.maps)
+        {
+            removed |= m.delete(key);
+        }
+
+        return removed;
+    }
+
     add(key)
     {
+        if (this.has(key))
+            return;
+
         this.map.add(key);
         if (this.map.size >= BigSet.maxSize)
         {
@@ -69,7 +85,15 @@ class BigSet
 
         if (autoClear)
             this.map.clear();
-    }     
+    }   
+    
+    forEach(callback)
+    {
+        for (let m of this.maps)
+            m.forEach(callback);
+
+        this.map.forEach(callback);
+    }
 }
 
 module.exports = BigSet;
