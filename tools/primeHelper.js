@@ -2,8 +2,10 @@ module.exports = function(maxPrime, noMap)
 {
     const Database = require('better-sqlite3');
     const BitArray = require('tools/bitArray');
+    const BigSet   = require('tools/BigSet');
 
     let $db = undefined;
+    // let $dbCache = {};
 
     function openDB()
     {
@@ -24,11 +26,15 @@ module.exports = function(maxPrime, noMap)
 
     function getPrimeCount(num)
     {
+        // if ($dbCache[num] !== undefined)
+        //     return $dbCache[num];
+
         let db = openDB();
         let count = db.prepare('SELECT primes FROM prime_counts WHERE "value"=?').get(num);
         if (count !== undefined)
         {
             count = +(count.primes);
+            // $dbCache[num] = count;
             return count;
         }
     }
@@ -39,22 +45,25 @@ module.exports = function(maxPrime, noMap)
         {
             let db = openDB();
             db.prepare('REPLACE INTO prime_counts ("value", "primes") VALUES (?, ?)').run(num, value);
+
+            // $dbCache[num] = value;
             return true;
         }
         else
             return false;
     }
 
-    let   _primeMap    = new Set();
+    let   _primeMap    = new BigSet();
     let   _primes      = [];
     let   _extraPrimes = [];
     let   _maxPrime    = 0;
 
     function reset()
     {
-        _primeMap = new Set();
+        _primeMap = new BigSet();
         _primes   = [];
         _maxPrime = 0;
+        // $dbCache = {};
     }
 
     function countPrimes(num, trace)
@@ -130,6 +139,33 @@ module.exports = function(maxPrime, noMap)
         return false;
     }
 
+    function likelyPrime(n)
+    {
+        if (isKnownPrime(n))
+            return true;
+
+        if (n % 2 === 0 || n % 3 === 0 || n % 5 === 0 || n % 7 === 0 || n % 11 === 0)
+            return false;
+
+        let picked = [];
+
+        while (picked.length < 5)
+        {
+            let a = Math.floor(Math.random() * (n-4)) + 2;
+            if (picked.includes(a))
+                continue;
+                
+            picked.push(a);
+
+            let v = a.modPow(n-1, n);
+        
+            if (v !== 1)
+                return false;
+        }
+
+        return true;
+    }
+
     function isPrime(p)
     {
         if (_primeMap !== undefined)
@@ -139,10 +175,10 @@ module.exports = function(maxPrime, noMap)
             if (p <= _maxPrime)
                 return false;
         }
-        if (p === 2 || p === 3)
+        if (p === 2 || p === 3  || p === 5)
             return true;
 
-        if ((p & 1)  === 0 || (p % 3) === 0)
+        if ((p & 1) === 0 || p % 3 === 0 || p % 5 === 0 || p % 7 === 0 || p % 11 === 0)
             return false;
 
         let root = Math.floor(Math.sqrt(p));
@@ -393,6 +429,9 @@ module.exports = function(maxPrime, noMap)
         },
         isPrime: function(value) {
             return isPrime(value);
+        },
+        likelyPrime: function(value) {
+            return likelyPrime(value);
         },
         isKnownPrime: function(value) {
             return isKnownPrime(value);
