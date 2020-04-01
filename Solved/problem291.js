@@ -12,19 +12,19 @@ timeLogger.wrap('Loading Primes', _ => primeHelper.initialize(MAX_PRIME));
 
 function bruteForce(max)
 {
-    let values = [];
+    const values = [];
 
     max = BigInt(max);
 
     for(let x = 2n; x < max; x++)
     for(let y = 1n; y < x; y++)
     {
-        let top = x**4n - y**4n;
-        let bottom = x**3n + y**3n;
+        const top = x**4n - y**4n;
+        const bottom = x**3n + y**3n;
 
         if (top % bottom === 0n)
         {
-            let v = Number(top / bottom);
+            const v = Number(top / bottom);
             if (primeHelper.isKnownPrime(v))
                 values.push(v);
         }
@@ -45,7 +45,7 @@ function solve(max)
 
     for(let n = 1; n <= MAX_N; n++)
     {
-        let p = (n**2) + ((n+1)**2);
+        const p = (n**2) + ((n+1)**2);
         if (p >= max)
             break;
 
