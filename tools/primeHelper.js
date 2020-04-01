@@ -144,20 +144,33 @@ module.exports = function(maxPrime, noMap)
         if (isKnownPrime(n))
             return true;
 
-        if (n % 2 === 0 || n % 3 === 0 || n % 5 === 0 || n % 7 === 0 || n % 11 === 0)
+        if (n % 2 === 0 || 
+            n % 3 === 0 || 
+            n % 5 === 0 || 
+            n % 7 === 0 || 
+            n % 11 === 0 || 
+            n % 13 === 0 || 
+            n % 17 === 0 || 
+            n % 19 === 0 || 
+            n % 23 === 0 || 
+            n % 29 === 0 || 
+            n % 31 === 0 || 
+            n % 37 === 0 || 
+            n % 41 === 0 || 
+            n % 43 === 0)
             return false;
 
-        let picked = [];
+        const picked = [];
 
         while (picked.length < 5)
         {
-            let a = Math.floor(Math.random() * (n-4)) + 2;
+            const a = Math.floor(Math.random() * (n-4)) + 2;
             if (picked.includes(a))
                 continue;
                 
             picked.push(a);
 
-            let v = a.modPow(n-1, n);
+            const v = a.modPow(n-1, n);
         
             if (v !== 1)
                 return false;
