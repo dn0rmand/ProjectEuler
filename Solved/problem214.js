@@ -36,15 +36,19 @@ function tests()
 function solve()
 {
     let total = 0;
-    let maxPrime = primeHelper.maxPrime();
-    
-    for(let p of primeHelper.allPrimes())
+    const maxPrime = primeHelper.maxPrime();
+    const primes = primeHelper.allPrimes();
+
+    let i = primes.indexOf(9548417);
+
+    while (i < primes.length)
     {
-        process.stdout.write(`\r${maxPrime - p}  `);
+        const p = primes[i++];
+        // process.stdout.write(`\r${maxPrime - p}  `);
         if (checkChainLength(p, 25))
         {
             total += p;
-        }
+        }        
     }
 
     return total;
