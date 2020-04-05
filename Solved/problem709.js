@@ -2,17 +2,18 @@ const assert = require('assert');
 const Tracer = require('tools/tracer');
 const timeLogger = require('tools/timeLogger');
 
-require('tools/numberHelper');
+require('tools/bigintHelper');
 
 const MAX    = 24680;
-const MODULO = 1020202009;
-const INVTWO = Number(2).modInv(MODULO);
+const MODULO = 1020202009n;
+const INVTWO = BigInt(2).modInv(MODULO);
 
 const $binomial = timeLogger.wrap('preloading binomials', _ => 
 {
     const tracer = new Tracer(2000, true);
     const cache = new Array(MAX+1);
-    
+    const modulo = Number(MODULO);
+
     cache[0] = [1]
  
     let previous = cache[0];
@@ -21,15 +22,15 @@ const $binomial = timeLogger.wrap('preloading binomials', _ =>
     {
         tracer.print(_ => MAX-i);
 
-        let values = new Array(i+1);
+        let values = new Uint32Array(i+1);
 
         values[0] = 1;
         values[i] = 1; 
         for(let k1 = 1, k2 = i-1; k1 <= k2; k1++, k2--)
         {
             let v = (previous[k1-1] + previous[k1]);
-            if (v >= MODULO) 
-                v -= MODULO;
+            if (v >= modulo) 
+                v -= modulo;
             values[k1] = v;
             values[k2] = v;
         }
@@ -42,9 +43,13 @@ const $binomial = timeLogger.wrap('preloading binomials', _ =>
     return cache;
 });
 
+
 const binomial = (n, k) => $binomial[n][k];
 
-const $f = [1, 1, 1];
+const $f = new BigUint64Array(MAX+1);
+
+// known values
+$f[0] = $f[1] = $f[2] = 1n;
 
 // http://oeis.org/A000111
 // 2*a(n+1) = Sum_{k=0..n} binomial(n, k)*a(k)*a(n-k).
@@ -54,12 +59,12 @@ function f(max, trace)
 
     for(let N = 3; N <= max; N++)
     {
-        if ($f[N] !== undefined)
+        if ($f[N])
             continue;
 
         tracer.print(_ => max-N);
 
-        let total = 0;
+        let total = 0n;
         const n = N-1;
 
         for(let k1 = 0, k2 = n; k1 <= k2; k1++, k2--)
@@ -67,16 +72,13 @@ function f(max, trace)
             const v1 = $f[k1];
             const v2 = $f[k2];
 
-            let value = binomial(n, k1).modMul(v1, MODULO).modMul(v2, MODULO);
+            let value = (v1 * v2 * BigInt(binomial(n, k1))) % MODULO;
             if (k1 === k2)
-                value = value.modMul(INVTWO, MODULO);
+                value = (value * INVTWO) % MODULO;
 
-            total += value;
-            if (total >= MODULO)
-                total %= MODULO;
+            total = (total + value) % MODULO;
         }
 
-        // total = total.modMul(INVTWO, MODULO);
         $f[N] = total;
     }
 
