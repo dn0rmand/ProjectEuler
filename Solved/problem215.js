@@ -1,5 +1,4 @@
 const assert = require('assert');
-const Tracer = require('tools/tracer');
 const timeLog = require('tools/timeLogger');
 
 class Row
@@ -23,33 +22,7 @@ class Row
     }
 }
 
-class Wall
-{
-    constructor(row, count, key)
-    {
-        this.lastRow = row || [];
-        this.count   = count || 1;
-        this.key     = key || 0;
-    }
-
-    addRow(values)
-    {
-        const lastRow = [];
-        let key = 0n;
-
-        for(const w of values)
-        {
-            if (this.lastRow[w] !== undefined)
-                return undefined; // cannot add that row
-            lastRow[w] = 1;
-            key = (key * 50n) + BigInt(w);
-        }
-        
-        return new Wall(lastRow, this.count, key);
-    }
-}
-
-function *generateRows(maxWidth)
+function generateRows(maxWidth, callback)
 {
     let rows = [new Row()];
 
@@ -65,7 +38,11 @@ function *generateRows(maxWidth)
                 if (nr !== undefined)
                 {
                     if (nr.width === maxWidth)
-                        yield nr.values.slice(0, nr.values.length-1);
+                    {
+                        const r = nr.values.slice(0, nr.values.length-1);
+                        const k = r.join('-');
+                        callback(k, r);
+                    }
                     else
                         newRows.push(nr);
                 }
@@ -75,42 +52,49 @@ function *generateRows(maxWidth)
     }
 }
 
-function solve(width, height, trace)
+function solve(width, height)
 {
-    const rows = [...generateRows(width)];
+    const rowMap  = new Map();
+    const rows    = new Map();
 
-    let walls   = new Map();
-    let newWalls= new Map();
+    let states    = new Map();
+    let newStates = new Map();
 
-    walls.set(0n, new Wall());
-
-    const tracer = new Tracer(1, trace)
-    for(let h = 0; h < height; h++)
+    generateRows(width, (key, row) => 
     {
-        tracer.print(_ => height-h);
+        const dest = [];
 
-        for(const wall of walls.values())
+        for(const [k, r] of rows)
         {
-            for(const row of rows)
+            const bad = row.reduce((a, v) => a || r.includes(v), false);
+            if (! bad)
             {
-                const w = wall.addRow(row);
-                if (w !== undefined)
-                {
-                    const old = newWalls.get(w.key);
-                    if (old)
-                        old.count += w.count;
-                    else
-                        newWalls.set(w.key, w);
-                }
+                dest.push(k);
+                rowMap.get(k).push(key);
             }
         }
-        [walls, newWalls] = [newWalls, walls];
-        newWalls.clear();
+
+        rowMap.set(key, dest);
+        rows.set(key, row);
+        states.set(key, 1);
+    });
+    
+    for(let h = 1; h < height; h++)
+    {
+        for(const [key, count] of states)
+        {            
+            for(const newKey of rowMap.get(key))
+            {
+                newStates.set(newKey, count + (newStates.get(newKey) || 0));
+            }
+        }
+        
+        [states, newStates] = [newStates, states];
+        newStates.clear();
     }
-    tracer.clear();
 
     let total = 0;
-    walls.forEach(w => total += w.count);
+    states.forEach(c => total += c);
 
     return total;
 }
