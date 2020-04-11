@@ -2,7 +2,7 @@ const numberHelper = function()
 {
     Number.prototype.gcd = function(b)
     {
-        let a = this;
+        let a = this.valueOf();
         if (a < b)
             [a, b] = [b, a];
 
