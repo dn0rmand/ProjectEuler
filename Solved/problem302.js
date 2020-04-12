@@ -13,65 +13,56 @@ timeLogger.wrap('Loading Primes', _=> { primeHelper.initialize(MAX_PRIME, true);
 
 const allPrimes = timeLogger.wrap('Converting primes to BigInt', _ => primeHelper.allPrimes().map(v => BigInt(v)));
 
-function factorize(value, callback)
+const $factorize = {};
+
+function factorize(p1)
 {
-    if (value <= Number.MAX_SAFE_INTEGER)
-    {
-        primeHelper.factorize(Number(value), callback);
-        return;
-    }
+    p1 = Number(p1);
 
-    let max = BigInt(Math.floor(Math.sqrt(Number(value)))+1);
+    if ($factorize[p1])
+        return $factorize[p1];
 
-    for(let p of allPrimes)
-    {
-        if (p > value || p > max)
-            break;
+    const factors = [];
 
-        if (value % p === 0n)
-        {
-            let f = 1;
-            value /= p;
-            while (value % p === 0n)
-            {
-                f++;
-                value /= p;
-            }
-            callback(p, f);
-            if (value === 1)
-                break;
-            if (value <= Number.MAX_SAFE_INTEGER && primeHelper.isKnownPrime(Number(value)))
-                break;
-        }
-    }
-    if (value !== 1n)
-        callback(value, 1);
-}
-
-function isAchilles(value)
-{
-    let gcdFactors = 1;
-    let count      = 0;
-    let good       = true;
-
-    factorize(value, (_, f) => {
-        if (f < 2)
-        {
-            good = false;
-            return false;
-        }
-
-        if (count === 0)
-            gcdFactors = f;
-        else
-            gcdFactors = gcdFactors.gcd(f);
-
-        count++;
+    primeHelper.factorize(p1, (p, f) => {
+        factors[p] = f;
     });
 
-    good = good && count > 1 && gcdFactors === 1;
+    $factorize[p1] = factors;
+    return factors;
+}
 
-    return good;
+function mergeFactorization(p1, previous)
+{
+    let factors = { ...previous };
+    p1 = factorize(p1);
+
+    for (const p in p1)
+        factors[p] = (factors[p] || 0) + p1[p];
+
+    return factors;
+}
+
+function isAchilles(factors)
+{
+    let g = 0;
+
+    for(let v of Object.values(factors))
+    {
+        if (v < 2)
+            return false;
+            
+        if (g === 0) 
+        {
+            g = v;
+        }
+        else if (g !== 1)
+        {
+            g = g.gcd(v);
+        }
+    }
+
+    return g === 1;
 }
 
 function solve(max, trace)
@@ -80,12 +71,12 @@ function solve(max, trace)
 
     let total  = 0;
 
-    function otherPrimes(maxPrime, value, factor, phi)
+    function otherPrimes(maxPrime, value, factor, phiFactors)
     {
         if (value >= max)
             return;
 
-        if (factor === 1 && isAchilles(phi))
+        if (factor === 1 && isAchilles(phiFactors))
         {
             total++;
         }
@@ -97,24 +88,27 @@ function solve(max, trace)
 
             let v = value * p * p;
             let f = 2;
-            let phi2 = phi * (p-1n) * p;
+
+            let factors = mergeFactorization(p-1n, phiFactors);
+            factors[p] = (factors[p] || 0) + 1;
+
             if (v >= max)
                 break;
 
             while (v < max)
             {
-                otherPrimes(p, v, factor.gcd(f), phi2);
+                otherPrimes(p, v, factor.gcd(f), factors);
 
                 f++;
                 v *= p;
-                phi2 *= p;
+                factors[p] += 1;
             }
         }
     }
 
     function firstPrime()
     {
-        const tracer = new Tracer(100, trace);
+        const tracer = new Tracer(10, trace);
         const maximus = allPrimes[allPrimes.length-1];
         for(let p of allPrimes)
         {
@@ -126,15 +120,18 @@ function solve(max, trace)
 
             tracer.print(_ => maximus - p);
 
-            let phi = (p-1n)*p*p;
+            let phiFactors = {};
 
+            phiFactors[p] = 2;
+            phiFactors = mergeFactorization(p-1n, phiFactors);
+            
             while (v < max)
             {
-                otherPrimes(p, v, f, phi);
+                otherPrimes(p, v, f, phiFactors);
 
                 f += 1;
                 v *= p;
-                phi *= p;
+                phiFactors[p] += 1;
             }
         }
     
