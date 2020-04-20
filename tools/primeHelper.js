@@ -5,7 +5,7 @@ module.exports = function(maxPrime, noMap)
     const BigSet   = require('tools/BigSet');
 
     let $db = undefined;
-    // let $dbCache = {};
+    let $dbCache = {};
 
     function openDB()
     {
@@ -24,17 +24,38 @@ module.exports = function(maxPrime, noMap)
         return $db;
     }
 
+    function getPrimeGroups(start, callback)
+    {
+        let db = openDB();
+        let stm = db.prepare(`
+            SELECT 
+                max(value) value, primes count 
+            FROM 
+                prime_counts 
+            WHERE 
+                value >= ? 
+            GROUP BY 
+                primes order by value
+        `);
+
+        for(let row of stm.iterate(+start))
+        {
+            if (callback(row.value, row.count) === false)
+                break;
+        }
+    }
+
     function getPrimeCount(num)
     {
-        // if ($dbCache[num] !== undefined)
-        //     return $dbCache[num];
+        if ($dbCache[num] !== undefined)
+            return $dbCache[num];
 
         let db = openDB();
         let count = db.prepare('SELECT primes FROM prime_counts WHERE "value"=?').get(num);
         if (count !== undefined)
         {
             count = +(count.primes);
-            // $dbCache[num] = count;
+            $dbCache[num] = count;
             return count;
         }
     }
@@ -46,7 +67,7 @@ module.exports = function(maxPrime, noMap)
             let db = openDB();
             db.prepare('REPLACE INTO prime_counts ("value", "primes") VALUES (?, ?)').run(num, value);
 
-            // $dbCache[num] = value;
+            $dbCache[num] = value;
             return true;
         }
         else
@@ -63,7 +84,7 @@ module.exports = function(maxPrime, noMap)
         _primeMap = new BigSet();
         _primes   = [];
         _maxPrime = 0;
-        // $dbCache = {};
+        $dbCache = {};
     }
 
     function countPrimes(num, trace)
@@ -452,6 +473,9 @@ module.exports = function(maxPrime, noMap)
         next: function(p) { return next(p); },
         countPrimes: function(to, trace) { 
             return countPrimes(to, trace); 
+        },
+        getPrimeGroups : function(start, callback) {
+            return getPrimeGroups(start, callback);
         },
         factorize: function (n, callback) {
             factorize(n, callback);
