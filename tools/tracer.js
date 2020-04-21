@@ -2,21 +2,41 @@ const { gotoSOL, eraseLine, back } = require('console-control-strings');
 
 class Tracer
 {
-    constructor(speed, enabled)
+    constructor(speed, enabled, prefix)
     {
         this.enabled    = enabled;
         this.speed      = speed;
+        this.prefix     = prefix;
         this.traceCount = 0;
         this.lastLength = 0;
     }
 
-    clear()
+    get prefix() 
+    { 
+        return this.$prefix; 
+    }
+
+    set prefix(value)
+    {
+        this.clear(false);
+        this.$prefix = value || '';
+
+        if (this.$prefix && this.enabled)
+            process.stdout.write(` ${ this.$prefix} `);
+    }
+
+    clear(excludePrefix)
     {
         if (this.enabled)
         {
-            if (this.lastLength)
+            let length = this.lastLength;
+            
+            if (!excludePrefix && this.prefix)
+                length += this.prefix.length+2;
+
+            if (length)
             {
-                process.stdout.write(back(this.lastLength));
+                process.stdout.write(back(length));
                 process.stdout.write(eraseLine());
             }
         }
@@ -28,7 +48,7 @@ class Tracer
         {
             if (this.traceCount === 0)
             {
-                this.clear();
+                this.clear(true);
                 let str = ` ${callback()} `;
                 process.stdout.write(str);
                 this.lastLength = str.length;
