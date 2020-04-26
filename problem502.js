@@ -2,15 +2,10 @@ const assert = require('assert');
 const Tracer = require('tools/tracer');
 const timeLogger = require('tools/timeLogger');
 
-const BLANK = '⬜️';
-const BRICK = '🟩';
-const BAD   = '🟥';
+require('tools/numberHelper');
 
 const $MODULO = 1000000007;
-
-const DEBUG = 0;
-const DUMP  = 0;
-const DUMP_INVALID = 0;
+const MAX     = 1E12;
 
 function initialize(useBigInt)
 {
@@ -21,150 +16,20 @@ function initialize(useBigInt)
 }
 
 const { bigInt, ZERO, ONE, TWO, MODULO } = initialize(false);
+const FOUR = TWO+TWO;
 
-//#region ABSTRACT CLASSES
-
-class State
+class ColumnState
 {
-    static nextKey = 0;
-
-    constructor(value, count, blocks, previous)
+    constructor(left, value, count, blocks, reachedTop)
     {
-        this.value  = value;
-        this.count  = count;
-        this.blocks = (blocks & ONE);
-
-        if (DEBUG)
-        {            
-            this.$key     = ++State.nextKey;
-            this.previous = previous;
-        }
-        else
-        {
-            this.$key = (this.value * TWO) + (this.blocks & ONE); 
-        }
-    }
-
-    get key()
-    { 
-        return this.$key;
-    }
-
-    get isValid() { return (this.blocks & ONE) === ZERO; }
-    get total()   { return this.isValid ? this.count : ZERO; }
-
-
-    nextState(value, maxHeight) { throw "Need implementation";; }
-
-    draw(buffer, x, y)
-    {
-        throw "Need implementation";
-    }
-
-    dump(width, height)
-    {
-        if (DEBUG && DUMP)
-        {
-            if (! this.isValid && ! DUMP_INVALID)
-                return;
-
-            const brick = this.isValid ? BRICK : BAD;
-            const buffer = new Array(height);
-            for(let i = 0; i < width; i++)
-                buffer[i] = new Array(width).fill(0);
-
-            this.draw(buffer, width, height);
-
-            for(let y = height-1; y >= 0; y--)
-            {
-                let s = '';
-                for(let x = 0; x < width; x++)
-                {
-                    s += buffer[y][x] ? brick : BLANK;
-                }
-                console.log(s);
-            }
-
-            console.log('');
-        }
-    }
-}
-
-class Engine
-{
-    constructor(width, height)
-    {
-        this.width  = width;
-        this.height = height;
-    }
-
-    solve()
-    {
-        let states     = new Map();
-        let newStates  = new Map();
-
-        states.set('XX', this.createFirstState());
-
-        this.outerLoop(_ => {
-            states.forEach(state => this.innerLoop(state, value => {
-                let s = state.nextState(value, this.height);
-                if (s !== undefined)
-                {
-                    let k = s.key;
-                    let o = newStates.get(k);
-                    if (o)
-                    {
-                        // if (o.blocks !== s.blocks)
-                        //     throw "ERROR";
-
-                        o.count = (o.count + s.count) % MODULO;
-                    }
-                    else
-                        newStates.set(k, s);
-                }
-            }));
-
-            [states, newStates] = [newStates, states];
-            newStates.clear();
-        });
-
-        let total = ZERO;
-
-        states.forEach(s => {
-            s.dump(this.width, this.height);
-            total = (total + s.total) % MODULO;
-        });    
-
-        return total;
-    }
-
-    createFirstState()
-    {
-        throw "Need implementation";
-    }
-
-    outerLoop(callback)
-    {
-        throw "Need implementation";
-    }
-
-    innerLoop(state, callback)
-    {
-        throw "Need implementation";
-    }
-}
-
-//#endregion
-
-//#region IMPLEMENTATION for COLUMN per COLUMN calculation
-
-class ColumnState extends State
-{
-    constructor(value, count, blocks, previous)
-    {
-        super(value, count, blocks, previous);
-
-        this.reachedTop = false;
+        this.value      = value;
+        this.left       = left || value; // left cannot be zero
+        this.count      = count;
+        this.blocks     = (blocks & ONE);
+        this.reachedTop = reachedTop;
+        this.key        = (this.value * FOUR) + 
+                          (this.blocks ? TWO : ZERO) + 
+                          (this.reachedTop ? ONE : ZERO);
     }
 
     get isValid()
@@ -172,14 +37,12 @@ class ColumnState extends State
         if (! this.reachedTop)
             return false;
 
-        return super.isValid;
+        return (this.blocks & ONE) === ZERO;
     }
 
-    get key()
-    {
-        const k = super.key;
-
-        return (k*TWO) + (this.reachedTop ? 1 : 0);
+    get total()
+    { 
+        return this.isValid ? this.count : ZERO; 
     }
 
     nextState(value, maxHeight)
@@ -188,184 +51,247 @@ class ColumnState extends State
         if (newBlocks < ZERO)
             newBlocks = ZERO;
 
-        let s = new ColumnState(value, this.count, this.blocks + newBlocks, this);
+        const reachedTop = this.reachedTop || value >= maxHeight;
 
-        s.reachedTop = this.reachedTop || s.value >= maxHeight;
-
-        return s;
-    }
-
-    draw(buffer, x, h)
-    {
-        for(let y = ZERO; y < this.value; y++)
-        {
-            buffer[y][x-1] = 1;
-        }
-        if (this.previous)
-            this.previous.draw(buffer, x-1, h);
+        return new ColumnState(this.left, value, this.count, this.blocks + newBlocks, reachedTop);
     }
 }
 
-class ColumnEngine extends Engine
+class ColumnEngine
 {
-    constructor(width, height)
+    constructor(width, height, useLeft)
     {
-        super(width, height);
+        this.useLeft = (useLeft !== false);
+        this.width      = width;
+        this.height     = height;
+        this.states     = new Map();
+        this.newStates  = new Map();
     }
 
-    createFirstState()
+    forEachStates(callback)
     {
-        return new ColumnState(ZERO, ONE, ZERO)
-    }
-
-    outerLoop(callback)
-    {
-        for (let w = 1; w <= this.width; w++)
-            callback(w);
-    }
-
-    innerLoop(_, callback)
-    {
-        for(let value = ONE; value <= this.height; value++)
+        if (this.useLeft)
         {
-            callback(value);
+            this.states.forEach(leftMap => {
+                if (leftMap.size === undefined)
+                    callback(leftMap);
+                else
+                    leftMap.forEach(state => callback(state));
+            });
         }
+        else
+            this.states.forEach(state => callback(state));
     }
-}
 
-//#endregion
-
-//#region IMPLEMENTATION for ROW per ROW calculation
-
-class RowState extends State
-{
-    static countBlocks(value)
+    addNewState(state)
     {
-        let blocks = ZERO;
-        while (value > 0)
+        let newStates = this.newStates;
+        if (this.useLeft)
         {
-            if ((value & ONE) === ONE)
+            let newStates = this.newStates.get(state.left);
+            if (! newStates)
             {
-                blocks++;
-                while ((value & ONE) === ONE)
-                {
-                    value = (value - ONE) / TWO;
-                }
+                newStates = new Map();
+                this.newStates.set(state.left, newStates);
             }
+        }
+
+        const k = state.key;
+        const o = newStates.get(k);
+
+        if (o)
+        {                    
+            o.count = (o.count + state.count) % MODULO;
+        }
+        else
+        {
+            newStates.set(k, state);
+        } 
+    }
+
+    runStep()
+    {
+        this.forEachStates(state => 
+        {
+            for(let value = ONE; value <= this.height; value++)
+            {
+                const s = state.nextState(value, this.height);
+
+                this.addNewState(s);
+            }
+        });
+
+        [this.states, this.newStates] = [this.newStates, this.states];
+        this.newStates.clear();
+    }
+
+    get total()
+    {
+        let total = ZERO;
+
+        this.forEachStates(s => {
+            total = (total + s.total) % MODULO;
+        });    
+
+        return total;
+    }
+
+    solve(trace)
+    {
+        this.states.set('XX', new ColumnState(ZERO, ZERO, ONE, ZERO, false));
+
+        const tracer = new Tracer(1, trace);
+        for (let i = 1; i <= this.width; i++)
+        {
+            tracer.print(_ => this.width-i);
+
+            this.runStep();
+        }
+
+        tracer.clear();
+
+        return this.total;
+    }
+
+    merge()
+    {
+        const lefts = [];
+        this.forEachStates(state => {
+            if (lefts[state.left] === undefined)
+                lefts[state.left] = [state];
             else
-                value /= TWO;
+                lefts[state.left].push(state);
+        });
+
+        this.forEachStates(leftState => {
+            const rightStates = lefts[leftState.value];
+            if (rightStates === undefined)
+                throw "ERROR";
+
+            for(const rightState of rightStates)
+            {
+                let count = leftState.count.modMul(rightState.count, MODULO);
+                let blocks= (leftState.blocks + rightState.blocks + (rightState.left & ONE)) & ONE;
+
+                const newState = new ColumnState(leftState.left, 
+                                                rightState.value, 
+                                                count, blocks,
+                                                leftState.reachedTop || rightState.reachedTop);
+
+                this.addNewState(newState);
+            }
+        });
+
+        [this.states, this.newStates] = [this.newStates, this.states];
+        this.newStates.clear();
+    }
+}
+
+function F0(width, height, trace)
+{
+    const engine = new ColumnEngine(width, height, false);
+
+    return engine.solve(trace);
+}
+
+function findBestStart(max)
+{
+    function inner(start)
+    {
+        let value= start;
+
+        while (value <= max)
+        {
+            const newValue = value+value-1;
+            if (newValue > max)
+                break;
+            value = newValue;
         }
 
-        return blocks;
+        return max - value;
     }
 
-    constructor(value, count, blocks, previous)
+    let best = Math.min(3, max);
+    let min = inner(best);
+
+    const end = Math.min(max, 20000000);
+
+    for(let i = best+1; i < end; i++)
     {
-        super(value, count, blocks, previous);
-    }   
+        const v = inner(i);
+        if (v < min)
+        {
+            min = v;
+            best= i;
+            if (min === 0)
+                break;
+        }
+    }
+
+    return best;
+}
+
+function F1(width, height, trace)
+{
+    function solve(width)
+    {
+        const start = findBestStart(width);
+
+        const tracer = new Tracer(1, trace);
+        tracer.prefix = `> ${start}`;
     
-    nextState(value, maxHeight)
-    {
-        if ((this.value & value) !== value)
-            return undefined; // cannot do that!
+        let engine;
 
-        let blocks = RowState.countBlocks(value) + this.blocks;
-
-        return new RowState(value, this.count, blocks, this);
-    }
-
-    min()
-    {
-        if (this.value === ZERO)
-            return ONE;
-        let v = ONE;
-        while ((v & this.value) === ZERO)
+        if (start > 5)
         {
-            v *= TWO;
+            if (start === 1)
+                start = 3;
+            engine = solve(start);
         }
-        return v;
-    }
-
-    max()
-    {
-        return this.value+ONE;
-    }
-
-    draw(buffer, w, y)
-    {
-        let row = this.value.toString(2).padStart(w, '0').split('').map(a => +a);
-
-        for(let i = 0; i < w; i++)
-            buffer[y-1][i] = row[i] || 0;
-
-        if (this.previous)
-            this.previous.draw(buffer, w, y-1);
-    }
-}
-
-class RowEngine extends Engine
-{
-    constructor(width, height)
-    {
-        super(width, height);
-        this.MAX_VALUE = TWO ** bigInt(width);
-    }
-
-    get isValid()
-    {
-        return this.value != 0 && super.isValid;
-    }
-
-    createFirstState()
-    {
-        return new RowState(this.MAX_VALUE-ONE, ONE, ONE)
-    }
-
-    outerLoop(callback)
-    {
-        for(let h = 2; h <= this.height; h++)
-            callback(h);
-    }
-
-    innerLoop(state, callback)
-    {
-        let max = state.max();
-        let min = state.min();
-
-        // callback(ZERO);
-
-        for(let value = min; value < max; value++)
+        else
         {
-            callback(value);
+            engine = new ColumnEngine(start, height, true);
+            engine.solve(trace);
         }
+    
+        tracer.prefix = 'merging states';
+    
+        let w = start;
+
+        while (w+w-1 <= width)
+        {
+            tracer.print(_ => width-w);
+            engine.merge();
+            w = w+w-1;
+        }
+    
+        tracer.prefix = 'Finishing up';
+    
+        while (w++ < width)
+        {
+            tracer.print(_ => width-w);
+            engine.runStep();
+        }
+    
+        tracer.clear();
+
+        return engine;
     }
+
+    const engine = solve(width);
+
+    return engine.total;
 }
 
-//#endregion
 
-function F(width, height, perRow)
-{
-    let engine ;
-
-    if (perRow === true)
-        engine = new RowEngine(width, height);
-    else    
-        engine = new ColumnEngine(width, height);
-
-    let total = engine.solve();
-
-    return total;
-}
-
-console.log('Row per Row');
-assert.equal(F(4, 2, true), 10);
-assert.equal(timeLogger.wrap('13x10', _ => F(13, 10, true)), 50584533);
-assert.equal(timeLogger.wrap('10x13', _ => F(10, 13, true)), 959702255);
-
-console.log('');
-console.log('Column per Column');
-assert.equal(F(4, 2, false), 10);
-assert.equal(timeLogger.wrap('13x10', _ => F(13, 10, false)), 50584533);
-assert.equal(timeLogger.wrap('10x13', _ => F(10, 13, false)), 959702255);
+assert.equal(F0(4, 2), 10);
+assert.equal(timeLogger.wrap('13x10', _ => F0(13, 10)), 50584533);
+assert.equal(timeLogger.wrap('10x13', _ => F0(10, 13)), 959702255);
 
 console.log('Tests passed');
+
+//console.log(timeLogger.wrap('1E12x100', _ => F1(MAX, 100, true)));
+
+// F(MAX, 100) = 364553235 ( 14 minutes )
+
+console.log(timeLogger.wrap('10000x10000', _ => F0(10000, 10000, true)));
