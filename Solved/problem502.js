@@ -413,48 +413,16 @@ function F3(width, height, trace)
 
     function findPolynomial(start)
     {
-        let values = [];
-        let h = ZERO;
-
-        h = start;
-
         const tracer = new Tracer(1, trace, 'populating values');
 
-        while(h < bigInt(400))
-        {
-            tracer.print(_ => h);
-            try
-            {
-                let power = polynomial.findPower(values, MODULO);
-                if (power < h-ONE)
-                {
-                    try
-                    {
-                        tracer.clear();
-                        tracer.prefix = 'Resolving polynomial';
-                        return polynomial.solve(values, MODULO);
-                    }
-                    catch(error)
-                    {
-                        console.log(error);
-                        throw error;
-                    }
-                    finally
-                    {
-                        tracer.clear();
-                    }
-                }
-            }
-            catch
-            {
+        const result = polynomial.findPolynomial(start, TWO, (x) => {
+            tracer.print(_ => x);
+            return F(width, x);
+        });
 
-            }
-            
-            values.push(F(width, h))
-            h += TWO;
-        }
+        tracer.clear();
 
-        throw "NO SOLUTION"
+        return result;
     }
 
     // disable MODULO

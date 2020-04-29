@@ -142,12 +142,47 @@ function calculate(x, coefficients, modulo)
     return value;
 }
 
-module.exports = {
-    findPower : function(values)
+const polynomial = {
+    findPower: function(values)
     {
         values  = values.map(v => BigInt(v));
         let { power } = reduce(values);
         return power;
+    },
+
+    findPolynomial: function(start, step, fx)
+    {
+        let values = [];
+        let x = start;
+
+        while(x < 1000)
+        {
+            try
+            {
+                let power = this.findPower(values);
+                if (power)
+                {
+                    try
+                    {
+                        return this.solve(values);
+                    }
+                    catch(error)
+                    {
+                        console.log(error);
+                        throw error;
+                    }
+                }
+            }
+            catch
+            {
+
+            }
+            
+            values.push(fx(x));
+            x += step;
+        }
+
+        throw "NO SOLUTION"
     },
 
     solve: function(values)
@@ -197,3 +232,5 @@ module.exports = {
         formula.join(' ');
     },
 };
+
+module.exports = polynomial;
