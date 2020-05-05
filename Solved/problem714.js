@@ -2,8 +2,10 @@ const assert = require('assert');
 const Tracer = require('tools/tracer');
 const timeLogger = require('tools/timeLogger');
 
+require('tools/bigintHelper');
+
 const MAX      = 50000;
-const LIMIT    = 1E8;
+const LIMIT    = 1E9;
 const $memoize = [];
 const $missing = new Set();
 
@@ -42,11 +44,13 @@ function d(n, trace)
         if (v >= LIMIT)
         {
             $missing.add(BigInt(n));
-            return 0;
+            return 0n;
         }
     }
 
     tracer.clear();
+
+    v = BigInt(v);
 
     $memoize[n] = v;
     return v;
@@ -60,7 +64,7 @@ function findMissing(trace)
     let MIN_LIMIT = BigInt(LIMIT);
     let MAX_LIMIT = 10n * MIN_LIMIT;
 
-    let length = `${LIMIT}`.length - 1;
+    let length = `${LIMIT}`.length - 2;
 
     const tracer = new Tracer(1, trace);
     const $found = new Map();
@@ -76,10 +80,16 @@ function findMissing(trace)
         }
     }
 
+    let $calculated = new Map();
+    let $current;
+
     function inner(value)
     {
         if (value >= MIN_LIMIT && value < MAX_LIMIT)
         {
+            if ($current)
+                $current.add(value);
+
             for(let v of $missing)
             {
                 check(value, v);
@@ -108,11 +118,13 @@ function findMissing(trace)
 
     while ($missing.size > 0)
     {
-        $found.clear();
         length++;
+        $found.clear();
         tracer.print(_ => `${$missing.size} - ${length}`);
 
         // ones with 2 different digits
+
+        let calculated = undefined;
 
         for(let c1 = 1n; c1 <= 9n; c1++)
         for(let c2 = 0n; c2 <= 9n; c2++)
@@ -122,8 +134,36 @@ function findMissing(trace)
 
             cs = c2 < c1 ? [c2, c1] : [c1, c2];
 
-            inner(c1);
+            let key = c1*10n + c2;
+
+            current = $calculated.get(key);
+
+            if (length < 15)
+            {
+                calculated = calculated || new Map();
+
+                $current = calculated.get(key);
+
+                assert.equal($current, undefined);
+                $current = new Set();
+            }
+            else
+                $current = undefined;
+
+            if (current !== undefined)
+            {
+                current.forEach(v => inner(v));
+            }
+            else
+            {
+                inner(c1);
+            }
+
+            if ($current && calculated)
+                calculated.set(key, $current);
         }
+
+        $calculated = calculated || $calculated; 
 
         MIN_LIMIT = MAX_LIMIT;
         MAX_LIMIT = MAX_LIMIT * 10n;
@@ -140,14 +180,13 @@ function D(k, trace)
 
     const tracer = new Tracer(100, trace);
 
-    let total = 0;
+    let total = 0n;
     for(let n = 1; n <= k; n++)
     {
         tracer.print(_ => k-n);
         total += d(n, trace);
     }
     tracer.clear();
-    total = BigInt(total);
 
     if ($missing.size > 0)
         total += findMissing(trace);
@@ -170,6 +209,6 @@ assert.equal(D(500), 29570988);
 
 console.log('Tests passed');
 
-let answer = timeLogger.wrap('', _ => D(MAX, true));
-console.log(`Answer is ${answer} - ${ Number(answer).toExponential(12) }`);
+const answer = timeLogger.wrap('', _ => D(MAX, true));
 
+console.log(`Answer is ${answer} - ${ answer.toExponential(12) }`);

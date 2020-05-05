@@ -3,6 +3,60 @@ const bigIntHelper = function()
     BigInt.ONE  = BigInt(1);
     BigInt.ZERO = BigInt(0);
 
+    BigInt.prototype.toExponential = function(maxDigits)
+    {
+        let value = this;
+        maxDigits = maxDigits || 12;
+        
+        let sign = value < 0n ? '-' : '';
+        value = value < 0n ? -value : value;
+
+        const digits = [];
+        let power  = 0;
+
+        while (value > 10n)
+        {
+            let d = value % 10n;
+            digits.unshift(d);
+            value = (value - d) / 10n;
+            power++;
+            if (digits.length > maxDigits+1)
+            {
+                digits.length = maxDigits+1;
+            }
+        }
+        
+        if (digits.length > maxDigits)
+        {
+            let l = maxDigits;
+            if (digits[l--] >= 5n)
+            {            
+                digits[l+1] = 10n;
+                while (l >= 0 && digits[l+1] > 9n)
+                {
+                    digits[l+1] = 0n;
+                    digits[l--]++;
+                }
+                if (digits[0] > 9n)
+                {
+                    digits[0] = 0n;
+                    value++;
+                    if (value > 9n)
+                    {
+                        digits.unshift(0n);
+                        value /= 10n;
+                        power++;
+                    }
+                }
+            }
+            digits.length = maxDigits;
+        }
+
+        s = `${sign}${value}.${digits.join('')}e${power}`;
+
+        return s;
+    }
+
     BigInt.prototype.gcd = function(b)
     {
         let a = this;
