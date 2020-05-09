@@ -7,87 +7,87 @@ const $memoize_C = [];
 const $costs = [];
 const $treeCost = [];
 
-function calculateCost(offset)
+const generateEmptyTree = offset =>
 {
-    const generateEmptyTree = offset =>
+    let totalEntries = ((offset-1)/2 - 1);
+    
+    const addLayer = bottoms =>
     {
-        let totalEntries = ((offset-1)/2 - 1);
-        
-        const addLayer = bottoms =>
+        const newBottoms = [];
+        for(let i = 0; totalEntries > 0 && i < bottoms.length; i++)
         {
-            const newBottoms = [];
-            for(let i = 0; totalEntries > 0 && i < bottoms.length; i++)
+            const node = bottoms[i];
+
+            const left = { value: 0 };
+
+            node.left = left;
+            newBottoms.push(left);
+
+            if (--totalEntries > 0)
             {
-                const node = bottoms[i];
-
-                const left = { value: 0 };
-
-                node.left = left;
-                newBottoms.push(left);
-
-                if (--totalEntries > 0)
-                {
-                    const right = { value: 0 };
-                
-                    node.right = right;
-                    newBottoms.push(right);
-                    totalEntries--;
-                }
+                const right = { value: 0 };
+            
+                node.right = right;
+                newBottoms.push(right);
+                totalEntries--;
             }
-
-            return newBottoms;
         }
 
-        let tree    = { value: 0 };
-        let bottoms = [tree];
-
-        while (totalEntries > 0)
-        {
-            bottoms = addLayer(bottoms);
-        }
-
-        return tree;
+        return newBottoms;
     }
 
-    const createTree = offset =>
+    let tree    = { value: 0 };
+    let bottoms = [tree];
+
+    while (totalEntries > 0)
     {
-        const tree = generateEmptyTree(offset);
-        let nextValue = 0;
-
-        const getNextValue = _ =>
-        {
-            nextValue += 2;
-            return nextValue;
-        }
-
-        const fill = node =>
-        {
-            if (node.left)
-                fill(node.left);
-            node.value = getNextValue();
-            if (node.right)
-                fill(node.right);
-        }
-
-        fill(tree);
-
-        return tree;
+        bottoms = addLayer(bottoms);
     }
 
-    const getCost = (node, cost, depth) => 
+    return tree;
+}
+
+const createTree = offset =>
+{
+    const tree = generateEmptyTree(offset);
+    let nextValue = 0;
+
+    const getNextValue = _ =>
     {
-        if (node === undefined)
-            return { cost, depth };
+        nextValue += 2;
+        return nextValue;
+    }
 
-        let left = getCost(node.left, cost + node.value, depth+1);
-        let right= getCost(node.right,cost + node.value, depth+1);
+    const fill = node =>
+    {
+        if (node.left)
+            fill(node.left);
+        node.value = getNextValue();
+        if (node.right)
+            fill(node.right);
+    }
 
-        if (right.depth >= left.depth)
-            return right;
-        else
-            return left;
-    };
+    fill(tree);
 
+    return tree;
+}
+
+const getCost = (node, cost, depth) => 
+{
+    if (node === undefined)
+        return { cost, depth };
+
+    let left = getCost(node.left, cost + node.value, depth+1);
+    let right= getCost(node.right,cost + node.value, depth+1);
+
+    if (right.depth >= left.depth)
+        return right;
+    else
+        return left;
+};
+
+const calculateCost = offset =>
+{
     if ($treeCost[offset])
         return $treeCost[offset];
 
@@ -99,7 +99,7 @@ function calculateCost(offset)
     return cost;
 }
 
-function fastC(max, offset)
+const fastC = (max, offset) =>
 {
     const getRightCost = offset =>
     {
@@ -147,11 +147,11 @@ function fastC(max, offset)
     return { value: result, offset: best }
 }
 
-function C(maxValue, offset)
+const C = (maxValue, offset) =>
 {
     const odds = (maxValue & 1) === 0 ? 1 : 0;
 
-    function inner(min, max, _start, _step, _middle)
+    const inner  = (min, max) =>
     {
         if (min >= max)
             return { value:0, guesses: [0] };
@@ -165,29 +165,14 @@ function C(maxValue, offset)
             return $memoize_C[min][max];
 
         let result = { value: Number.MAX_SAFE_INTEGER, guesses: [] };
-        let midPoint = Math.floor((min+max)/2);
+        let start  = Math.floor((min+max)/2);
 
-        if (! _middle) 
+        start = (start - (start & 1)) + odds;
+
+        for (let guess = start; guess <= max; guess += 2)
         {
-            _middle = midPoint;
-        }
-        else if(midPoint > _middle)
-        {
-            _middle = Math.max(midPoint, _middle);
-        }
-
-        if (! _step)
-            _step = 2;
-
-        if (! _start)
-            _start = (_middle - (_middle & 1)) + odds;
-
-        _middle--;
-
-        for (let guess = _start; guess >= _middle && guess <= max; guess += _step)
-        {
-            const pass2 = inner(min, guess-1,  undefined, undefined, undefined);
-            const pass1 = inner(guess+1, max,  undefined, undefined, undefined);
+            const pass2 = inner(min, guess-1);
+            const pass1 = inner(guess+1, max);
 
             const pass  = (pass1.value < pass2.value ? pass2 : pass1);
 
@@ -206,20 +191,7 @@ function C(maxValue, offset)
         return result;
     }
 
-    let start, step, middle;
-
-    if (maxValue >= 100 && offset)
-    {
-        start = maxValue - offset;
-        step  = -8;
-        middle = 2;
-        while (middle <= offset)
-            middle *= 2;
-        middle = (middle*2)-1;
-        middle = (start - middle);
-    }
-
-    let answer = inner(1, maxValue, start, step, middle);
+    let answer = inner(1, maxValue);
 
     offset = answer.guesses.reduce((a, v) => Math.max(maxValue - v, a), 0);
 
