@@ -12,7 +12,7 @@ module.exports = function(maxPrime, noMap)
         if ($db)
             return $db;
 
-        $db  = new Database('primeCounts.sqlite');
+        $db = new Database(`${__dirname}/primeCounts.sqlite`);
         $db.exec(`
         CREATE TABLE IF NOT EXISTS "prime_counts" 
         (
