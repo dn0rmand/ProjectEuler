@@ -34,7 +34,14 @@ const numberHelper = function()
         let r = this * value;
         if (r > Number.MAX_SAFE_INTEGER)
         {
-            r = (BigInt(this) * BigInt(value)) % BigInt(modulo);
+            try
+            {
+                r = (BigInt(this) * BigInt(value)) % BigInt(modulo);
+            }
+            catch(error)
+            {
+                console.log(error);
+            }
             r = Number(r);
         }
         else
