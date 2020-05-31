@@ -2,23 +2,57 @@ const assert = require('assert');
 const Tracer = require('tools/tracer');
 const timeLogger = require('tools/timeLogger');
 
+require('tools/numberHelper');
+
 const MODULO = 1000000007;
+const DIVTWO = Number(2).modInv(MODULO);
 
 class SieveArray
 {
-    constructor(min, max)
+    constructor(min, size)
     {
-        this.min = min;
-        this.max = max;
-        this.size= max-min+1;
-        this.array= new Uint8Array(this.size);
+        this.size = size;
+        this.$min = min;
+        this.$max = min + this.size;
+
+        this.array = new Uint8Array(this.size);
+        this.free  = this.size;
+        // this.used = new Set();
+        // this.unused = new Set();
+        // for(let i = 0; i < size; i++)
+        //     this.unused.add(i);
+    }
+
+    cloneArray()
+    {
+        return new Uint8Array(this.array);
+    }
+
+    set min(value)
+    {
+        this.$min = value; 
+        this.$max = value + this.size;
+    }
+
+    get min()
+    { 
+        return this.$min;
+    }
+
+    get max()
+    { 
+        return this.$max; 
     }
 
     set(index, mask)
     {
         const i = index - this.min;
         if (i >= 0 && i < this.size)
+        {
             this.array[i] |= mask;
+            // this.used.add(i);
+            // this.unused.delete(i);
+        }
     }
 
     get(index, mask)
@@ -30,115 +64,125 @@ class SieveArray
         else
             return 0;
     }
-}
 
-function getMaxUnreachable(values)
-{
-    for(let i = values.size-1; i >= 0; i--)
+    fill(start, step, mask, callback)
     {
-        if (! values.get(i))
-            return i;
+        callback = callback || (v => {});
+
+        for(let i = start; i < this.max; i += step)
+        {
+            if (this.get(i, mask))
+                continue;
+
+            this.set(i, mask);
+            callback(i);
+        }
     }
 
-    return 0;
+    sum()
+    {
+        let total = 0;
+        let free  = 0;
+        
+        total = this.array.reduce((a, v, i) => {
+            if (! v)
+            {
+                free++;
+                a = (a + i + this.$min) % MODULO;
+            }
+            return a;
+        }, 0);
+
+        this.free = free;
+        return total;
+    }
+
+    dump()
+    {
+        console.log(this.array.join(', '));
+    }
+
+    *indexes()
+    {
+        const idxes = [...this.used];
+        for(const i of idxes)
+            yield i + this.min;
+    }
 }
 
-function G(p)
+function G(p, trace)
 {
     const X = 17 ** p;
     const Y = 19 ** p;
     const Z = 23 ** p;
 
     const MIN = X+Y+Z;
-    const MAX = 3 * (23 ** (p+2));
+    const SIZE= Z;
 
-    let values = new SieveArray(MIN, MAX);
+    let values = new SieveArray(MIN, SIZE);
+    values.set(MIN, 7);
+    let total  = MIN.modMul(MIN-1,MODULO).modMul(DIVTWO, MODULO);
 
-    const keepFilling = (start, offset, mask, callback) => {
-        while(start <= MAX)
-        {
-            if (values.get(start, mask))
-                break;
-
-            values.set(start, mask);
-            if (callback)
-                callback(start);
-
-            start += offset;
-        }
-    };
-
-    for(let v1 = MIN, v2 = MIN, v3 = MIN; ; v1 += X, v2 += Y, v3 += Z)
+    const tracer = new Tracer(10, trace);
+    while (true)
     {
-        if (v1 > MAX && v2 > MAX && v3 > MAX)
+        tracer.print(_ => values.free);
+
+        const old = values.cloneArray();
+
+        for(let i = 0; i < SIZE; i++)
+        {
+            if (old[i] === 0)
+                continue;
+
+            let posx = i + values.min;
+            let posy = posx;
+            let posz = posx;
+
+            if (values.min > MIN)
+            {
+                posx = posx - Z + X;
+                posy = posy - Z + Y;
+            }
+
+            values.fill(posx, X, 1, v1 => {
+                values.fill(v1, Z, 4);//, v2 => values.fill(v2, Y, 2));
+                values.fill(v1, Y, 2);//, v2 => values.fill(v2, Z, 4));
+            });
+
+            values.fill(posy, Y, 2, v1 => {
+                values.fill(v1, X, 1);//, v2 => values.fill(v2, Z, 4));
+                values.fill(v1, Z, 4);//, v2 => values.fill(v2, X, 1));
+            });
+
+            // values.fill(posz, Z, 4, v1 => {
+            //     values.fill(v1, X, 1);//, v2 => values.fill(v2, Y, 2));
+            //     values.fill(v1, Y, 2);//, v2 => values.fill(v2, X, 1));
+            // });
+        }
+
+        // values.dump();
+
+        let s = values.sum();
+        if (s === 0)
             break;
 
-        if (v1 <= MAX)
-        {
-            values.set(v1, 1);
-            keepFilling(v1, Y, 2, v => keepFilling(v, Z, 4));
-            keepFilling(v1, Z, 4, v => keepFilling(v, Y, 2));
-        }
+        total = (total + s) % MODULO;
 
-        if (v2 <= MAX)
-        {
-            values.set(v2, 2);
-            keepFilling(v2, X, 1, v => keepFilling(v, Z, 4));
-            keepFilling(v2, Z, 4, v => keepFilling(v, X, 1));
-        }
-
-        if (v3 <= MAX)
-        {
-            values.set(v3, 4);
-            keepFilling(v3, X, 1, v => keepFilling(v, Y, 2));
-            keepFilling(v3, Y, 2, v => keepFilling(v, X, 1));
-        }
+        values.min += SIZE;
     }
 
-    let total = 0;
-    const maxUnreachable = getMaxUnreachable(values);
-    // console.log(maxUnreachable);
-    for(let i = 1; i <= maxUnreachable; i++)
-    {
-        if (! values.get(i))
-            total = (total + i) % MODULO;
-    }
+    tracer.clear();
 
     return total;
-}
-
-function isReachable(value, p)
-{
-    const X = 17 ** p;
-    const Y = 19 ** p;
-    const Z = 23 ** p;
-
-    const MAXA = Math.floor((value - (Y+Z)) / X);
-    const MAXB = Math.floor((value - (X+Z)) / Y);
-    const MAXC = Math.floor((value - (X+Y)) / Z);
-
-    for(let a = 1; a <= MAXA; a++)
-    {
-        for(let b = 1; b <= MAXB; b++)
-        {
-            for(let c = 1; c <= MAXC; c++)
-            {
-                let v = a*X + b*Y + c*Z;
-                if (v === value)
-                {
-                    console.log(`${value} = ${a} x 17^${p} + ${b} x 19^${p} + ${c} x 23^${p}`);
-                }
-            }
-        }
-    }
 }
 
 assert.equal(G(1), 8253);
 assert.equal(G(2), 60258000);
 assert.equal(G(3), 299868284548 % MODULO);
-assert.equal(timeLogger.wrap('G(4)', _ => G(4)), 859617967);
+assert.equal(timeLogger.wrap('G(4)', _ => G(4, true)), 859617967);
 
 console.log('Tests passed');
 
-const answer = timeLogger.wrap('G(5)', _ => G(5));
+const answer = timeLogger.wrap('G(5)', _ => G(5, true));
 console.log(`Answer is ${answer}`);
