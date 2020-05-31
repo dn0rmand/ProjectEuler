@@ -5,40 +5,16 @@ const timeLogger = require('tools/timeLogger');
 const primeHelper = require('tools/primeHelper')();
 
 require('tools/numberHelper');
+require('tools/bigintHelper');
 
 const MAX       = 1E12;
 const MAX_PRIME = 1E7;
 const MODULO    = 1000000007;
+const MODULO_N  = BigInt(MODULO);
 
 primeHelper.initialize(MAX_PRIME);
 
 const TWO = Number(2);
-
-class Cache
-{
-    constructor()
-    {
-        this.map = new Map();
-    }
-
-    get(p, e)
-    {
-        let a = this.map.get(p);
-        if (a !== undefined)
-            return a.get(e);
-    }
-
-    set(p, e, value)
-    {
-        let a = this.map.get(p);
-        if (a === undefined)
-        {
-            a = new Map();
-            this.map.set(p, a);
-        }
-        a.set(e, value);
-    }
-}
 
 function fp(p, e)
 {
@@ -69,22 +45,29 @@ function f(n)
     return total;
 }
 
-const $FP = new Cache();
-
 function FP(p, e)
 {
-    let result = $FP.get(p, e);
-    if (result !== undefined)
-        return result;
+    let result ;
+    
+    if (p === 2)
+    {
+        result = p.modPow(3 * e, MODULO);
+    }
+    else if (p % 4 === 1)
+    {
+        const p3  = p.modPow(3, MODULO);
+        const p31 = p3-1;
 
-    const k      = p ** e; 
-    const phi    = k-(k/p);
-    const bottom = k.modMul(k, MODULO).modMul(phi, MODULO);
-    const top    = fp(p, e);
+        result = p31.modMul(p3.modPow(e-1, MODULO), MODULO);
+    }
+    else
+    {
+        const p3  = p.modPow(3, MODULO);
+        const p31 = p3+1;
 
-    result = top.modDiv(bottom, MODULO);
+        result = p31.modMul(p3.modPow(e-1, MODULO), MODULO);
+    }
 
-    $FP.set(p, e, result);
     return result;
 }
 
@@ -93,7 +76,7 @@ function F(k)
     let total = 1;
 
     primeHelper.factorize(k, (p, e) => {
-        total = total.modMul(FP(p, e), MODULO);
+        total = total.modMul(FP(p, e),  MODULO);
     });
 
     return total;
@@ -121,13 +104,5 @@ assert.equal(G(1E5), 157612967);
 
 console.log('Tests passed');
 
-timeLogger.wrap('', _ => {
-    let total = 0;
-    for(let i = 0; i < MAX; i++)
-    {
-        total = i
-    }
-    return total;
-});
-// const answer = timeLogger.wrap('', _ => G(MAX, true));
-// console.log(`Answer is ${answer}`);
+const answer = timeLogger.wrap('', _ => G(1E7, true));
+console.log(`Answer is ${answer}`);
