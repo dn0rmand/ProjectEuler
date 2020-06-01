@@ -40,55 +40,45 @@ class SieveArray
         return this.$max; 
     }
 
-    set(index, mask)
+    set(index)
     {
         const i = index - this.min;
         if (i >= 0 && i < this.size)
         {
-            this.array[i] |= mask;
+            this.array[i] = 1;
         }
     }
 
-    get(index, mask)
-    {
-        mask = mask || 7;
-        const i = index - this.min;
-        if (i >= 0 && i < this.size)
-            return (this.array[i] & mask);
-        else
-            return 0;
-    }
-
-    fill(start, step, mask, flag, callback)
+    fill(start, step, callback)
     {
         callback = callback || (v => {});
 
-        for(let i = start; i < this.max; i += step)
+        while (start < this.max)
         {
-            if (this.get(i, mask))
-                continue;
-
-            this.set(i, mask | flag);
-            callback(i);
+            this.set(start);
+            callback(start);
+            start += step;
         }
+        return start;
     }
 
     sum()
     {
-        this.free = 0;
+        this.free  = 0;
+        let total  = 0;
 
-        let total = 0;
         for(let i = 0; i < this.size; i++)
         {
             if (this.array[i] === 0)
             {
-                total += i+this.min;
-                while (total >= MODULO)
-                    total -= MODULO;
-                    
                 this.free++;
+                total += i;
+                while (total >= MODULO) 
+                    total -= MODULO;
             }
         }
+
+        total = (total + this.free.modMul(this.min % MODULO, MODULO)) % MODULO;
 
         return total;
     }
@@ -124,39 +114,32 @@ function G(p, trace)
     let total  = MIN.modMul(MIN-1,MODULO).modMul(DIVTWO, MODULO);
 
     const tracer = new Tracer(10, trace);
-    let previous = 8;
 
     let xContinue = new Set([MIN]);
     let yContinue = new Set([MIN]);
-    let zContinue = new Set([MIN]);
+    let xs = new Set();
+    let ys = new Set();
 
-    values.set(MIN, 7 | previous);
+    values.set(MIN);
 
     while (true)
     {
         tracer.print(_ => values.free);
 
-        const current = previous ^ 24;
+        xs.clear();
+        ys.clear();
 
-        const offsetX = values.min > MIN ? X - Z : 0;
-        const offsetY = values.min > MIN ? Y - Z : 0;
+        for(let posx of xContinue)
+        {
+            xs.add(values.fill(posx, X, v1 => ys.add(values.fill(v1, Y))));
+        }
 
-        values.forEach(previous, (i) => {
-            let posx = i + offsetX;
-            let posy = i + offsetY;
+        for(let posy of yContinue)
+        {
+            ys.add(values.fill(posy, Y, v1 => xs.add(values.fill(v1, X))));
+        }
 
-            values.fill(posx, X, 1, current, v1 => {
-                values.fill(v1, Z, 4, current);
-                values.fill(v1, Y, 2, current);
-            });
-
-            values.fill(posy, Y, 2, current, v1 => {
-                values.fill(v1, X, 1, current);
-                values.fill(v1, Z, 4, current);
-            });
-        });
-
-        previous = current;
+        [xContinue, xs, yContinue, ys] = [xs, xContinue, ys, yContinue];
 
         let s = values.sum();
         if (s === 0)
@@ -176,8 +159,9 @@ assert.equal(G(1), 8253);
 assert.equal(G(2), 60258000);
 assert.equal(G(3), 299868284548 % MODULO);
 assert.equal(timeLogger.wrap('G(4)', _ => G(4, true)), 859617967);
+assert.equal(timeLogger.wrap('G(5)', _ => G(5, true)), 381641126);
 
 console.log('Tests passed');
 
-const answer = timeLogger.wrap('G(5)', _ => G(5, true));
+const answer = timeLogger.wrap('G(6)', _ => G(6, true));
 console.log(`Answer is ${answer}`);
