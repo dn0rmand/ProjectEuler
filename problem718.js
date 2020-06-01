@@ -7,6 +7,67 @@ require('tools/numberHelper');
 const MODULO = 1000000007;
 const DIVTWO = Number(2).modInv(MODULO);
 
+class UsedIndex
+{
+    constructor()
+    {
+        this.first = undefined;
+    }
+
+    add(index)
+    {
+        if (this.first === undefined)
+        {
+            this.first = {start: index, end: index, next: undefined, previous: undefined};
+            return;
+        }
+
+        let p = this.first;
+        while (true)
+        {
+            if (index === p.start-1)
+            {
+                p.start = index;
+                if (p.previous && p.previous.end === index-1)
+                {
+                    p.previous.next = p.next;
+                    if (p.next)
+                        p.next.previous = p.previous;
+                }
+                break;
+            }
+            else if (index < p.start)
+            {
+                let x = { start:index, end: index, next: p, previous: p.previous};
+                p.previous = x;
+                break;
+            }
+            else if (index === p.end+1)
+            {
+                p.end = index;
+                if (p.next && p.next.start === index+1)
+                {
+                    p.next = p.next.next;
+                    if (p.next)
+                        p.next.previous = p;
+                }
+                break;
+            }
+            else if (index > p.end)
+            {
+                if (p.next === undefined)
+                {
+                    let x = {start: index, end: index, next = undefined, previous = p};
+                    p.next = x;
+                    break;
+                }
+                else
+                    p = p.next;
+            }
+        }
+    }
+}
+
 class SieveArray
 {
     constructor(min, size)
@@ -17,10 +78,7 @@ class SieveArray
 
         this.array = new Uint8Array(this.size);
         this.free  = this.size;
-        // this.used = new Set();
-        // this.unused = new Set();
-        // for(let i = 0; i < size; i++)
-        //     this.unused.add(i);
+        this.used = new Set();
     }
 
     cloneArray()
@@ -50,8 +108,7 @@ class SieveArray
         if (i >= 0 && i < this.size)
         {
             this.array[i] |= mask;
-            // this.used.add(i);
-            // this.unused.delete(i);
+            this.used.add(i);
         }
     }
 
@@ -65,7 +122,7 @@ class SieveArray
             return 0;
     }
 
-    fill(start, step, mask, callback)
+    fill(start, step, mask, flag, callback)
     {
         callback = callback || (v => {});
 
@@ -74,26 +131,25 @@ class SieveArray
             if (this.get(i, mask))
                 continue;
 
-            this.set(i, mask);
+            this.set(i, mask | flag);
             callback(i);
         }
     }
 
     sum()
     {
-        let total = 0;
-        let free  = 0;
-        
-        total = this.array.reduce((a, v, i) => {
-            if (! v)
-            {
-                free++;
-                a = (a + i + this.$min) % MODULO;
-            }
-            return a;
-        }, 0);
+        let total1 = this.min.modMul(this.min-1, MODULO).modMul(DIVTWO, MODULO);  
+        let total2 = this.max.modMul(this.max-1, MODULO).modMul(DIVTWO, MODULO); 
 
-        this.free = free;
+        this.forEach(0, i => {
+            total1++;
+        });
+
+        let total = total2 - total1;
+        while (total < 0)
+            total += MODULO;
+
+        this.free = this.size - this.used.size;
         return total;
     }
 
@@ -102,11 +158,14 @@ class SieveArray
         console.log(this.array.join(', '));
     }
 
-    *indexes()
+    forEach(flag, callback)
     {
-        const idxes = [...this.used];
-        for(const i of idxes)
-            yield i + this.min;
+        for(const i of this.used)
+        {
+            const v = this.array[i];
+            if (v !== 0 && (v & flag) == flag)
+                callback(i + this.min);
+        }
     }
 }
 
@@ -120,46 +179,38 @@ function G(p, trace)
     const SIZE= Z;
 
     let values = new SieveArray(MIN, SIZE);
-    values.set(MIN, 7);
     let total  = MIN.modMul(MIN-1,MODULO).modMul(DIVTWO, MODULO);
 
     const tracer = new Tracer(10, trace);
+    let previous = 8;
+
+    values.set(MIN, 7 | previous);
+
     while (true)
     {
         tracer.print(_ => values.free);
 
-        const old = values.cloneArray();
+        const current = previous ^ 24;
 
-        for(let i = 0; i < SIZE; i++)
-        {
-            if (old[i] === 0)
-                continue;
+        const offsetX = values.min > MIN ? X - Z : 0;
+        const offsetY = values.min > MIN ? Y - Z : 0;
 
-            let posx = i + values.min;
-            let posy = posx;
-            let posz = posx;
+        values.forEach(previous, (i) => {
+            let posx = i + offsetX;
+            let posy = i + offsetY;
 
-            if (values.min > MIN)
-            {
-                posx = posx - Z + X;
-                posy = posy - Z + Y;
-            }
-
-            values.fill(posx, X, 1, v1 => {
-                values.fill(v1, Z, 4);//, v2 => values.fill(v2, Y, 2));
-                values.fill(v1, Y, 2);//, v2 => values.fill(v2, Z, 4));
+            values.fill(posx, X, 1, current, v1 => {
+                values.fill(v1, Z, 4, current);
+                values.fill(v1, Y, 2, current);
             });
 
-            values.fill(posy, Y, 2, v1 => {
-                values.fill(v1, X, 1);//, v2 => values.fill(v2, Z, 4));
-                values.fill(v1, Z, 4);//, v2 => values.fill(v2, X, 1));
+            values.fill(posy, Y, 2, current, v1 => {
+                values.fill(v1, X, 1, current);
+                values.fill(v1, Z, 4, current);
             });
+        });
 
-            // values.fill(posz, Z, 4, v1 => {
-            //     values.fill(v1, X, 1);//, v2 => values.fill(v2, Y, 2));
-            //     values.fill(v1, Y, 2);//, v2 => values.fill(v2, X, 1));
-            // });
-        }
+        previous = current;
 
         // values.dump();
 
