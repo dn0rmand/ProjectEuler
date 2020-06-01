@@ -12,6 +12,7 @@ class UsedIndex
     constructor()
     {
         this.first = undefined;
+        this.lastPos = undefined;
     }
 
     add(index)
@@ -22,31 +23,55 @@ class UsedIndex
             return;
         }
 
-        let p = this.first;
+        let p = this.lastPos || this.first;
+
         while (true)
         {
-            if (index === p.start-1)
+            this.lastPos = p;
+
+            if (index >= p.start && index <= p.end) // already in the list?
+            {
+                break;
+            }
+            else if (index === p.start-1)
             {
                 p.start = index;
                 if (p.previous && p.previous.end === index-1)
                 {
+                    p.previous.end = p.end;
                     p.previous.next = p.next;
                     if (p.next)
                         p.next.previous = p.previous;
+
+                    this.lastPos = p.previous;
                 }
                 break;
             }
             else if (index < p.start)
             {
-                let x = { start:index, end: index, next: p, previous: p.previous};
-                p.previous = x;
-                break;
+                if (! p.previous)
+                {
+                    throw "ERROR";
+                }
+                else if (index > p.previous.end+1)
+                {
+                    let x = { start:index, end: index, next: p, previous: p.previous };
+                    if (p.previous)
+                        p.previous.next = x;
+                    p.previous = x;
+                    break;
+                }
+                else
+                {
+                    p = p.previous;
+                }
             }
             else if (index === p.end+1)
             {
                 p.end = index;
                 if (p.next && p.next.start === index+1)
                 {
+                    p.end = p.next.end;
                     p.next = p.next.next;
                     if (p.next)
                         p.next.previous = p;
@@ -57,13 +82,42 @@ class UsedIndex
             {
                 if (p.next === undefined)
                 {
-                    let x = {start: index, end: index, next = undefined, previous = p};
+                    let x = {start: index, end: index, next: undefined, previous: p};
                     p.next = x;
                     break;
                 }
                 else
                     p = p.next;
             }
+            else
+                throw "Invalid case";
+        }
+    }
+
+    clone()
+    {
+        let p = this.first;
+        let f = { ... p };
+        let k = f;
+        p = p.next;
+        while (p)
+        {
+            let x = { ... p };
+            x.previous = k;
+            k.next     = x;
+            k = x;
+            p = p.next;
+        }
+        return f;
+    }
+
+    forEach(callback, clone) // callback(start, count)
+    {        
+        let p = clone === false ? this.first : this.clone();
+        while (p)
+        {
+            callback(p.start, p.end);
+            p = p.next;
         }
     }
 }
@@ -78,7 +132,7 @@ class SieveArray
 
         this.array = new Uint8Array(this.size);
         this.free  = this.size;
-        this.used = new Set();
+        this.used  = new UsedIndex();
     }
 
     cloneArray()
@@ -107,8 +161,9 @@ class SieveArray
         const i = index - this.min;
         if (i >= 0 && i < this.size)
         {
+            if (this.array[i] === 0)
+                this.used.add(i);
             this.array[i] |= mask;
-            this.used.add(i);
         }
     }
 
@@ -122,17 +177,19 @@ class SieveArray
             return 0;
     }
 
-    fill(start, step, mask, flag, callback)
+    fill(start, count, step, mask, flag, callback)
     {
         callback = callback || (v => {});
 
         for(let i = start; i < this.max; i += step)
         {
-            if (this.get(i, mask))
-                continue;
+            const alreadySet = this.get(i, mask);
 
-            this.set(i, mask | flag);
-            callback(i);
+            for(let j = 0; j < count; j++)
+                this.set(i+j, mask | flag);
+
+            if (! alreadySet)
+                callback(i);
         }
     }
 
@@ -140,16 +197,22 @@ class SieveArray
     {
         let total1 = this.min.modMul(this.min-1, MODULO).modMul(DIVTWO, MODULO);  
         let total2 = this.max.modMul(this.max-1, MODULO).modMul(DIVTWO, MODULO); 
+        let total3 = 0;
 
-        this.forEach(0, i => {
-            total1++;
-        });
+        this.used.forEach((start, end) => {
+            start += this.min;
+            end   += this.min;
+            let t1 = start.modMul(start-1, MODULO).modMul(DIVTWO, MODULO);  
+            let t2 = end.modMul(end+1, MODULO).modMul(DIVTWO, MODULO); 
+            total1 += (t2-t1);
+            total3 += end-start+1;
+        }, false);
 
         let total = total2 - total1;
         while (total < 0)
             total += MODULO;
 
-        this.free = this.size - this.used.size;
+        this.free = this.size - total3;
         return total;
     }
 
@@ -158,14 +221,24 @@ class SieveArray
         console.log(this.array.join(', '));
     }
 
-    forEach(flag, callback)
+    forEach(flag, callback) // callback(start, end)
     {
-        for(const i of this.used)
-        {
-            const v = this.array[i];
-            if (v !== 0 && (v & flag) == flag)
-                callback(i + this.min);
-        }
+        this.used.forEach((start, end) => {
+            if (start < 0 || start >= this.size)
+                throw "ERROR";
+
+            let v = this.array[start];
+            if (v === 0)
+                throw "ERROR";
+
+            if ((v & flag) == flag)
+            {
+                start += this.min;
+                end   += this.min;
+
+                callback(start, end);
+            }
+        });
     }
 }
 
@@ -195,18 +268,19 @@ function G(p, trace)
         const offsetX = values.min > MIN ? X - Z : 0;
         const offsetY = values.min > MIN ? Y - Z : 0;
 
-        values.forEach(previous, (i) => {
-            let posx = i + offsetX;
-            let posy = i + offsetY;
+        values.forEach(previous, (start, end) => {
+            let count= end-start+1;
+            let posx = start + offsetX;
+            let posy = start + offsetY;
 
-            values.fill(posx, X, 1, current, v1 => {
-                values.fill(v1, Z, 4, current);
-                values.fill(v1, Y, 2, current);
+            values.fill(posx, count, X, 1, current, v1 => {
+                values.fill(v1, count, Z, 4, current);
+                values.fill(v1, count, Y, 2, current);
             });
 
-            values.fill(posy, Y, 2, current, v1 => {
-                values.fill(v1, X, 1, current);
-                values.fill(v1, Z, 4, current);
+            values.fill(posy, count, Y, 2, current, v1 => {
+                values.fill(v1, count, X, 1, current);
+                values.fill(v1, count, Z, 4, current);
             });
         });
 
@@ -235,5 +309,5 @@ assert.equal(timeLogger.wrap('G(4)', _ => G(4, true)), 859617967);
 
 console.log('Tests passed');
 
-const answer = timeLogger.wrap('G(5)', _ => G(5, true));
-console.log(`Answer is ${answer}`);
+// const answer = timeLogger.wrap('G(5)', _ => G(5, true));
+// console.log(`Answer is ${answer}`);
