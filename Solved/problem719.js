@@ -9,22 +9,22 @@ function isSS(s)
     if (n !== Math.floor(n))
         return false;
 
-    return isS(s, n, 1);
+    return isS(s, n);
 }
 
-function isS(s, n, count)
+function isS(s, n, ok)
 {
     if (n < 0 || n > s)
         return false;
 
     if (n === s)
-        return count >= 2;
+        return !!ok;
     
     for (let div = 10; ; div *= 10)
     {
         let v = s % div;
-        let w = (s - v) / div;        
-        if (isS(w, n-v, count+1))
+        let w = (s - v) / div;
+        if (isS(w, n-v, true))
             return true;
 
         if (w === 0)
@@ -34,19 +34,25 @@ function isS(s, n, count)
     return false;
 }
 
-function solve(max)
+function solve(N)
 {
     let total = 0;
+    const max = Math.floor(Math.sqrt(N));
 
-    for(let n = 2; ; n++)
+    let o1 = 1;
+    let o8 = 8;
+
+    for(let n = 9; n <= max; n += o8)
     {
-        let s = n*n;
-        if (s > max)
-            break;
+        const s = n*n;
 
-        if (isS(s, n, 1))
+        if (isS(s, n))
             total += s;
-    }
+            
+        const ot = o1;
+        o1 = o8;
+        o8 = ot;
+   }
 
     return total;
 }
