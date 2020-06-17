@@ -72,6 +72,20 @@ const bigIntHelper = function()
         return a;
     }
 
+    BigInt.prototype.lcm = function(b)
+    {
+        let a = this;
+        if (a < 0)
+            a = -a;
+        if (b < 0)
+            b = -b;
+
+        let g = a.gcd(b);
+        let l = (a / g) * b;
+
+        return l;
+    }
+
     BigInt.prototype.divise = function(divisor, precision)
     {
         const g = this.gcd(divisor);
