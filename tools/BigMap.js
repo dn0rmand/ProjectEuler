@@ -2,11 +2,12 @@ class BigMap
 {
     static maxSize = (2**24 - 100);
 
-    constructor(name)
+    constructor(name, nogrow)
     {
         this.name = name || '<generic>';
         this.maps = [];
         this.map  = new Map();
+        this.nogrow = !!nogrow;
     }
 
     get size()
@@ -47,7 +48,8 @@ class BigMap
         if (this.map.size >= BigMap.maxSize)
         {
             // console.log(`... extending map for ${this.name}`);
-            this.maps.push(this.map);
+            if (! this.nogrow)
+                this.maps.push(this.map);
             this.map = new Map();
         }
     }
