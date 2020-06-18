@@ -1,14 +1,15 @@
 const assert = require('assert');
 const timeLogger = require('tools/timeLogger');
-const ranking = require('tools/permutationRanking');
+const { rank, unrank } = require('tools/permutationRanking');
 
 // require('tools/numberHelper');
 
 const MODULO = 1000000007;
+const MODULO_N = BigInt(MODULO);
 const MAX_POWER = 25
 const MAX = 2**MAX_POWER;
     
-const getIndex = (values, trace) => ranking(values, MODULO, trace);
+const getIndex = (values, trace) => rank(values, trace ? MODULO_N : undefined, trace) + 1n;
 
 function solve(size, trace)
 {
@@ -148,7 +149,14 @@ function solve(size, trace)
     let permutation = generatePermutation(size);
     let index       = getIndex(permutation, trace);
 
-    return index;
+    if (! trace)
+    {
+        let perm = unrank(index-1n, size);
+        for(let i = 0; i < size; i++)
+            assert.equal(perm[i], permutation[i]);
+    }
+
+    return Number(index % MODULO_N);
 }
 
 assert.equal(solve(4), 3);
@@ -159,4 +167,4 @@ assert.equal(solve(32), 641839205);
 console.log('Tests passed');
 
 const answer = timeLogger.wrap('', _ => solve(MAX, true));
-console.log(`S(2^${MAX_POWER}) = ${answer}`);
+console.log(`Answer is ${answer}`);
