@@ -34,15 +34,3 @@ function g(n)
 
 assert.equal(g(1E6), 37429395);
 console.log('Tests passed');
-
-let values = [];
-let previous = 0;
-
-for(let i = 1; i < 50; i++)
-{
-    let v = f(i);
-    values.push((v-previous));
-    previous = v;
-}
-console.log(values.join(', '));
-
