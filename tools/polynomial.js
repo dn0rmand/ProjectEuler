@@ -51,7 +51,7 @@ function reduce(values)
         values = differences(values);
     }
 
-    if (values.length < 4)
+    if (values.length < 5)
         throw "No solution or not enough data";
 
     return { power , constant: values[0] };
@@ -99,6 +99,10 @@ function *solve(values, divisor)
 
 function calculate(x, coefficients, modulo)
 {
+    x = BigInt(x);
+    if (modulo)
+        modulo = BigInt(modulo);
+
     let divisor = 1n;
     let value = 0n;
 

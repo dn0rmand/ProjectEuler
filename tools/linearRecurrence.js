@@ -1,53 +1,76 @@
 const assert = require('assert');
-const gcd    = require('gcd');
 
-require('tools/numberHelper');
+require('tools/bigintHelper');
+
+const ABS      = a => a > 0 ? a : -a;
+const MAX      = (a, b) => a > b ? a : b;
 
 function solveRecurrence(data, size)
 {
+    function validate(factors, divisor)
+    {
+        const c = factors.length;
+        
+        let values = data.slice(0, c);
+        for(let i = values.length; i < data.length; i++)
+        {
+            try
+            {
+                values = calculateNext(values, factors, divisor);
+                if (values[c-1] != data[i])
+                    return false;
+            }
+            catch(e)
+            {
+                return false;
+            }
+        }    
+        return true;
+    }
+
     function simplify(values)
     {
         assert.equal(values.length > 1, true);
 
         for(let i = 0; i < values.length; i++)
         {
-            if (values[i] !== 0)
+            if (values[i] !== 0n)
             {
-                if (values[i] < 0)
+                if (values[i] < 0n)
                 {
                     for(let j = i; j < values.length; j++)
-                        values[j] = values[j] * -1;
+                        values[j] = values[j] * -1n;
                 }
                 break;
             }
         }
         
-        let g = gcd(Math.abs(values[0]), Math.abs(values[1]));        
-        if (g === 1)
+        let g = ABS(values[0]).gcd(ABS(values[1])); 
+        if (g === 1n)
             return values;
 
-        if (g === 0)
-            g = Math.max(Math.abs(values[0]), Math.abs(values[1]));
+        if (g === 0n)
+            g = MAX(ABS(values[0]), ABS(values[1]));
 
         for(let i = 2; i < values.length; i++)
         {
-            let g2 = gcd(g, Math.abs(values[i]));
-            if (g2 === 1)
+            let g2 = g.gcd(ABS(values[i]));
+            if (g2 === 1n)
                 return values;
 
-            if (g2 === 0)
-                g = Math.max(g, Math.abs(values[i]));
+            if (g2 === 0n)
+                g = MAX(g, ABS(values[i]));
             else
                 g = g2;
         }
 
-        if (g > 1)
+        if (g > 1n)
         {
             for(let i = 0; i < values.length; i++)
             {
                 values[i] /= g;
                 if (values[i] == 0)
-                    values[i] = 0;
+                    values[i] = 0n;
             }
         }
 
@@ -121,49 +144,69 @@ function solveRecurrence(data, size)
         }
     }
 
+    let l = matrix[0][0];
+    for(let i = 1; i < size; i++)
+    {
+        let v = matrix[i][i];
+
+        if (v === 0n)
+            return { factors: undefined, divisor: undefined };
+
+        l = l.lcm(v);
+    }
+
     let values = [];
+    let divisor = l;
 
     for(let i = 0; i < size; i++)
     {
-        if (matrix[i][i] != 1)
-            return;
+        if (matrix[i][i] !== divisor)
+        {
+            assert.equal(divisor % matrix[i][i], 0n);
+            let k = divisor / matrix[i][i];
+
+            for(let j = 0; j < matrix[i].length; j++)
+                matrix[i][j] *= k;
+        }
+        
+        if (matrix[i][i] !== divisor)
+            return { factors: undefined, divisor: undefined };
 
         values.push(matrix[i][size]);
     }
 
+    if (divisor === undefined)
+        divisor = 1n;
+
     // verify
 
-    let lastRow = data; // [data.length-1];
-    let total   = lastRow[lastRow.length-1];
+    if (validate(values, divisor))
+        return { factors: values, divisor };
+    else
+        return { factors: undefined, divisor: undefined };
 
-    for(let i = 0; i < values.length; i++)
-    {
-        let a = values[values.length-1-i];
-        let b = lastRow[lastRow.length-2-i];
-
-        total -= (a*b);
-    }
-
-    if (total === 0)
-        return values;
 }
 
 function findRecurrence(data)
 {
     for(let size = 2; ; size++)
     {
-        let values = solveRecurrence(data, size);
-        if (values)
-            return values;
+        let { factors, divisor } = solveRecurrence(data, size);
+        if (factors)
+            return { factors, divisor };
     }
 }
 
-function calculateNext(values, factors, modulo)
+function calculateNext(values, factors, divisor, modulo)
 {
     assert.equal(values.length >= factors.length, true);
     
-    let value = 0;
+    let value = 0n;
     let res   = [];
+    let modDiv;
+
+    if (modulo && divisor !== 1n)
+        modDiv = divisor.modInv(modulo);
 
     for(let i = 0; i < factors.length; i++)
     {
@@ -179,24 +222,30 @@ function calculateNext(values, factors, modulo)
 
     if (modulo)
     {
+        if (modDiv)
+            value = value.modMul(modDiv, modulo);
+
         while (value < 0)
             value += modulo;
 
         res.push(value % modulo);
     }
     else
-        res.push(value);
+    {
+        assert.equal(value % divisor, 0);
 
+        res.push(value / divisor);
+    }
     return res;
 }
 
-function get(n, values, factors, modulo)
+function get(n, values, factors, divisor, modulo)
 {    
     assert.equal(values.length >= factors.length, true);
 
     for(let y = factors.length; y < n; y++)
     {
-        values = calculateNext(values, factors, modulo);
+        values = calculateNext(values, factors, divisor, modulo);
     }
 
     return values[factors.length-1];
@@ -204,14 +253,17 @@ function get(n, values, factors, modulo)
 
 module.exports = function(data) 
 {
-    const factors = findRecurrence(data);
+    const toBigInt = data => data.map(a => BigInt(a));
+    const MODULO   = modulo => modulo ? BigInt(modulo) : undefined;
+    const {factors, divisor}  = findRecurrence(toBigInt(data));
 
     if (factors)
     {
         return {
             factors,
-            next: (values, modulo) => calculateNext(values, factors, modulo),
-            get: (n, values, modulo) => get(n, values, factors, modulo)
+            divisor,
+            next: (values, modulo) => calculateNext(toBigInt(values), factors, divisor, MODULO(modulo)),
+            get: (n, values, modulo) => get(n, toBigInt(values), factors, divisor, MODULO(modulo))
         }
     }
 }

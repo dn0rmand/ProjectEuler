@@ -1,21 +1,23 @@
 const assert = require('assert');
-const asciichart = require ('asciichart')
+const timeLogger = require('tools/timeLogger');
+const Tracer = require('tools/tracer');
 
 const MAX_MOD = 4000000;
 
 const $l = [];
 
-function initialize()
+timeLogger.wrap('Initializing', _ => 
 {
-    for (let i = 1; i <= MAX_MOD; i++)
+    const tracer  = new Tracer(100, true);
+    $l.length = MAX_MOD+1;
+    
+    for (let i = MAX_MOD; i > 0; i--)
     {
-        $l[i] = new Uint32Array(i);
+        tracer.print(_ => i);
+        $l[i] = []; // new Uint32Array(i);
     }
-}
-
-process.stdout.write('initializing ... ')
-initialize();
-console.log(' ... done');
+    tracer.clear();
+});
 
 function getL(a, mod)
 {
@@ -84,16 +86,10 @@ function g(x)
 function f(n, trace)
 {
     let max = 0;
-    let traceCount = 0;
+    const tracer = new Tracer(1, trace);
     for (let x = n; x > 0; x--)
     {
-        if (trace)
-        {
-            if (traceCount == 0)
-                process.stdout.write(`\r${x} - ${MAX_MOD} - ${max} `);
-            // if (++traceCount >= 100)
-            //     traceCount = 0;
-        }
+        tracer.print(_ => `${x} - ${MAX_MOD} - ${max}`);
 
         let value = g(x);
         if (value > max)
@@ -101,8 +97,7 @@ function f(n, trace)
             max  = value;
         }
     }
-    if (trace)
-        process.stdout.write('\r                                \r');
+    tracer.clear();
     return max;
 }
 
@@ -110,9 +105,9 @@ assert.equal(l(5, 3), 29);
 assert.equal(g(5), 29);
 
 assert.equal(f(100), 145);
-assert.equal(f(10000, true), 8824);
+assert.equal(timeLogger.wrap('', _ => f(10000, true)), 8824);
 
 console.log('Tests passed');
 
-answer = f(3000000, true);
-console.log("Answer is", answer)
+// answer = f(3000000, true);
+// console.log("Answer is", answer)

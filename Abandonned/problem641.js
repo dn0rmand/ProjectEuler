@@ -1,6 +1,8 @@
 const assert = require('assert');
 const primeHelper = require('tools/primeHelper')();
 
+const linearRecurrence = require('tools/linearRecurrence');
+
 const MAX = 10n ** 36n;
 const MAX_PRIME = 1E7;
 const SIX = 6n;
@@ -272,17 +274,41 @@ function solve(size)
         }
     }
 
-    dump();
+    // dump();
 
     return count;
 }
 
-console.log($solve(1E12));
+function analyze()
+{
+    let values = [];
+    let current = undefined;
+    let max = 10000;
+    for (let i = 1; ; i++)
+    {
+        let v = solve(i);
+        if (current === undefined || current.value != v)
+        {
+            if (i > max)
+                break;
+            current = { value:v, count: 1};
+            values.push(current);
+        }
+        else
+            current.count++;
+    }
+    console.log(values);
+    process.exit(0);
+}
+
+analyze();
 
 assert.equal(solve(100), 2);
 assert.equal(solve(1E7), 36);
 assert.equal(solve(1E8), 69);
 // assert.equal(solve(1E12), 740);
+
+console.log('Tests passed');
 
 let answer = solve(MAX);
 

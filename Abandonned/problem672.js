@@ -3,6 +3,8 @@ const BigNumber = require('bignumber.js');
 const MODULO = 1117117717; // Prime #
 const MAX    = 1000000000;
 
+const polynomial = require('tools/polynomial');
+
 const digits = [0,4,3,1,1,6,2,3,5,5].reverse();
 
 function analyze()
@@ -70,7 +72,7 @@ function H(k)
 function test(digit1, digit2)
 {
     let value = digit1*7 + digit2;
-    let v2    = S(digit2);
+    let b2    = S(digit2);
     let base  = S(6);
 
     console.log(`S(10) -> ${ S(Number.parseInt("10", 7)).toString(7) }`);
@@ -97,7 +99,7 @@ function test(digit1, digit2)
     {
         if (i === digit1)
         {
-            result += g(i) + 1 + v2;
+            result += g(i) + 1 + b2;
         }
         else if (i > 0)
         {
@@ -117,8 +119,8 @@ function test(digit1, digit2)
     console.log(`expected ${ S(value) } , calculated ${ result }`);
 }
 
-test(2, 1);
-test(1, 2);
+// test(2, 1);
+// test(1, 2);
 
 console.log(H(1).toString(7));
 console.log(Number(690409338).toString(7));
@@ -128,6 +130,11 @@ assert.equal(g(1000), 9);
 assert.equal(g(10000), 21);
 assert.equal(H(10), 690409338);
 console.log('Test passed');
+
+let p = polynomial.findPolynomial(1, 1, x => S(x));
+
+let x = (7**10 - 1)/11;
+console.log(p.calculate(x, MODULO));
 
 // let answer = H(MAX);
 // console.log('Answer is', answer);

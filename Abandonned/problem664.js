@@ -25,6 +25,7 @@ assert.equal(F(1), 6);
 assert.equal(F(2), 9);
 assert.equal(F(3), 13);
 assert.equal(F(11), 58);
+assert.equal(F(125), 1173);
+
 for (let i = 0; i < 20; i++)
     F(123+i);
-// assert.equal(F(125), 1173);

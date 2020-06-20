@@ -99,13 +99,18 @@ function solve(max)
     console.log('');
 }
 
-// solve(5); // 4933
-// solve(6); // 4933
-// solve(7); // 4933
-// solve(8); // 4933
-// solve(9); // 4933
+solve(1); 
+solve(2); 
+solve(3); 
+solve(4); 
+solve(5); 
+solve(6); 
+solve(7); 
+solve(8); 
+solve(9); 
+solve(10); 
 
-solve(25); // 4933
+solve(25); 
 
 /*
 2 ^ 22 => 11 squares , 7 cubes, 5 fourth
