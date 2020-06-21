@@ -251,19 +251,29 @@ function get(n, values, factors, divisor, modulo)
     return values[factors.length-1];
 }
 
-module.exports = function(data) 
-{
-    const toBigInt = data => data.map(a => BigInt(a));
-    const MODULO   = modulo => modulo ? BigInt(modulo) : undefined;
-    const {factors, divisor}  = findRecurrence(toBigInt(data));
+const toBigInt = data => data.map(a => BigInt(a));
+const MODULO   = modulo => modulo ? BigInt(modulo) : undefined;
 
+function makeRecurrence(factors, divisor)
+{
     if (factors)
     {
         return {
             factors,
             divisor,
             next: (values, modulo) => calculateNext(toBigInt(values), factors, divisor, MODULO(modulo)),
-            get: (n, values, modulo) => get(n, toBigInt(values), factors, divisor, MODULO(modulo))
+            get: (n, values, modulo) => get(n, toBigInt(values), factors, divisor, MODULO(modulo)),
+            create: (f, d) => makeRecurrence(f, d)
         }
     }
+}
+
+module.exports = function(data) 
+{
+    if (data && data.factors && data.divisor)
+        return makeRecurrence(data.factors, data.divisor);
+        
+    const {factors, divisor}  = findRecurrence(toBigInt(data));
+
+    return makeRecurrence(factors, divisor);
 }
