@@ -5,8 +5,9 @@ const timeLogger = require('tools/timeLogger');
 const linearRecurrence = require('tools/linearRecurrence');
 const Matrix = require('tools/matrix');
 
-const MAX    = 5000000n;
-const MODULO = 999999937n;
+const MAX    = 5000000;
+const MODULO = 999999937;
+const MODULO_N = BigInt(MODULO);
 
 function calculateRecurrence(a)
 {
@@ -35,47 +36,44 @@ function calculateRecurrence(a)
     assert.equal(l.factors[0], a - (b*b));
     assert.equal(l.factors[1], b+b);
 
-    return { recurrence: l, data: data.slice(0, l.factors.length) }; // Matrix.fromRecurrence(l.factors);
+    return { recurrence: l, data: data.slice(0, l.factors.length) };
 }
 
 function getRecurrence(a)
 {
-    const aa = Math.sqrt(Number(a));
-    const b  = BigInt(Math.ceil(aa));
+    const aa = Math.sqrt(a);
+    const b  = Math.ceil(aa);
 
-    const b1 = (b-1n) ** 2n;
-    const b2 = b*b;
+    const r = linearRecurrence({ factors: [ a - b*b, b+b], divisor: 1 });
 
-    if (b2 < a || b1 > a)
-        throw "ERROR";
-    
-    const r = linearRecurrence({ factors: [ a - b*b, b+b], divisor: 1n });
-
-    return {recurrence: r, data: [2n, b + b ]};
+    return { recurrence: r, data: [2, b + b ], one: b === aa ? 0 : 1 };
 }
 
 function f(a, n)
 {
-    const { recurrence, data } = getRecurrence(a);
+    const { recurrence, data, one } = getRecurrence(a);
 
-    const matrix = Matrix.fromRecurrence(recurrence.factors);
+    const matrix = Matrix.fromRecurrence(recurrence.factors.map(a => BigInt(a)));
     const start  = new Matrix(2, 1);
 
-    start.set(0, 0, data[1]);
-    start.set(1, 0, data[0]);
+    start.set(0, 0, BigInt(data[1]));
+    start.set(1, 0, BigInt(data[0]));
+
+    if (n === 1)
+        return data[1];
 
     const m = matrix.pow(n, MODULO);
     const v = m.multiply(start, MODULO);
 
-    return v.get(1, 0) - 1n;
+    return Number(v.get(1, 0)) - one;
 }
 
 function G(n)
 {
-    let total = 0n;
+    let total = 0;
 
-    const tracer = new Tracer(100, true);
-    for (let a = 1n; a <= n; a++)
+    const tracer = new Tracer(1000, true);
+    for (let a = 1; a <= n; a++)
     {
         tracer.print(_ => n-a);
         total = (total + f(a, a * a)) % MODULO;
@@ -84,11 +82,11 @@ function G(n)
     return total;
 }
 
-assert.equal(f(5n, 2n), 27n);
-assert.equal(f(5n, 5n), 3935n);
-// assert.equal(timeLogger.wrap('', _ => G(1000n, true)), 163861845n);
+assert.equal(f(5, 2), 27);
+assert.equal(f(5, 5), 3935);
+assert.equal(timeLogger.wrap('', _ => G(1000)), 163861845);
 
 console.log("Tests passed");
 
-const answer = timeLogger.wrap('', _ => G(MAX, true));
+const answer = timeLogger.wrap('', _ => G(MAX));
 console.log(`Answer = ${answer}`);
