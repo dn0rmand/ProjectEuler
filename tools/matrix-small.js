@@ -1,5 +1,3 @@
-const assert = require("assert");
-
 class Matrix
 {
     constructor(rows, columns)
@@ -15,7 +13,7 @@ class Matrix
         for(let i = 0; i < rows; i++)
         {
             array[i] = new Array(columns);
-            array[i].fill(0n);
+            array[i].fill(0);
         }
         return array;
     }
@@ -24,10 +22,10 @@ class Matrix
     {
         const matrix = new Matrix(factors.length, factors.length);
 
-        matrix.array[0] = [...factors].reverse().map(a => BigInt(a)); 
+        matrix.array[0] = [...factors].reverse().map(a => Number(a)); 
 
         for(let i = 1; i < factors.length; i++)
-            matrix.set(i, i-1, 1n);
+            matrix.set(i, i-1, 1);
             
         return matrix;
     }
@@ -50,29 +48,44 @@ class Matrix
 
     multiply(right, modulo) 
     {
-        if (modulo)
-            modulo = BigInt(modulo);
-
         const result = new Matrix(this.rows, right.columns);
+        let modMul, modSum, fixSum;
+        
+        if (modulo)
+        {
+            modMul = (a, b) => {
+                let v = a*b;
+                if (v > Number.MAX_SAFE_INTEGER)
+                    return Number((BigInt(a)*BigInt(b)) % BigInt(modulo));
+                else
+                    return v % modulo;
+            }
+
+            modSum = (a, b) => (a+b) % modulo;
+            fixSum = a => { 
+                while (a < 0)
+                    a += modulo;
+                return a;
+            }
+        }
+        else
+        {
+            modMul = (a, b) => a*b;
+            modSum = (a, b) => a+b;
+            fixSum = a => a;
+        }
 
         for (let i = 0; i < this.rows; i++) 
         {
             for (let j = 0; j < right.columns; j++) 
             {
-                let sum = 0n;
+                let sum = 0;
                 for (let y = 0; y < this.columns; y++) 
                 {
-                    sum += this.get(i, y) * right.get(y, j);
+                    sum = modSum(sum, modMul(this.get(i, y), right.get(y, j)));
                 }
 
-                if (modulo)
-                {
-                    sum %= modulo;
-                    while (sum < 0)
-                        sum += modulo;
-                }
-
-                result.set(i, j, sum);
+                result.set(i, j, fixSum(sum));
             }
         }
 
@@ -84,14 +97,12 @@ class Matrix
         if (pow == 1)
             return this;
 
-        pow = BigInt(pow);
-
         let m  = this;
         let mm = undefined;
 
-        while (pow > 1n)
+        while (pow > 1)
         {
-            if ((pow & 1n) !== 0n)
+            if ((pow & 1) !== 0)
             {
                 if (mm === undefined)
                     mm = m;
@@ -101,9 +112,9 @@ class Matrix
                 pow--;
             }
 
-            while (pow > 1n && (pow & 1n) === 0n)
+            while (pow > 1 && (pow & 1) === 0)
             {
-                pow /= 2n;
+                pow /= 2;
                 m =  m.multiply(m, modulo);
             }
         }
