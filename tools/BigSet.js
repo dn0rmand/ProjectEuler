@@ -2,11 +2,12 @@ class BigSet
 {
     static maxSize = (2**24 - 100);
 
-    constructor(name)
+    constructor(name, nogrow)
     {
         this.name = name || '<generic>';
         this.maps = [];
         this.map  = new Set();
+        this.nogrow = !!nogrow;
     }
 
     get size()
@@ -50,7 +51,8 @@ class BigSet
         if (this.map.size >= BigSet.maxSize)
         {
             // console.log(`... extending map for ${this.name}`);
-            this.maps.push(this.map);
+            if (! this.nogrow)
+                this.maps.push(this.map);
             this.map = new Set();
         }
     }
