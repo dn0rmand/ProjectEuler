@@ -36,6 +36,7 @@
     "pretty-hrtime": "^1.0.3",
     "prho": "^1.0.1",
     "print-bst": "^1.0.1",
+    "progress": "^2.0.3",
     "rollup": "^1.32.1",
     "sized-balanced-tree": "^1.0.7",
     "slack-webhook": "^1.0.0",

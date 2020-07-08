@@ -184,7 +184,6 @@ function solveRecurrence(data, size)
         return { factors: values, divisor };
     else
         return { factors: undefined, divisor: undefined };
-
 }
 
 function findRecurrence(data)
