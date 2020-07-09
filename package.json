@@ -32,6 +32,7 @@
     "ml-matrix": "^5.3.0",
     "ml-regression-polynomial": "^2.1.0",
     "mlcm": "0.0.3",
+    "n64": "^0.2.10",
     "pixels-please": "^1.0.3",
     "pretty-hrtime": "^1.0.3",
     "prho": "^1.0.1",

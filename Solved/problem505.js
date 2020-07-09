@@ -4,29 +4,33 @@
 const assert = require('assert');
 const timeLogger = require('tools/timeLogger');
 const ProgressBar = require('progress');
+const ULong = require('tools/ulong');
 
 const MODULO = 2n**60n;
-const MAX    = 10n ** 10n;//12n;
+const MAX    = 10n ** 8n; // 1091173346864234358
 
-const max = (a, b) => a > b ? a : b;
+let REF_N   = undefined;
+let BAR     = undefined;
 
-let REF_N = undefined;
-let STEPS = 0n;
-let BAR = undefined;
-
-const MODULO1 = MODULO - 1n;
+const MODULO1 = ULong.fromBigInt(MODULO-1n);
 
 function yy(k, xCurrent, xPrevious)
 {
-    if (k >= REF_N) 
+    if (k.gte(REF_N)) 
         return xCurrent;
 
     BAR.tick();
     
-	const left  = yy(k+k  , (3n * xCurrent + 2n * xPrevious) % MODULO, xCurrent);
-    const right = yy(k+k+1, (2n * xCurrent + 3n * xPrevious) % MODULO, xCurrent);
+    const k2    = k.add(k);
+    const xy    = xCurrent.add(xPrevious).shl(1);// 2*xCurrent+2*xPrevious
+
+	const left  = yy(k2             , xy.add(xCurrent).and(MODULO1) , xCurrent);
+    const right = yy(k2.add(ULong.ONE), xy.add(xPrevious).and(MODULO1), xCurrent);
     
-	return MODULO1 - max(left, right);
+    if (left.gte(right))
+        return MODULO1.sub(left);
+    else
+        return MODULO1.sub(right);
 }
 
 function A(n, trace)
@@ -35,21 +39,23 @@ function A(n, trace)
 
     if (trace)
     {
-        bar = new ProgressBar('  Calculating :percent [:bar] :current', {
+        bar = new ProgressBar('  Calculating :percent [:bar]', {
             complete: '=',
             incomplete: ' ',
             width: 50,
             total: Number(n),
-            renderThrottle: 5000,
+            renderThrottle: 1000,
         });
     }
 
     try
     {
         BAR   = bar || { tick: () => {} };
-        REF_N = n;
+        REF_N = ULong.fromBigInt(n);
         STEPS = n;
-        return yy(1, 1n, 0n);
+        const res = yy(ULong.fromNumber(1), ULong.fromNumber(1), ULong.fromNumber(0));
+
+        return res.toBigInt();
     }
     finally
     {
@@ -60,7 +66,7 @@ function A(n, trace)
 assert.equal(A(4n), 8);
 assert.equal(A(10n), MODULO - 34n);
 
-assert.equal(A(1000n), 101881n);
+assert.equal(A(1000n), 101881);
 
 console.log('Tests passed');
 
