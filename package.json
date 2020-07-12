@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "@types/node": "^11.15.12",
+    "Complex": "^3.0.0",
     "asciichart": "^1.5.17",
     "atlas-pretty-hrtime": "^1.0.0",
     "better-sqlite3": "^6.0.1",
