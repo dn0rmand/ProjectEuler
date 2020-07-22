@@ -1,7 +1,16 @@
 const assert = require('assert');
 const Tracer = require('tools/tracer');
 const timeLogger = require('tools/timeLogger');
-const { set } = require('d3');
+var RBTree = require('bintrees').RBTree;
+
+const compare = (a, b) => {
+    if (a > b)
+        return 1;
+    else if (a < b)
+        return -1;
+    else
+        return 0;
+};
 
 function getPosition(value)
 {
@@ -46,10 +55,10 @@ function bruteF(n)
 
 function fastF(n, trace)
 {
-    let values  = new Set();
+    let values  = new RBTree(compare);
     let max     = BigInt(n);
 
-    values.add(max);
+    values.insert(max);
     
     function addDigitsBefore()
     {
@@ -58,15 +67,16 @@ function fastF(n, trace)
         {
             const v2 = BigInt(`${d}${n}`);
 
-            values.add(v2);
-            max = v2;
+            values.insert(v2);
         }
+        max = values.max();
     }
 
     function addDigitsAfter()
     {
         // Adding digit in front of it
-        let newValues = new Set(values.values());
+        let newValues = new Set();
+        values.each(v => newValues.add(v));
 
         for(let d = 0; newValues.size > 0; d++)
         {
@@ -79,20 +89,16 @@ function fastF(n, trace)
                 {
                     const v2 = BigInt(`${v}${d}`);
 
-                    if (values.has(v2))
+                    if (values.find(v2))
                         continue;
 
                     if (v2 >= max)
                         break;
 
-                    values.delete(max);
-                    values.add(v2);
+                    values.remove(max);
+                    values.insert(v2);
                     newValues.add(v2);
-                    max = v2;
-                    values.forEach(x => { 
-                        if (x >= max) 
-                            max = x;
-                    });
+                    max = values.max();
                 }
             }
         }
@@ -107,15 +113,11 @@ function fastF(n, trace)
         if (v2 >= max)
             return;
 
-        if (! values.has(v2))
+        if (! values.find(v2))
         {                
-            values.delete(max);
-            values.add(v2);
-            max = v2;
-            values.forEach(x => { 
-                if (x > max) 
-                    max = x;
-            });
+            values.remove(max);
+            values.insert(v2);
+            max = values.max();
         }
 
         // Adding digit in front of it
@@ -148,29 +150,32 @@ function fastF(n, trace)
     return position + BigInt(offset);
 }
 
-function f(n, trace)
+function f(n)
 {
     if (n < 1000)
-        return bruteF(n, trace);
+        return bruteF(n);
     else
-        return fastF(n, trace);
+        return fastF(n);
 }
 
 function solve()
 {
     let total = 0n;
 
+    const tracer = new Tracer(1, true);
     for (let k = 13; k >= 1; k--)
     {
-        let n = 3 ** k;
-
-        total += f(n);
+        tracer.print(_ => k);
+        const n = 3 ** k;
+        const fn = f(n);
+        console.log(`f(${n}) => ${fn}`);
+        total += fn;
     }
-
+    tracer.clear();
     return total;
 }
 
-assert.equal(f(7780, true), 111111365);
+assert.equal(f(7780), 111111365);
 assert.equal(f(1), 1);
 assert.equal(f(5), 81);
 assert.equal(f(12), 271);
