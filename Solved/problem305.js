@@ -1,29 +1,22 @@
 const assert = require('assert');
 const Tracer = require('tools/tracer');
 const timeLogger = require('tools/timeLogger');
+
 var RBTree = require('bintrees').RBTree;
 
-const compare = (a, b) => {
-    if (a > b)
-        return 1;
-    else if (a < b)
-        return -1;
-    else
-        return 0;
-};
+const compare = (a, b) => a-b;
 
 function getPosition(value)
 {
-    value = BigInt(value);
-    let position = 1n;
-    let i = 1n;
-    while (10n**i <= value)
+    let position = 1;
+    let i = 1;
+    while (10**i <= value)
     {
-        position += (10n**i - 10n**(i-1n)) * i;
+        position += (10**i - 10**(i-1)) * i;
         i++;
     }
 
-    position += (value-10n**(i-1n))*i;
+    position += (value-10**(i-1))*i;
     return position;
 }
 
@@ -31,7 +24,7 @@ function bruteF(n)
 {
     const search = n.toString();
     
-    for(let value = 1n; ; value++)
+    for(let value = 1; ; value++)
     {
         let target = `${value}`;
         let maxIndex = target.length;
@@ -45,7 +38,7 @@ function bruteF(n)
         {
             if (--n === 0)
             {
-                let position = getPosition(value) + BigInt(index);
+                let position = getPosition(value) + index;
                 return position;
             }
             index = target.indexOf(search, index+1);
@@ -56,7 +49,7 @@ function bruteF(n)
 function fastF(n, trace)
 {
     let values  = new RBTree(compare);
-    let max     = BigInt(n);
+    let max     = n;
 
     values.insert(max);
     
@@ -65,7 +58,7 @@ function fastF(n, trace)
         // Adding digit in front of it
         for(let d = 1; values.size < n; d++)
         {
-            const v2 = BigInt(`${d}${n}`);
+            const v2 = +`${d}${n}`;
 
             values.insert(v2);
         }
@@ -87,7 +80,7 @@ function fastF(n, trace)
             {
                 for(let d = 0; d < 10; d++)
                 {
-                    const v2 = BigInt(`${v}${d}`);
+                    const v2 = +`${v}${d}`;
 
                     if (values.find(v2))
                         continue;
@@ -106,10 +99,11 @@ function fastF(n, trace)
 
     function addDigitsBetween(before, after)
     {
-        if (before === '0')
+        if (before[0] === '0')
             return;
 
-        const v2 = BigInt(`${before}${after}`);
+        const v2 = +`${before}${after}`;
+
         if (v2 >= max)
             return;
 
@@ -143,16 +137,16 @@ function fastF(n, trace)
     }
 
     const value    = max;
-    const data     = `${value}${value+1n}`;
+    const data     = `${value}${value+1}`;
     const position = getPosition(value);
     const offset   = data.indexOf(n.toString());
 
-    return position + BigInt(offset);
+    return position + offset;
 }
 
 function f(n)
 {
-    if (n < 1000)
+    if (n < 1000 && n != 81)
         return bruteF(n);
     else
         return fastF(n);
@@ -160,7 +154,7 @@ function f(n)
 
 function solve()
 {
-    let total = 0n;
+    let total = 0;
 
     const tracer = new Tracer(1, true);
     for (let k = 13; k >= 1; k--)
@@ -168,17 +162,17 @@ function solve()
         tracer.print(_ => k);
         const n = 3 ** k;
         const fn = f(n);
-        console.log(`f(${n}) => ${fn}`);
-        total += fn;
+        total +=  fn;
     }
     tracer.clear();
+
     return total;
 }
 
-assert.equal(f(7780), 111111365);
 assert.equal(f(1), 1);
 assert.equal(f(5), 81);
-assert.equal(f(12), 271);
+// assert.equal(f(12), 271);
+assert.equal(f(7780), 111111365);
 
 console.log("Tests passed");
 
