@@ -2,53 +2,70 @@ const assert = require('assert');
 const Tracer = require('tools/tracer');
 const timeLogger = require('tools/timeLogger');
 const BigMap = require('tools/BigMap');
+const { pool } = require('workerpool');
 
 class State
 {
-    constructor(size)
+    constructor()
     {
-        this.remainders = size ? new Uint8Array(size).fill(0) : undefined;
-        this.count      = 1n;
-        this.hasDivisor = false;
+        this.remainders     = [];
+        this.remainderCount = [];
+        this.hasDivisor     = false;
+        this.count          = 1n;
+    }
+
+    static create()
+    {
+        return new State();
     }
 
     get key()
     {
-        const k = this.remainders.reduce((a, v) => a*10n + BigInt(v), 0n);
-        return k * (this.hasDivisor ? -1n : 1n);
+        if (this.hasDivisor)
+        {
+            // don't need the count
+            return -this.remainders.reduce((a, v) => a*40n + BigInt(v), 0n);
+        }
+        else
+        {
+            return this.remainders.reduce((a, v) => a*40n + BigInt(v) + (this.remainderCount[v] > 1 ? 20n : 0n), 0n);
+        }
     }
 
-    addDigit(digit, size)
+    addDigit(digit, modulo)
     {
-        let d = digit % size;
+        let d = digit % modulo;
+        let hasDivisor = d === 0;
 
-        if (d === 0 && this.hasDivisor)
+        if (hasDivisor && this.hasDivisor)
             return;  // multiple divisor
 
-        let newRemainders = new Uint8Array(size).fill(0);
+        let clone = State.create();
 
-        newRemainders[d] = 1;
+        clone.count             = this.count;
+        clone.hasDivisor        = hasDivisor || this.hasDivisor;
+        clone.remainders        = [d];
+        clone.remainderCount[d] = 1;
 
-        for(let modulo = 0; modulo < size; modulo++)
+        for(const r of this.remainders)
         {
-            const r = this.remainders[modulo];
-            if (! r)
-                continue;
-            
-            const r2 = (modulo * 10 + d) % size;
+            const r2    = (r*10 + d) % modulo;
+            const count = Math.min(2, this.remainderCount[r] + (clone.remainderCount[r2] || 0));
 
-            newRemainders[r2] = Math.max(2, r + newRemainders[r2]);
+            if (r2 === 0)
+            {
+                if (clone.hasDivisor || count > 1)
+                    return;
+
+                clone.hasDivisor = true;
+            }
+            
+            clone.remainderCount[r2] = count;
+            if (! clone.remainders.includes(r2))
+                clone.remainders.push(r2);
         }
 
-        if (newRemainders[0] > 1)
-            return; // invalid
-
-        let clone = new State();
-
-        clone.remainders = newRemainders;
-        clone.hasDivisor = this.hasDivisor || (newRemainders[0] !== 0);
-        clone.count      = this.count;
-
+        clone.remainders.sort((a, b) => a-b);
         return clone;
     }
 }
@@ -58,7 +75,7 @@ function countOneChild(size, trace)
     let states    = new BigMap();
     let newStates = new BigMap();
 
-    states.set(0, new State(size));
+    states.set(0, State.create());
 
     const modulo = size;
 
@@ -74,12 +91,14 @@ function countOneChild(size, trace)
         newStates.clear();
 
         const innerTracer = new Tracer(10000, trace);
-        let idx = 0;
+        let idx = states.size;
         for(const state of states.values())
         {
-            idx++;
+            idx--;
+            innerTracer.print(_ => idx);
+
             for(let digit = i ? 0 : 1; digit < 10; digit++)
-            {                
+            {
                 let newState = state.addDigit(digit, modulo);
                 if (! newState)
                     continue;
@@ -103,7 +122,6 @@ function countOneChild(size, trace)
                     }
                 }
             }
-            innerTracer.print(_ => `${states.size-idx} - ${newStates.size}`);
         }
         innerTracer.clear();
 
@@ -127,7 +145,9 @@ function solve(size, trace)
     return total;
 }
 
+assert.equal(countOneChild(1), 9);
 assert.equal(countOneChild(2), 20);
+assert.equal(countOneChild(3), 360);
 
 assert.equal(solve(1), 9);
 assert.equal(solve(3), 389);
