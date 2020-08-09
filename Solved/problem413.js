@@ -2,7 +2,6 @@ const assert = require('assert');
 const Tracer = require('tools/tracer');
 const timeLogger = require('tools/timeLogger');
 const BigMap = require('tools/BigMap');
-const { pool } = require('workerpool');
 
 class State
 {
