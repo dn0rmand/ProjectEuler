@@ -1,3 +1,6 @@
+const BigSet = require('tools/BigSet');
+const Tracer = require('tools/tracer');
+
 function addDigits(from)
 {
     const   to    = {};
@@ -8,15 +11,18 @@ function addDigits(from)
     {
         let b = to[index];
         if (! b)
-            to[index] = b = new Set();
+            to[index] = b = new BigSet();
         
         b.add(value);
         sum += 1/value;
         count++;
     };
 
+    const tracer = new Tracer(1, true);
     for(let d = 0; d < 10; d++)
     {        
+        tracer.print(_ => 10-d);
+
         let D  = d + "";
         let DD = D + "" + d;
 
@@ -29,7 +35,7 @@ function addDigits(from)
             if (i === D)
             {
                 // goes to dd
-                for(let value of f)
+                for(let value of f.values())
                 {
                     writeTo(DD, (value * 10)+d);
                 }
@@ -41,7 +47,7 @@ function addDigits(from)
             else
             {
                 // goes to d bucket
-                for(let value of f)
+                for(let value of f.values())
                 {
                     writeTo(D, (value * 10)+d);
                 }
@@ -49,6 +55,8 @@ function addDigits(from)
         }
     }
 
+    tracer.clear();
+    
     return [to, count, sum];
 }
 
@@ -71,7 +79,7 @@ function solve(maxDigits)
         let subSum;
         [buckets, count, subSum] = addDigits(buckets);
         sum += subSum
-        console.log(count, sum, subSum);
+        console.log(i, count, sum, subSum);
     }
 }
 
