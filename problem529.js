@@ -2,8 +2,8 @@ const assert = require('assert');
 const Tracer = require('tools/tracer');
 const timeLogger = require('tools/timeLogger');
 const Matrix = require('tools/matrix-small');
-const recurrence = require('tools/linearRecurrence');
-const linearRecurrence = require('tools/linearRecurrence');
+
+require('tools/numberHelper');
 
 const MODULO  = 1000000007
 const MAXSIZE = 10n**18n;
@@ -22,11 +22,6 @@ class State
     {
         this.sums  = sums;
         this.key   = State.makeKey(sums);
-    }
-
-    get isGood()
-    {        
-        return this.sums.length === 0 || this.sums[this.sums.length-1] === 0;
     }
 
     addDigit(digit)
@@ -50,7 +45,7 @@ class State
         {
             if (this.sums[i] === 0)
             {
-                if (sums.length > 0 && !found)
+                if (!found)
                     sums.push(0);
                 continue;
             }
@@ -77,8 +72,11 @@ class State
         sums.push(digit);
 
         if (found)
+        {
+            if (sums.includes(0))
+                throw "ERROR";
             sums.push(0);
-
+        }
         return new State(sums);
     }
 }
@@ -92,10 +90,18 @@ function buildMatrix()
     {
         for(const key2 of $transitions[key1])
         {
-            matrix.set(key1, key2, matrix.get(key1, key2) + 1);
+            const v = matrix.get(key1, key2) + 1;
+            matrix.set(key1, key2, v);
+            if (v === 2)
+                console.log(key1, key2);
         }
     }
 
+    for(let i = 0; i < 45; i++)
+    {
+        let r = matrix.array[i].slice(0, 45);
+        console.log(r.join(''));
+    }
     return matrix;
 }
 
@@ -134,7 +140,7 @@ function buildTransitions()
 
             for(const state of states.values())
             {
-                for(let digit = i ? 0 : 1; digit < 10; digit++)
+                for(let digit = 0; digit < 10; digit++)
                 {
                     let newState = state.addDigit(digit, 10);
                     if (! newState)
@@ -170,18 +176,18 @@ function buildTransitions()
             k2 = nextKey++;
             keyMap.set(k, k2);
             transitions[k2] = [];
-            if (k % 10 === 0)
+            if ((k % 10 === 0) && k !== 0)
                 transitions.validKeys[k2] = 1;
         }
         return k2;
     };
 
     const special = k => {
-        k = keyMap.get(k);
-        assert.notEqual(k, undefined);
-        const v = transitions[k];
+        const k2 = keyMap.get(k);
+        assert.notEqual(k2, undefined);
+        const v = transitions[k2];
 
-        v.push(k);
+        v.push(k2);
         v.sort((a, b) => a-b);
     };
 
@@ -208,7 +214,6 @@ function buildTransitions()
 const $transitions    = buildTransitions();
 const $matrix         = buildMatrix();
 
-const $countSubstring = [];
 const $statesPerSize  = [];
 
 function getStates(size)
@@ -255,11 +260,8 @@ function getStates(size)
     return newStates;
 }
 
-function countSubstring(size)
+function T(size)
 {
-    if ($countSubstring[size] !== undefined)
-        return $countSubstring[size];
-
     let total  = 0;
 
     const states = getStates(size);
@@ -272,36 +274,8 @@ function countSubstring(size)
         }
     }
 
-    $countSubstring[size] = total;
     return total;
 }
-
-function T(size, trace)
-{
-    let total = 0;
-    const tracer = new Tracer(1, trace);
-    for(let s = 2; s <= size; s++)
-    {
-        tracer.print(_ => size-s);
-        const v = countSubstring(s);
-        total = (total + v) % MODULO;
-    }
-    tracer.clear();
-    return total;
-}
-
-function T2(size)
-{
-    const m = $matrix.pow(size, MODULO);
-    const i = new Matrix(m.rows, 1);
-    i.set(0, 0, 1);
-
-    const v = m.multiply(i, MODULO);
-
-    return v.get(m.rows-1, 0);
-}
-
-console.log(T2(2));
 
 assert.equal(T(2), 9);
 assert.equal(T(5), 3492);
@@ -311,22 +285,4 @@ console.log('Tests passed');
 const answer = timeLogger.wrap('', _ => T(100, true));
 console.log(`Answer is ${answer}`);
 
-let values = [];
-
-const tracer = new Tracer(1, true);
-const MAX = $transitions.length*2 + 100;
-
-let previous = 0;
-for(let i = 0; i < MAX; i++)
-{
-    tracer.print(_ => MAX - i);
-    let v = previous + countSubstring(i+2);
-    values.push(v);
-    previous = v;
-}
-tracer.clear();
-const l = linearRecurrence(values, $transitions.length, MODULO);
-console.log('Divisor =', l.divisor);
-console.log('Factors =', l.factors.join(', '));
-
-// console.log('Answer is 23624465');
+console.log('Should be 23624465');
