@@ -12,8 +12,7 @@ class Matrix
         const array = new Array(rows);
         for(let i = 0; i < rows; i++)
         {
-            array[i] = new Array(columns);
-            array[i].fill(0);
+            array[i] = new Int32Array(columns);
         }
         return array;
     }
@@ -53,10 +52,12 @@ class Matrix
         
         if (modulo)
         {
+            const modulo_n = BigInt(modulo);
+            
             modMul = (a, b) => {
                 let v = a*b;
                 if (v > Number.MAX_SAFE_INTEGER)
-                    return Number((BigInt(a)*BigInt(b)) % BigInt(modulo));
+                    return Number((BigInt(a)*BigInt(b)) % modulo_n);
                 else
                     return v % modulo;
             }
