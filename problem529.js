@@ -4,12 +4,11 @@ const timeLogger = require('tools/timeLogger');
 const Matrix = require('tools/matrix-small');
 // const { Matrix } = require(".");
 
-
 require('tools/numberHelper');
 
 const MODULO  = 1000000007
 const MAXSIZE = 10n**18n;
-
+    
 class State
 {
     static makeKey(sums)
@@ -272,29 +271,30 @@ function T(size)
     return total;
 }
 
-function TestPower()
+function solve(size)
 {
-    const m  = timeLogger.wrap('Squaring Matrix', _ => $matrix.pow(2, MODULO, true));
+    const m = timeLogger.wrap('Squaring Matrix', _ => $matrix.pow(size, MODULO, true));
 
     let total = 0;
 
     for(let x = 0; x < $matrix.columns; x++)
     {
         if ($transitions.validKeys[x])
-            total = (total + $matrix.get(0, x)) % MODULO;
+        {
+            total = (total + m.get(0, x)) % MODULO;
+        }
     }
 
-    console.log(total);
+    return total;
 }
-
-TestPower();
 
 assert.equal(T(2), 9);
 assert.equal(T(5), 3492);
+// assert.equal(solve(5), 3492);
 
 console.log('Tests passed');
 
-const answer = timeLogger.wrap('', _ => T(10, true));
+const answer = timeLogger.wrap('', _ => solve(MAXSIZE, true));
 console.log(`Answer is ${answer}`);
 
 console.log('Should be 23624465');
