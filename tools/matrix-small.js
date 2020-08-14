@@ -1,3 +1,5 @@
+const Tracer = require('tools/tracer');
+
 class Matrix
 {
     constructor(rows, columns)
@@ -45,7 +47,7 @@ class Matrix
         this.array[row][column] = value;
     }
 
-    multiply(right, modulo) 
+    multiply(right, modulo, trace) 
     {
         const result = new Matrix(this.rows, right.columns);
         let modMul, modSum, fixSum;
@@ -76,8 +78,12 @@ class Matrix
             fixSum = a => a;
         }
 
+        const tracer = new Tracer(100, trace);
+
         for (let i = 0; i < this.rows; i++) 
         {
+            tracer.print(_ => this.rows - i);
+
             for (let j = 0; j < right.columns; j++) 
             {
                 let sum = 0;
@@ -90,10 +96,12 @@ class Matrix
             }
         }
 
+        tracer.clear();
+
         return result;
     }
 
-    pow(pow, modulo)
+    pow(pow, modulo, trace)
     {
         if (pow == 1)
             return this;
@@ -101,14 +109,18 @@ class Matrix
         let m  = this;
         let mm = undefined;
 
+        const tracer = new Tracer(1, trace);
+
         while (pow > 1)
         {
+            tracer.print(_ => pow);
+
             if ((pow & 1) !== 0)
             {
                 if (mm === undefined)
                     mm = m;
                 else
-                    mm = mm.multiply(m, modulo);
+                    mm = mm.multiply(m, modulo, trace);
 
                 pow--;
             }
@@ -116,15 +128,16 @@ class Matrix
             while (pow > 1 && (pow & 1) === 0)
             {
                 pow /= 2;
-                m =  m.multiply(m, modulo);
+                m =  m.multiply(m, modulo, trace);
             }
         }
 
         if (mm !== undefined)
         {
-            m = m.multiply(mm, modulo);
+            m = m.multiply(mm, modulo, trace);
         }
 
+        tracer.clear();
         return m;
     }
 }

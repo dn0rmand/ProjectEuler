@@ -2,6 +2,8 @@ const assert = require('assert');
 const Tracer = require('tools/tracer');
 const timeLogger = require('tools/timeLogger');
 const Matrix = require('tools/matrix-small');
+// const { Matrix } = require(".");
+
 
 require('tools/numberHelper');
 
@@ -92,16 +94,9 @@ function buildMatrix()
         {
             const v = matrix.get(key1, key2) + 1;
             matrix.set(key1, key2, v);
-            if (v === 2)
-                console.log(key1, key2);
         }
     }
 
-    for(let i = 0; i < 45; i++)
-    {
-        let r = matrix.array[i].slice(0, 45);
-        console.log(r.join(''));
-    }
     return matrix;
 }
 
@@ -277,12 +272,29 @@ function T(size)
     return total;
 }
 
+function TestPower()
+{
+    const m  = timeLogger.wrap('Squaring Matrix', _ => $matrix.pow(2, MODULO, true));
+
+    let total = 0;
+
+    for(let x = 0; x < $matrix.columns; x++)
+    {
+        if ($transitions.validKeys[x])
+            total = (total + $matrix.get(0, x)) % MODULO;
+    }
+
+    console.log(total);
+}
+
+TestPower();
+
 assert.equal(T(2), 9);
 assert.equal(T(5), 3492);
 
 console.log('Tests passed');
 
-const answer = timeLogger.wrap('', _ => T(100, true));
+const answer = timeLogger.wrap('', _ => T(10, true));
 console.log(`Answer is ${answer}`);
 
 console.log('Should be 23624465');
