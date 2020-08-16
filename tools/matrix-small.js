@@ -84,15 +84,18 @@ class Matrix
         {
             tracer.print(_ => this.rows - i);
 
+            const ar = this.array[i];
+            const tr = result.array[i];
+
             for (let j = 0; j < right.columns; j++) 
             {
                 let sum = 0;
                 for (let y = 0; y < this.columns; y++) 
                 {
-                    sum = modSum(sum, modMul(this.get(i, y), right.get(y, j)));
+                    sum = modSum(sum, modMul(ar[y], right.array[y][j]));
                 }
 
-                result.set(i, j, fixSum(sum));
+                tr[j] = fixSum(sum);
             }
         }
 
