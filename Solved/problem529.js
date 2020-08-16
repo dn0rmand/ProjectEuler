@@ -1,8 +1,14 @@
 const assert = require('assert');
 const Tracer = require('tools/tracer');
 const timeLogger = require('tools/timeLogger');
-const Matrix = require('tools/matrix-small');
-// const { Matrix } = require(".");
+
+const fs = require("fs");
+const loader = require("@assemblyscript/loader");
+const imports = { };
+const wasmModule = loader.instantiateSync(fs.readFileSync(__dirname + "../build/release.wasm"), imports);
+const Matrix = wasmModule.exports.Matrix;
+
+// const { Matrix } = require("./loadWasm");
 
 require('tools/numberHelper');
 
@@ -273,7 +279,15 @@ function T(size)
 
 function solve(size)
 {
-    const m = timeLogger.wrap('Squaring Matrix', _ => $matrix.pow(size, MODULO, true));
+    size = BigInt(size);
+
+    const pLow = Number(size & (2n**32n - 1n));
+    const pHi  = Number(size >> 32n);
+
+    const m = timeLogger.wrap('Powering Matrix', _ => {
+        $matrix.bigPow(pLow, pHi, MODULO, true);
+        return $matrix;
+    });
 
     let total = 0;
 
@@ -290,7 +304,7 @@ function solve(size)
 
 assert.equal(T(2), 9);
 assert.equal(T(5), 3492);
-// assert.equal(solve(5), 3492);
+assert.equal(solve(5), 3492); // slow so don't do it
 
 console.log('Tests passed');
 
