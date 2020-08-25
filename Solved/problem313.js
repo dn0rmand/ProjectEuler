@@ -164,34 +164,9 @@ function S(m, n)
     return steps;
 }
 
-function solve(max, trace)
+function solve(max)
 {
     max = max * max;
-
-    function findIndex(value, maxIndex)
-    {
-        let max = maxIndex || specialPrimes.length-1;
-        let min = 0;
-        let middle = Math.floor((min+max)/2);
-        while (min < max)
-        {
-            let v = specialPrimes[middle];
-            if (value < v)
-                max = middle-1;
-            else if (value > v)
-                min = middle+1;
-            else
-                return middle;
-
-            middle = Math.floor((min+max)/2);
-        }
-        if (maxIndex)
-        {
-            while (specialPrimes[middle] < value)
-                middle++;
-        }
-        return middle;
-    }
 
     const specials = specialPrimes.reduce((a, p) => {
         if (p < max)
@@ -201,9 +176,6 @@ function solve(max, trace)
 
     let total1 = 0;
     let total2 = 0;
-
-    const tracer   = new Tracer(5000000, trace);
-    const maxIndex = specials.length-1
 
     // count prime of the form 8*n+5 and (8*n+5+4)
     for(let p of squarePrimes)
@@ -218,94 +190,20 @@ function solve(max, trace)
     }
 
     // count special primes ( % 6 = 1 )
-    let previous = 0;
-
-    for(let i = 0; i < specials.length; i++)
+    for(let i = 1; i < specials.length; i++)
     {
-        let p = specials[i];
-        if (p >= max)
+        const p0 = specials[i-1];
+        const p1 = specials[i];
+        if (p1 >= max)
             break;
 
-        let x = p-6-4-5;
-        if (x % 8 === 0)
-        {
-            let v = 0;
-            while(x > previous)
-            {
-                v++;
-                x -= 8;
-            }
-            let c = specials.length-i;
-            total2 += c*v;
-        }
-        previous = p;
+        const times = (p1-p0)/24;
+        const count = specials.length-i;
+
+        total2 += times * count;
     }
 
     let total = total1 + (2 * total2);
-    return total;
-}
-
-function solve1(max, trace)
-{
-    max = max * max;
-
-    function findIndex(value, maxIndex)
-    {
-        let max = maxIndex || specialPrimes.length-1;
-        let min = 0;
-        let middle = Math.floor((min+max)/2);
-        while (min < max)
-        {
-            let v = specialPrimes[middle];
-            if (value < v)
-                max = middle-1;
-            else if (value > v)
-                min = middle+1;
-            else
-                return middle;
-
-            middle = Math.floor((min+max)/2);
-        }
-        if (maxIndex)
-        {
-            while (specialPrimes[middle] < value)
-                middle++;
-        }
-        return middle;
-    }
-
-    const specials = specialPrimes.reduce((a, p) => {
-        if (p < max)
-            a.push(p);
-        return a;
-    }, []);
-
-    let total1 = 0;
-    let total2 = 0;
-
-    const tracer   = new Tracer(5000000, trace);
-    const maxIndex = specials.length-1
-
-    for(let m = 9; m < max; m += 8)
-    {
-        let count = m;
-
-        tracer.print(_ => max - count);
-
-        if (squarePrimes.has(count))
-            total2++;
-
-        if (count % 6 !== 1)
-            continue;
-
-        let idx = findIndex(count + 6, maxIndex);
-        if (idx <= maxIndex)
-            total2 += maxIndex-idx+1;
-    }
-
-    tracer.clear();
-
-    const total = total1 + 2*total2;
     return total;
 }
 
@@ -316,6 +214,5 @@ assert.equal(solve(100), 5482);
 
 console.log("Tests passed");
 
-const answer = timeLogger.wrap('', _ => solve(MAX, true));
+const answer = timeLogger.wrap('', _ => solve(MAX));
 console.log(`Answer is ${answer}`);
-console.log('Should be 2057774861813004');
