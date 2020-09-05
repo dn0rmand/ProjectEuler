@@ -170,7 +170,17 @@ function Kaprekar(digits, base)
         return result;
     }
 
-    return inner(digits);
+    const key = (digits[4]-digits[0]) * 2000 + (digits[3]-digits[1]);
+
+    let r = $kaprekar.get(key);
+    if (r === undefined)
+    {
+        r = inner(digits);
+        $kaprekar.set(key, r); 
+        return r;
+    }
+    else
+        return r;
 }
 
 function S(base, trace)
@@ -282,3 +292,5 @@ assert.equal(timeLogger.wrap('', _ => S(getBase(7))), 2261868699);
 assert.equal(timeLogger.wrap('', _ => S(111, true)), 400668930299);
 
 console.log('Tests passed');
+
+// timeLogger.wrap('', _ => S(1803, true));
