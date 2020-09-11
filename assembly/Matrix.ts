@@ -42,7 +42,7 @@ export class Matrix
         this.array[row][column] = value;
     }
 
-    public multiply(right: Matrix, modulo: u32, enableTracing : bool) : Matrix
+    public multiply(right: Matrix, modulo: u32, enableTracing : bool = false) : Matrix
     {
         const result : Matrix = new Matrix(this.rows, right.columns);
         const MODULO : u64 = modulo;
@@ -96,28 +96,28 @@ export class Matrix
             {
                 power--;
                 if (enableTracing)
-                    trace("Power " + power.toString() + " - Step " + (steps++).toString() + "\n");
+                    trace("Power " + power.toString() + " - Step " + (steps++).toString());
 
                 if (mm == null)
                     mm = m;
                 else
-                    mm = mm.multiply(m, modulo, enableTracing);
+                    mm = mm.multiply(m, modulo);
             }
 
             while (power > 1 && (power & 1) == 0)
             {
                 power /= 2;
                 if (enableTracing)
-                    trace("Power " + power.toString() + " - Step " + (steps++).toString() + "\n");
-                m =  m.multiply(m, modulo, enableTracing);
+                    trace("Power " + power.toString() + " - Step " + (steps++).toString());
+                m =  m.multiply(m, modulo);
             }
         }
 
         if (mm != null)
         {
             if (enableTracing)
-                trace("Finisup - Step " + (steps++).toString() + "\n");
-            m = m.multiply(mm, modulo, enableTracing);
+                trace("Finisup - Step " + (steps++).toString());
+            m = m.multiply(mm, modulo);
         }
         
         return m;
