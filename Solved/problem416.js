@@ -6,7 +6,7 @@ const timeLogger = require('tools/timeLogger');
 const fs = require("fs");
 const loader = require("@assemblyscript/loader");
 const imports = { };
-const wasmModule = loader.instantiateSync(fs.readFileSync(__dirname + "/build/release.wasm"), imports);
+const wasmModule = loader.instantiateSync(fs.readFileSync(__dirname + "/../build/release.wasm"), imports);
 const Matrix = wasmModule.exports.Matrix;
 
 require('tools/numberHelper');
@@ -319,5 +319,5 @@ assert.equal(F(2, 100), 429619151);
 
 console.log('Tests passed');
 
-const answer = timeLogger.wrap('', _ => console.log(F(10, 1E12, true)));
+const answer = timeLogger.wrap('', _ => F(10, 1E12, true));
 console.log(`Answer is ${answer}`);
