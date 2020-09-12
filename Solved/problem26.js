@@ -1,92 +1,47 @@
-const bigNumber = require('bignumber.js');
-const MAX_CYCLE_LENGTH  = 1000;
-const DECIMALS          = (MAX_CYCLE_LENGTH * 4)+1;
+const Tracer = require('tools/tracer');
+const timeLogger = require('tools/timeLogger');
+const assert = require('assert');
 
-bigNumber.set({ 
-    ROUNDING_MODE: 1,
-    DECIMAL_PLACES: DECIMALS
-});
+require('tools/numberHelper');
 
-function getValue(dividor)
+const TEN = 10;
+
+function getLength(n)
 {
-    let one = new bigNumber(1);
-    let value = one.dividedBy(dividor);
-    return value;    
+    const reference = TEN.modPow(n, n);
+
+    let len  = 0;
+    let rest = reference;
+    do 
+    {
+        rest = (rest * 10) % n;
+        len++;
+    } 
+    while (rest != reference);
+    return len;
 }
 
-function findCycle(str)
+function solve(MAX)
 {
-    function isCycle(index, length)
+    let length = 0;
+    let value  = 0;
+
+    for(let n = 2 ; n <= MAX ; n++ )
     {
-        let i = index+length;
-        while (i < (str.length - length))
+        const len = getLength(n);
+
+        if (len > length)
         {
-            for (let j = 0; j < length; j++)
-            {
-                if (str[index+j] !== str[i+j])
-                    return false;
-            }
-            i += length;
-        }
-
-        return true;
-    }
-
-    for (let length = 1; length <= MAX_CYCLE_LENGTH; length++)
-    {
-        for(let index = 0; index <= 2*MAX_CYCLE_LENGTH; index++)
-        {
-            if (isCycle(index, length))
-            {
-                return { 
-                    index: index, 
-                    length:length,
-                    cycle: str.substring(index, index+length)
-                };
-            }
-        }
-    }    
-}
-
-function toCycle(value)
-{
-    let str = value.toString().substring(2);
-
-    if (str.length >= DECIMALS)
-    {
-        // Could be cycling
-        let cycle = findCycle(str);
-        if (cycle !== undefined)
-        {
-            cycle.str = "0." + str.substring(0, cycle.index) + "(" + cycle.cycle + ")";
-            return cycle;
+            value   = n;
+            length = len;
         }
     }
 
-    return { str: "0." + str, length:0 };
+    return { value, length };
 }
 
-let max = { str:"0", length:0 };
-let count=0;
-
-for(let i = 2; i <= 1000; i++)
-{
-    let v     = getValue(i);
-    let cycle = toCycle(v);
-
-    if (cycle.length > max.length)
-    {
-        count = 1;
-        max   = cycle;
-        max.value = i;
-    }
-    else if (cycle.length === max.length)
-        count++;
-}
-
-if (count !== 1)
-    throw "Multiple values found!";
+const {value, length} = timeLogger.wrap('Solving', _ => solve(1000, true));
 
 console.log("Value of d < 1000 for which 1/d contains the longest recurring cycle in its decimal fraction part is");
-console.log(max.value + " with a cycle of " + max.length + " digits");
+console.log(`${value} with a cycle of ${length} digits`);
 
