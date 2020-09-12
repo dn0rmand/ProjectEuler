@@ -3,69 +3,70 @@ const Tracer = require('tools/tracer');
 const timeLogger = require('tools/timeLogger');
 const divisors = require('tools/divisors');
 const primeHelper = require('tools/primeHelper')();
-const BigMap = require('tools/BigMap');
 
 require('tools/numberHelper');
-
 const MAX = 1E8;
 const TEN = 10;
 
-timeLogger.wrap('Loading primes', _ => primeHelper.initialize(MAX));
+const $isPrime  = new Uint8Array(MAX+1);
 
-const allPrimes = primeHelper.allPrimes();  
+timeLogger.wrap('Loading primes', _ => {
+    primeHelper.initialize(MAX, true);
+    primeHelper.allPrimes().reduce((a, p) => $isPrime[p] = 1, 1);
+});
+const allPrimes = primeHelper.allPrimes();
+
+function isPrime(p) 
+{
+    return $isPrime[p] === 1;
+}
 
 function generateNumbers(min, max, callback)
 {
     const primes = [];
 
-    function inner(value, key, index)
+    function inner(value, index)
     {
         if (value > max)
             return;
 
         if (value >= min)
-            callback(key, primes);
+            callback(value, primes);
 
         for(let i = index ; i < allPrimes.length; i++)
         {
             const p = allPrimes[i];
+            if (p === 2 || p === 5)
+                continue;
+
             let v = value * p;
             if (v > max)
                 break;
 
             const pf = { p, f: 1 };
 
-            let k = key;
-
-            if (p !== 2 && p !== 5)
-            {
-                primes.push(pf);
-                k *= p;
-            }
+            primes.push(pf);
 
             while (v <= max)
             {
-                inner(v, k, i+1);
-                pf.f++;
+                inner(v, i+1);
                 v *= p;
-                if (p !== 2 && p !== 5)
-                    k *= p;
+                pf.f++;
             }
 
-            if (p !== 2 && p !== 5)
-                primes.pop();
+            primes.pop();
         }
     }
 
     inner(1, 1, 0);
 }
 
-const $length = new Map();
+const $length = new Uint32Array(MAX+1);
 
 function getLength(n)
 {
-    let len = $length.get(n);
-    if (len !== undefined)
+    let len = $length[n];
+    if (len)
         return len;
 
     len = 0;
@@ -73,20 +74,24 @@ function getLength(n)
     if (n > 10)
     {
         len = n-1;
-
-        for(const d of divisors(n-1, primeHelper.isKnownPrime))
-        {
+        let min = true;
+        divisors(n-1, isPrime, d => {
             if (d < len)
             {
                 const rest = TEN.modPow(d, n);
                 if (rest === 1)
+                {
                     len = d;
+                    if (min)
+                        return false;
+                }
             }
-        }
+            min = !min;
+        });
     }
     else
     {
-        const reference = n > 10 ? 10 : TEN.modPow(n, n);
+        const reference = TEN.modPow(n, n);
         let rest = reference;
         do 
         {
@@ -96,27 +101,31 @@ function getLength(n)
         while (rest != reference);
     }
 
-    $length.set(n, len);
+    $length[n] = len;
     return len;
 }
 
-const $calculate = new BigMap();
-
-function calculate(key, primes)
+function Add2and5(value, length, MAX)
 {
-    let length = $calculate.get(key);
-    if (length !== undefined)
-        return length;
-    
-    length = 1;
-    let valid  = false;
+    let o = length;
 
-    primes.forEach(({p, f}) => {        
-        if (p === 2 || p === 5)
-            return;
+    for(let v5 = value*5; v5 <= MAX; v5 *= 5) 
+        length += o;
+        
+    for(let v2 = value*2; v2 <= MAX; v2 *= 2)
+    {
+        length += o;
+        for(let v5 = v2*5; v5 <= MAX; v5 *= 5) 
+            length += o;
+    }
 
-        valid = true;
+    return length;
+}
 
+function calculate(value, primes, MAX)
+{
+    let length = primes.reduce((length, {p, f}) => 
+    {
         let l;
         if (p === 487)
         {
@@ -136,27 +145,23 @@ function calculate(key, primes)
                 l *= (p ** (f-1));
         }
 
-        if (l > 1)
-            length = length.lcm(l, length);
-    });
+        return l > 1 ? length.lcm(l, length) : length;
+    }, 1);
 
-    length = valid ? length : 0;
-    $calculate.set(key, length);
-    return length;
+    return Add2and5(value, length, MAX);
 }
 
 function solve(MAX)
 {    
     let total = 0, count = 2;
 
-    const tracer = new Tracer(1000, true);
+    const tracer = new Tracer(10000, true);
     
-    generateNumbers(3, MAX, (key, primes) => {
+    generateNumbers(3, MAX, (value, primes) => {
         count++;
         tracer.print(_ => MAX - count);
 
-        const l = calculate(key, primes);
-        total += l;
+        total += calculate(value, primes, MAX);
     });
 
     tracer.clear();
@@ -166,5 +171,5 @@ function solve(MAX)
 assert.strictEqual(timeLogger.wrap('', _ => solve(1000000, true)), 55535191115);
 console.log('Test passed');
 
-const answer = timeLogger.wrap('', _ => solve(MAX, true));
-console.log(`Answer is ${answer}`);
+// const answer = timeLogger.wrap('', _ => solve(MAX, true));
+// console.log(`Answer is ${answer}`);
