@@ -3,6 +3,7 @@ const Tracer = require('tools/tracer');
 const timeLogger = require('tools/timeLogger');
 const divisors = require('tools/divisors');
 const primeHelper = require('tools/primeHelper')();
+const BigMap = require('tools/BigMap');
 
 require('tools/numberHelper');
 
@@ -17,13 +18,13 @@ function generateNumbers(min, max, callback)
 {
     const primes = [];
 
-    function inner(value, index)
+    function inner(value, key, index)
     {
         if (value > max)
             return;
 
         if (value >= min)
-            callback(primes);
+            callback(key, primes);
 
         for(let i = index ; i < allPrimes.length; i++)
         {
@@ -34,18 +35,29 @@ function generateNumbers(min, max, callback)
 
             const pf = { p, f: 1 };
 
-            primes.push(pf);
+            let k = key;
+
+            if (p !== 2 && p !== 5)
+            {
+                primes.push(pf);
+                k *= p;
+            }
+
             while (v <= max)
             {
-                inner(v, i+1);
+                inner(v, k, i+1);
                 pf.f++;
                 v *= p;
+                if (p !== 2 && p !== 5)
+                    k *= p;
             }
-            primes.pop();
+
+            if (p !== 2 && p !== 5)
+                primes.pop();
         }
     }
 
-    inner(1, 0);
+    inner(1, 1, 0);
 }
 
 const $length = new Map();
@@ -88,9 +100,15 @@ function getLength(n)
     return len;
 }
 
-function calculate(primes)
+const $calculate = new BigMap();
+
+function calculate(key, primes)
 {
-    let length = 1;
+    let length = $calculate.get(key);
+    if (length !== undefined)
+        return length;
+    
+    length = 1;
     let valid  = false;
 
     primes.forEach(({p, f}) => {        
@@ -122,45 +140,30 @@ function calculate(primes)
             length = length.lcm(l, length);
     });
 
-    return valid ? length : 0;
+    length = valid ? length : 0;
+    $calculate.set(key, length);
+    return length;
 }
 
 function solve(MAX)
 {    
     let total = 0, count = 2;
-    let extra = 0n;
 
     const tracer = new Tracer(1000, true);
-    for(let p of allPrimes)
-    {
-        if (p > MAX)
-            break;
-        tracer.print(_ => MAX-p);
-        getLength(p);
-    }
-
-    generateNumbers(3, MAX, (primes) => {
+    
+    generateNumbers(3, MAX, (key, primes) => {
         count++;
         tracer.print(_ => MAX - count);
 
-        const l = calculate(primes);
-        const t = total + l;
-        if (t > Number.MAX_SAFE_INTEGER)
-        {
-            extra += BigInt(total) + BigInt(l);
-            total  = 0;
-        }
-        else
-        {
-            total = t;
-        }
+        const l = calculate(key, primes);
+        total += l;
     });
 
     tracer.clear();
-    return extra + BigInt(total);
+    return total;
 }
 
-assert.strictEqual(timeLogger.wrap('', _ => solve(1000000, true)), 55535191115n);
+assert.strictEqual(timeLogger.wrap('', _ => solve(1000000, true)), 55535191115);
 console.log('Test passed');
 
 const answer = timeLogger.wrap('', _ => solve(MAX, true));
