@@ -4,9 +4,12 @@ module.exports = function(value, isNumberPrime, fn)
 
     function forEachDivisors(callback)
     {
-        callback(1);
+        if (callback(1) === false) return; // early stop
+
         if (value > 1)
-            callback(value);
+        {
+            if (callback(value) === false) return; // early stop
+        }
 
         if (value <= 2)
             return;
@@ -26,11 +29,11 @@ module.exports = function(value, isNumberPrime, fn)
         {
             if ((value % i) == 0)
             {
+                if (callback(i) === false) return; // early stop
+
                 let res = value / i;
                 if (res > i)
-                    callback(res);
-
-                callback(i);
+                    if (callback(res) === false) return; // early stop
 
                 if (res < max)
                     max = res;
@@ -62,11 +65,11 @@ module.exports = function(value, isNumberPrime, fn)
         {
             if ((value % i) == 0)
             {
+                yield i;
+
                 let res = value / i;
                 if (res > i)
                     yield res;
-
-                yield i;
 
                 if (res < max)
                     max = res;
