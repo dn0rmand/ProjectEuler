@@ -93,6 +93,8 @@ module.exports = function(maxPrime, noMap)
         if (count !== undefined)
             return count;
 
+        console.log('\r\nNeed to calcule prime count :(');
+
         let r = Math.floor(Math.sqrt(num));
         let v = [];
 

@@ -51,7 +51,9 @@ function reduce(values)
         values = differences(values);
     }
 
-    if (values.length < 5)
+    if (values.length > 1)
+        debugger;
+    if (values.length < 10)
         throw "No solution or not enough data";
 
     return { power , constant: values[0] };
@@ -154,12 +156,13 @@ const polynomial = {
         return power;
     },
 
-    findPolynomial: function(start, step, fx)
+    findPolynomial: function(start, step, fx, max)
     {
+        max = max || 1000;
         let values = [];
         let x = start;
 
-        while(x < 1000)
+        while(x <= max)
         {
             try
             {

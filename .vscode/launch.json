@@ -43,7 +43,8 @@
             "runtimeArgs": [ "--stack-size=8092", "--max-old-space-size=12288", "--expose-gc" ],
             "name": "Node: Current File",
             "program": "${file}",
-            "cwd": "${fileDirname}"
+            "cwd": "${fileDirname}",
+            "console": "integratedTerminal"
         },
         {
             "type": "node",

@@ -32,10 +32,13 @@ function solveRecurrence(data, size)
     {
         assert.equal(values.length > 1, true);
 
+        let first = 0;
+
         for(let i = 0; i < values.length; i++)
         {
-            if (values[i] !== 0n)
+            if (values[i] != 0n)
             {
+                first = i;
                 if (values[i] < 0n)
                 {
                     for(let j = i; j < values.length; j++)
@@ -45,20 +48,23 @@ function solveRecurrence(data, size)
             }
         }
         
-        let g = ABS(values[0]).gcd(ABS(values[1])); 
-        if (g === 1n)
+        if (first === values.length-1)
             return values;
 
-        if (g === 0n)
-            g = MAX(ABS(values[0]), ABS(values[1]));
+        let g = ABS(values[first]).gcd(ABS(values[first+1])); 
+        if (g == 1n)
+            return values;
 
-        for(let i = 2; i < values.length; i++)
+        if (g == 0n)
+            g = MAX(ABS(values[first]), ABS(values[first+1]));
+
+        for(let i = first+2; i < values.length; i++)
         {
             let g2 = g.gcd(ABS(values[i]));
-            if (g2 === 1n)
+            if (g2 == 1n)
                 return values;
 
-            if (g2 === 0n)
+            if (g2 == 0n)
                 g = MAX(g, ABS(values[i]));
             else
                 g = g2;
@@ -66,7 +72,7 @@ function solveRecurrence(data, size)
 
         if (g > 1n)
         {
-            for(let i = 0; i < values.length; i++)
+            for(let i = first; i < values.length; i++)
             {
                 values[i] /= g;
                 if (values[i] == 0)
@@ -145,6 +151,9 @@ function solveRecurrence(data, size)
     }
 
     let l = matrix[0][0];
+    if (l == 0)
+        return { factors: undefined, divisor: undefined };
+        
     for(let i = 1; i < size; i++)
     {
         let v = matrix[i][i];
@@ -186,11 +195,16 @@ function solveRecurrence(data, size)
         return { factors: undefined, divisor: undefined };
 }
 
-function findRecurrence(data)
+function findRecurrence(data, minSize, modulo)
 {
-    for(let size = 2; ; size++)
+    if (modulo)
+        modulo = BigInt(modulo);
+
+    const trace = !!minSize;
+    minSize = minSize || 2;
+    for(let size = minSize; ; size++)
     {
-        let { factors, divisor } = solveRecurrence(data, size);
+        let { factors, divisor } = solveRecurrence(data, size, modulo, trace);
         if (factors)
             return { factors, divisor };
     }
