@@ -38,7 +38,7 @@ function F(n, k)
 const pows = new Uint32Array(MAX+2);
 const mods = new Uint32Array(MAX+2);
 
-function prepare()
+timeLogger.wrap('Loading 2 powers', _ =>
 {
     const tracer = new Tracer(1000, true);
     for(let n = 0; n <= MAX+1; n++) {
@@ -55,7 +55,7 @@ function prepare()
         }
     }
     tracer.clear();
-}
+});
 
 function includeExclude(divisors, counts, i, count)
 {
@@ -72,10 +72,24 @@ function includeExclude(divisors, counts, i, count)
     }
 }
 
-function s0(n)
+function exclude(divisors, counts, i, count)
 {
-    let sum = 0;
+    const d1 = divisors[i];
 
+    for(let j = i-1; j > 0; j--)
+    {
+        const d2 = divisors[j];
+
+        if (counts[d2] && (d1 % d2 === 0))
+        {
+            counts[d2] -= count;
+            exclude(divisors, counts, j, -count);
+        }
+    }
+}
+
+function s(n)
+{
     const mod      = mods[n];
     const divisors = [...getDivisors(n)].sort((a, b) => a-b);
 
@@ -85,45 +99,55 @@ function s0(n)
     for(let i = 0; i < divisors.length; i++)
     {
         const d1 = divisors[i];
-        specials[d1] = 0;
-        counts[d1]   = n/d1;
 
+        // calculate total count
+        counts[d1] = n/d1;
         includeExclude(divisors, counts, i, counts[d1]);
-    }
 
-    const specials2 = [];
-
-    if (mod === 2) 
-    {
-        for(d1 of divisors) 
+        // calculate special count
+        if (i > 0 && mod > 2)
         {
-            specials[d1] = Math.floor(counts[d1] / 2);
+            if (d1 <= mod) 
+            {
+                if (mod % d1 === 0)
+                {
+                    const count = Math.floor(n / mod);
+                    if (count) 
+                    {
+                        specials[d1] = count;
+                        exclude(divisors, specials, i, count);
+                    }
+                }
+            }
+            else 
+            {
+                const k = d1.gcd(mod);
+                const m = d1 / k;
+                const count = Math.floor(n / (m*mod));
+                if (count) 
+                {
+                    specials[d1] = count;
+                    exclude(divisors, specials, i, count);
+                }
+            }            
         }
-    } 
-    else if (mod < n) 
-    {
-        for(let x = mod; x <= n ; x += mod) 
-        {
-            const c = x.gcd(n);
-            specials[c]++;
-        }        
     }
     
-    for(const d of divisors)
+    const sum = divisors.reduce((sum, d) =>
     {
-        const c2 = specials[d] || 0;
+        const c2 = mod === 2 ? Math.floor(counts[d] / 2) : (specials[d] || 0);
         const c1 = counts[d] - c2;
         const p  = n - d;
         const k1 = c1 > 0 ? pows[p+1].modMul(c1, MODULO) : 0;
         const k2 = c2 > 0 ? pows[p].modMul(c2, MODULO) : 0;
 
-        sum = (sum + k1 + k2) % MODULO;
-    }
+        return (sum + k1 + k2) % MODULO;        
+    }, 0);
 
     return sum;
 }
 
-function S0(N, trace)
+function S(N, trace)
 {
     let total = 0;
 
@@ -132,65 +156,11 @@ function S0(N, trace)
     for(let n = 1; n <= N; n++) 
     {
         tracer.print(_ => N-n);
-        total = (total + s0(n)) % MODULO;
+        total = (total + s(n)) % MODULO;
     }
     tracer.clear();
     return total;
 }
-
-function s1(n)
-{
-    let mod = mods[n];
-
-    let sum = 0;
-    let c1  = [];
-    let c0  = [];
-
-    for(let k = 1, kk = 1; k <= n; k++, kk++)
-    {
-        const g = n.gcd(k);
-
-        c0[g] = (c0[g] || 0) + 1;
-
-        let offset = 1;
-        if (kk === mod) {
-            kk = 0;
-            offset = 0;
-            c1[g] = (c1[g] || 0) + 1;
-        }
-
-        const p = n - g + offset;
-
-        sum = (sum + pows[p]) % MODULO;
-    }
-
-    // if (mod > 2)
-    // {
-    //     const c = c1.reduce((a, v) => a + ((v||0) > 0) ? 1 : 0, 0);
-    //     if (c > 2)
-    //         console.log(`N=${n}, mod=${mod}, c0=${c0.reduce((a, v, i) => v === undefined ? a : `${a} ${i}x${v}`,'')}, c1=${c1.reduce((a, v, i) => v === undefined ? a : `${a} ${i}x${v}`,'')}`);
-    // }
-
-    return sum;
-}
-
-function S1(N, trace)
-{
-    let total = 0;
-
-    const tracer = new Tracer(100, trace);
-
-    for(let n = 1; n <= N; n++) {
-        tracer.print(_ => N-n);
-        total = (total + s1(n)) % MODULO;
-    }
-    tracer.clear();
-    return total;
-}
-
-const S = S0;
-
-timeLogger.wrap('Loading 2 powers', _ => prepare());
 
 assert.strictEqual(F(3, 2), 4);
 assert.strictEqual(F(8, 3), 256);
