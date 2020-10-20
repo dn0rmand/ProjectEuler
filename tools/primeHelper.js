@@ -87,6 +87,49 @@ module.exports = function(maxPrime, noMap)
         $dbCache = {};
     }
 
+    function sumPrimes(num) 
+    {
+        let root = Math.floor(Math.sqrt(num))+1;
+        let v = [];
+    
+        for (let i = 1; i <= root; i++)
+        {
+            v.push(Math.floor(num / i));
+        }
+    
+        for (let i = v[v.length - 1] - 1; i >= 0; i--) 
+        {
+            v.push(i);
+        }
+    
+        let s = {};
+        for (let i = 0; i < v.length; i++)
+        {
+            const vi = v[i];
+            const VI = BigInt(vi);
+            
+            s[vi] = (VI * (VI + 1n)) / 2n - 1n;
+        }
+    
+        for (let p = 2; p <= root; p++) 
+        {
+            if (s[p] > s[p - 1]) 
+            {
+                const sp = s[p - 1];
+                const p2 = p * p;
+    
+                for (let i = 0; i < v.length; i++) 
+                {
+                    const vi = v[i];
+                    if (vi < p2) 
+                        break;
+                    s[vi] -= BigInt(p) * (s[Math.floor(vi / p)] - sp);
+                }
+            }
+        }
+        return s[num];
+    }    
+
     function countPrimes(num, trace)
     {
         let count = getPrimeCount(num);
@@ -447,42 +490,29 @@ module.exports = function(maxPrime, noMap)
 
     let $init = generatePrimes;
     let result = {
-        reset: function() {
-            reset();
-        },
-        maxPrime: function() { return _maxPrime; },
-        initialize: function(max, noMap) {
+        reset: _ => reset(),
+        maxPrime: _ => _maxPrime,
+        initialize: (max, noMap) => {
             if (noMap === true)
                 _primeMap = undefined;
             let v = $init(max);
             $init = generateMorePrimes;
             return v;
         },
-        allPrimes: function() { return _primes; },
-        extraPrimes: function() { return _extraPrimes; },
+        allPrimes: _ => _primes,
+        extraPrimes: _ => _extraPrimes,
         primes : function *(limitless) {
             yield *primes(limitless);
         },
-        isPrime: function(value) {
-            return isPrime(value);
-        },
-        likelyPrime: function(value) {
-            return likelyPrime(value);
-        },
-        isKnownPrime: function(value) {
-            return isKnownPrime(value);
-        },
-        next: function(p) { return next(p); },
-        countPrimes: function(to, trace) { 
-            return countPrimes(to, trace); 
-        },
-        getPrimeGroups : function(start, callback) {
-            return getPrimeGroups(start, callback);
-        },
-        factorize: function (n, callback) {
-            factorize(n, callback);
-        },
-        mobius: function(n)
+        isPrime: value => isPrime(value),
+        likelyPrime: value => likelyPrime(value),
+        isKnownPrime: value => isKnownPrime(value),
+        next: p => next(p),
+        countPrimes: (to, trace) => countPrimes(to, trace), 
+        sumPrimes: to => sumPrimes(to),
+        getPrimeGroups: (start, callback) => getPrimeGroups(start, callback),
+        factorize: (n, callback) => factorize(n, callback),
+        mobius: (n) =>
         {
             let result = 1;
             this.factorize(n, (prime, factor) => {
@@ -496,7 +526,7 @@ module.exports = function(maxPrime, noMap)
 
             return result;
         },
-        PHI: function(n) 
+        PHI: (n) => 
         {
             if (n === 1)
                 return 1;
