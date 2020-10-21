@@ -6,7 +6,7 @@ const timeLogger = require('tools/timeLogger');
 require('tools/numberHelper');
 
 const MODULO = 1000000123;
-const MAX    = 16; // 39
+const MAX    = 39
 
 class KeyMapping
 {
@@ -36,19 +36,18 @@ class State
 
     static simberStates = []; // 0, 10, 1010, 101010, 10101010, 1010101010];
 
-    static keys = new Map();
-
     constructor(previous)
     {
-        this.digits = previous ? previous.digits.slice() : new Uint8Array(10);
-        this.count  = previous ? previous.count : 1;
+        this.digits  = previous ? previous.digits.slice() : new Uint8Array(10);
+        this.count   = previous ? previous.count : 1;
+        this.hasDigit= previous ? previous.hasDigit : 0;
         this.$key    = undefined;
     }
 
     get key()
     {
         if (this.$key === undefined) {
-            const s = this.digits.reduce((a, v) => a*10 + v);
+            const s = this.digits.reduce((a, v) => a*10 + v, this.hasDigit ? 1 : 2);
             this.$key = KeyMapping.get(s);
         }
         return this.$key;
@@ -56,6 +55,9 @@ class State
 
     isSimber()
     {
+        if (! this.hasDigit)
+            return false;
+            
         if (State.simberStates.includes(this.key))
             return true;
 
@@ -74,9 +76,12 @@ class State
 
     compact()
     {
-        for(let d1 of State.evenDigits) {
+        if (!this.hasDigit) 
+            return; // nothing to compact
+
+        for(const d1 of State.evenDigits) {
             if (this.digits[d1] === 0) {
-                for(let d2 of State.reverseEvenDigits) {
+                for(const d2 of State.reverseEvenDigits) {
                     if (d2 <= d1) {
                         break;
                     }
@@ -91,9 +96,9 @@ class State
             }
         }
 
-        for(let d1 of State.oddDigits) {
+        for(const d1 of State.oddDigits) {
             if (this.digits[d1] === 0) {
-                for(let d2 of State.reverseOddDigits) {
+                for(const d2 of State.reverseOddDigits) {
                     if (d2 <= d1) {
                         break;
                     }
@@ -108,7 +113,7 @@ class State
             }
             if (this.digits[d1] === 1) {
                 // try to put the 2s before the 1s
-                for(let d2 of State.reverseOddDigits) {
+                for(const d2 of State.reverseOddDigits) {
                     if (d2 <= d1) {
                         break;
                     }
@@ -118,8 +123,6 @@ class State
                         break;
                     }
                 }
-                // if (this.digits[d1] === 1) // didn't have anything to do
-                //     break;
             }
         }
     }
@@ -127,6 +130,11 @@ class State
     addDigit(d)
     {
         const newState = new State(this);
+
+        if (d === 0 && !newState.hasDigit)
+            return newState;
+
+        newState.hasDigit = true;
 
         let count = newState.digits[d] + 1;
         if (d & 1) {
@@ -153,7 +161,7 @@ class StateMapping
 
     add(parent, child)
     {
-        let m = this.get(parent.key);
+        const m = this.get(parent.key);
         m.set(child.key, (m.get(child.key) || 0) + 1);
     }
 
@@ -167,6 +175,11 @@ class StateMapping
         }
         return m;
     }
+
+    clear()
+    {
+        this.map = new Map();
+    }
 }
 
 function buildMatrix()
@@ -175,70 +188,41 @@ function buildMatrix()
     let newStates = new Map();
 
     const startState = new State();
-    const special    = new State();
+    const stateMap   = new StateMapping();
 
-    special.$key     = KeyMapping.get(-1);
-    startState.$key  = KeyMapping.get(0);
-    special.count = 0;
+    const uniqueStates = [];
 
-    let uniqueStates = [];
-
-    uniqueStates[special.key] = special;
     uniqueStates[startState.key] = startState;
 
     states.set(startState.key, startState);
-
     let found = 1;
 
-    for(let l = 0; found; l++)
+    while(found)
     {
         found = 0;
         newStates.clear();
+        stateMap.clear();
 
         for(const state of states.values())
         {
-            for(let digit = l === 0 ? 1 : 0; digit < 10; digit++)
+            for(let digit = 0; digit < 10; digit++)
             {
-                const newState = state.addDigit(digit);
+                let newState = state.addDigit(digit);
 
                 if (! uniqueStates[newState.key]) {
                     found++;
                     uniqueStates[newState.key] = newState;
                 }
+                else {
+                    newState = uniqueStates[newState.key];
+                }
 
-                if (! newStates.get(newState.key))
-                    newStates.set(newState.key, newState);
+                stateMap.add(state, newState);
+                newStates.set(newState.key, newState);
             }
         }
 
         [states, newStates] = [newStates, states];
-        // if (l === 0) {
-        //     const keys = uniqueStates.reduce((a, v) => {
-        //         if (v)
-        //             a.push(v.key);
-        //         return a;
-        //     }, []);
-        //     console.log(keys.join(', '));
-        // }
-    }
-
-    const stateMap = new StateMapping();
-
-    stateMap.add(special, special);
-
-    for(let state of uniqueStates)
-    {
-        if (state === special)
-            continue;
-
-        for(let digit = 0; digit < 10; digit++)
-        {
-            const newState = state.addDigit(digit);
-
-            stateMap.add(state, newState);
-            if (newState.isSimber())
-                stateMap.add(state, special);
-        }
     }
 
     const size   = uniqueStates.length;
@@ -253,51 +237,39 @@ function buildMatrix()
             matrix.set(y, x, count);
         }
     }
+
+    matrix.simbers = [];
+    
+    uniqueStates.reduce((a, s) => {
+        if (s.isSimber())
+            matrix.simbers.push(s.key);
+        }, 1);
+
     return matrix;
 }
 
-function Q1(n, _matrix, callback)
+function bruteQ(n, trace)
 {
     let states = new Map();
     let newStates = new Map();
 
     const startState = new State();
-    const special    = new State();
-
-    special.$key  = -1;
-    special.count = 0;
 
     states.set(startState.key, startState);
 
-    let total  = 0;
-
-    const tracer = new Tracer(1, callback !== undefined);
+    const tracer = new Tracer(1, trace);
 
     for(let l = 0; l < n; l++)
     {
         tracer.print(_ => `${n - l} - ${states.size}`);
 
         newStates.clear();
-        newStates.set(-1, special);
-
-        const map = new StateMapping(special);
 
         for(const state of states.values())
         {
-            if (state === special)
-                continue;
-
             for(let digit = 0; digit < 10; digit++)
             {
                 const newState = state.addDigit(digit);
-
-                map.add(state, newState);
-
-                if (newState.isSimber())
-                {
-                    map.add(state, special);
-                    special.count = (special.count + newState.count) %  MODULO ;
-                }
 
                 const old = newStates.get(newState.key);
                 if (old)
@@ -308,96 +280,57 @@ function Q1(n, _matrix, callback)
         }
 
         [states, newStates] = [newStates, states];
-
-        if (callback)
-            callback(l+1, total);
     }
 
     tracer.clear();
-
-    return special.count;
-}
-
-function Q2(n, matrix)
-{
-    const m = matrix.pow(n, MODULO);
-    const result = m.get(1, 0);
-
-    return result;
-}
-
-function Q(n, matrix, callback)
-{
-    let states = [0, 1]; // 0 = special, 1 = start with count of 1
-
-    const tracer = new Tracer(1, callback !== undefined);
-
-    const size = matrix.rows;
-
-    for(let l = 0; l < n; l++)
-    {
-        tracer.print(_ => n - l);
-
-        const newStates = [];
-
-        for(let state = 0; state < states.length; state++)
-        {
-            let count = states[state];
-            if (! count)
-                continue;
-
-            for(let newState = 0; newState < size; newState++)
-            {
-                const ratio = matrix.get(state, newState);
-                if (ratio) {
-                    newStates[newState] = ((newStates[newState] || 0) + ratio.modMul(count, MODULO)) % MODULO;
-                }
-            }
-        }
-
-        states = newStates;
-
-        if (callback)
-            callback(l+1, states[0]);
-    }
-
-    tracer.clear();
-
-    return states[0];
-}
-
-function solve(max)
-{
-    const lengths = [];
-    for(let u = 1; u <= max; u++)
-        lengths.push(2**u);
 
     let total = 0;
-
-    Q(lengths[lengths.length-1], (l, value) => {
-        if (l === lengths[0]) {
-            total = (total + value) % MODULO;
-            lengths.shift();
+    for(const state of states.values()) {
+        if (state.isSimber()) {
+            total = (total + state.count) % MODULO;
         }
-    })
+    }
 
     return total;
 }
 
-const matrix = buildMatrix();
+const matrix = timeLogger.wrap('Building Matrix', _ => buildMatrix());
 
-// timeLogger.wrap('', _ => {
-//     console.log(Q(2**10, matrix));
-// });
-// timeLogger.wrap('', _ => {
-//     console.log(Q2(2**10, matrix));
-// });
+function calculateSimbers(m) 
+{
+    let result = 0;
+    for(const k of matrix.simbers) {
+        result = (result + m.get(0, k)) % MODULO;
+    }
+    return result;
+}
 
-assert.strictEqual(Q(7, matrix), 287975);
-assert.strictEqual(timeLogger.wrap('', _ => Q(100, matrix)), 123864868);
+function Q(n)
+{
+    const m = matrix.pow(n, MODULO);
+    const result = calculateSimbers(m);
+    return result;
+}
+
+function solve(max)
+{
+    let total = 0;
+    let m = matrix;
+
+    const tracer = new Tracer(1, true);
+    for(let p = 0; p < max; p++) {
+        tracer.print(_ => max-p);
+        m = m.multiply(m, MODULO);
+        total = (total + calculateSimbers(m)) % MODULO;
+    }
+    tracer.clear();
+    return total;
+}
+
+assert.strictEqual(Q(7), 287975);
+assert.strictEqual(timeLogger.wrap('', _ => Q(100)), 123864868);
 
 console.log('Teats passed');
 
 const answer = timeLogger.wrap('', _ => solve(MAX));
-
-console.log(`Answer is ${answer} - 888128264`);
+console.log(`Answer is ${answer}`);
