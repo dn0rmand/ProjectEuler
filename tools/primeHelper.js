@@ -254,7 +254,7 @@ module.exports = function(maxPrime, noMap)
             if (p <= _maxPrime)
                 return false;
         }
-        if (p === 2 || p === 3  || p === 5)
+        if (p === 2 || p === 3  || p === 5 || p === 7 || p === 11)
             return true;
 
         if ((p & 1) === 0 || p % 3 === 0 || p % 5 === 0 || p % 7 === 0 || p % 11 === 0)
