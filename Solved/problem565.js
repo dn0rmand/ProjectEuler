@@ -1,11 +1,12 @@
 const assert = require('assert');
 const primeHelper = require('tools/primeHelper')();
 const timeLogger = require('tools/timeLogger');
+const Tracer = require('tools/tracer');
 
 require('tools/numberHelper');
 
 const MAX       = 1E11;
-const MAX_PRIME = 1E9;
+const MAX_PRIME = 1E6;
 const DIVISOR   = 2017;
 
 timeLogger.wrap('Loading primes', _ => primeHelper.initialize(MAX_PRIME, true));
@@ -47,14 +48,14 @@ function goodPrimes(n, divisor, callback)
         while (v-1 <= n)
         {
             if (v-1 > max_prime && primeHelper.isPrime(v-1)) {
-                callback(v-1, v-1);
+                callback(v-1, 1, v-1);
             }
-            v *= divisor;
+            v += divisor;
         }
     }
 }
 
-function S(n, divisor)
+function S(n, divisor, trace)
 {
     assert.strictEqual(primeHelper.isPrime(divisor), true);
 
@@ -63,12 +64,12 @@ function S(n, divisor)
     function sumPrimes(to)
     {
         if (! sumPrimeCache[to])
-
-        if (to > max_prime)
-            sumPrimeCache[to] = primeHelper.sumPrimes(to);
-        else
-            sumPrimeCache[to] = allPrimes.reduce((a, p) => a + (p <= to ? p : 0));
-
+        {
+            if (to > max_prime)
+                sumPrimeCache[to] = primeHelper.sumPrimes(to);
+            else
+                sumPrimeCache[to] = allPrimes.reduce((a, p) => a + (p <= to ? BigInt(p) : 0n), 0n);
+        }
         return sumPrimeCache[to];
     }
 
@@ -83,13 +84,13 @@ function S(n, divisor)
 
         total += BigInt(value);
 
-        // const maxP = Math.floor(n / value);
+        const maxP = Math.floor(n / value);
 
-        // if (maxP > max_prime) {
-        //     const extra = sumPrimes(maxP) - sumPrimes(max_prime);
+        if (maxP > max_prime) {
+            const extra = sumPrimes(maxP) - sumPrimes(max_prime);
 
-        //     total += BigInt(value) * BigInt(extra);
-        // }
+            total += BigInt(value) * extra;
+        }
 
         for(let i = index; i < allPrimes.length; i++)
         {
@@ -112,31 +113,14 @@ function S(n, divisor)
         }
     }
 
+    const tracer = new Tracer(100, trace);
+
     goodPrimes(n, divisor, (p, f, v) => {
+        tracer.print(_ => n - p);
         inner(v, p, 0);
         foundValues[p] = f;
     });
-
-    return total;
-}
-
-function S1(n, d)
-{
-    let total = 0n;
-
-    for(let i = 1; i <= n; i++) 
-    {
-        let sum = 1;
-        primeHelper.factorize(i, (p, k) => {
-            const x = ( (p ** (k+1)) - 1 ) / (p - 1);
-
-            sum = sum.modMul(x, d);
-            if (sum === 0)
-                return false; // can stop now
-        });
-        if (sum === 0)
-            total += BigInt(i);
-    }
+    tracer.clear();
 
     return total;
 }
@@ -146,3 +130,7 @@ assert.strictEqual(timeLogger.wrap('S(1E6)', _ => S(1E6, DIVISOR)), 150850429n);
 assert.strictEqual(timeLogger.wrap('S(1E9)', _ => S(1E9, DIVISOR)), 249652238344557n);
 
 console.log('Tests passed');
+
+const answer = timeLogger.wrap('', _ => S(MAX, DIVISOR, true));
+
+console.log(`Answer is ${answer}`);
