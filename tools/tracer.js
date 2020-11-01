@@ -1,4 +1,5 @@
 const { gotoSOL, eraseLine, back } = require('console-control-strings');
+const prettyHrtime = require('atlas-pretty-hrtime');
 
 class Tracer
 {
@@ -9,6 +10,8 @@ class Tracer
         this.prefix     = prefix;
         this.traceCount = 0;
         this.lastLength = 0;
+        this.start      = undefined;
+        this.remaining  = undefined;        
     }
 
     get prefix() 
@@ -50,6 +53,16 @@ class Tracer
             {
                 this.clear(true);
                 let str = ` ${callback()} `;
+                if (this.remaining !== undefined)
+                {                    
+                    if (this.start !==  undefined) 
+                    {
+                        const end = process.hrtime.bigint() - this.start;
+                        const estimate = (BigInt(this.remaining) * end) / BigInt(this.speed);
+                        str = str + ` - estimated time ${ prettyHrtime(Number(estimate), 2) }`
+                    }
+                    this.start = process.hrtime.bigint();
+                }
                 process.stdout.write(str);
                 this.lastLength = str.length;
             }

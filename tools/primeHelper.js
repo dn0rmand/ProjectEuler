@@ -531,10 +531,10 @@ module.exports = function(maxPrime, noMap)
             if (n === 1)
                 return 1;
 
-            if (this.isPrime(n))
+            if (isPrime(n))
                 return n-1;
             
-            let pIter     = this.primes(true);
+            let pIter     = primes(true);
             let p         = pIter.next().value;
             let value     = n;
             let phi       = n;
@@ -551,7 +551,7 @@ module.exports = function(maxPrime, noMap)
                     if (value === 1)
                         break;
 
-                    if (this.isPrime(value))
+                    if (isPrime(value))
                     {
                         phi *= (value-1)/value;
                         break;
