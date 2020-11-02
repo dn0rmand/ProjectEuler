@@ -8,10 +8,13 @@ require('tools/numberHelper');
 const MAX = 3141592653589793;
 const MAX_PRIME = Math.ceil(Math.sqrt(MAX))+1
 
-primeHelper.initialize(MAX_PRIME);
+timeLogger.wrap('Loading primes', _ => primeHelper.initialize(MAX_PRIME));
 
 function countCoPrime(n, max)
 {
+    if (max > n-1)
+        max = n-1;
+
     if ((n & 1) === (max & 1))
         max--;
 
@@ -58,28 +61,25 @@ function P(max, trace)
             break;
 
         tracer.print(_ => {
-            tracer.remaining = maxm-m;
+            tracer.setRemaining(maxm-m);
             return maxm - m;
         });
 
-        const start = m & 1 ? 2 : 1;
-        let maxn  = Math.floor(Math.sqrt(max-m2));
+        const maxn  = Math.floor(Math.sqrt(max-m2));
         if (m-1> maxn)
         {
             if (primeHelper.isKnownPrime(m))
             {
-                const c = Math.floor(maxn/2);
-                total += c;
+                total += Math.floor(maxn/2);
             }
             else
             {
-                const c = countCoPrime(m, maxn);
-                total += c;
+                total += countCoPrime(m, maxn);
             }
         }
         else
         {
-            total += Math.ceil(primeHelper.PHI(m+m) / 2)
+            total += countCoPrime(m, maxn);
         }
     }
     tracer.clear();

@@ -1,5 +1,6 @@
 const { gotoSOL, eraseLine, back } = require('console-control-strings');
 const prettyHrtime = require('atlas-pretty-hrtime');
+const assert = require('assert');
 
 class Tracer
 {
@@ -11,7 +12,9 @@ class Tracer
         this.traceCount = 0;
         this.lastLength = 0;
         this.start      = undefined;
-        this.remaining  = undefined;        
+        this.remaining  = undefined;
+        this.executed   = undefined;
+        this.estimated  = undefined;
     }
 
     get prefix() 
@@ -45,6 +48,26 @@ class Tracer
         }
     }
 
+    setRemaining(remaining)
+    {
+        assert.notStrictEqual(remaining, undefined);
+
+        remaining = BigInt(remaining);
+
+        if (this.remaining === undefined) {
+            this.remaining = remaining;
+            this.start     = process.hrtime.bigint();
+            this.executed  = 0n;
+        }
+        else {
+            this.executed  += this.remaining - remaining;
+            this.remaining  = remaining;
+            const spend     = process.hrtime.bigint() - this.start;
+            
+            this.estimated  = Number((spend * remaining) / this.executed);
+        }
+    }
+
     print(callback)
     {
         if (this.enabled)
@@ -53,15 +76,9 @@ class Tracer
             {
                 this.clear(true);
                 let str = ` ${callback()} `;
-                if (this.remaining !== undefined)
-                {                    
-                    if (this.start !==  undefined) 
-                    {
-                        const end = process.hrtime.bigint() - this.start;
-                        const estimate = (BigInt(this.remaining) * end) / BigInt(this.speed);
-                        str = str + ` - estimated time ${ prettyHrtime(Number(estimate), 2) }`
-                    }
-                    this.start = process.hrtime.bigint();
+                if (this.estimated !== undefined)
+                { 
+                    str += ` - estimated time ${ prettyHrtime(this.estimated, 2) }`;
                 }
                 process.stdout.write(str);
                 this.lastLength = str.length;
