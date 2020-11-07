@@ -44,7 +44,7 @@
             "name": "Node: Current File",
             "program": "${file}",
             "cwd": "${fileDirname}",
-            "console": "integratedTerminal"
+            // "console": "integratedTerminal"
         },
         {
             "type": "node",
