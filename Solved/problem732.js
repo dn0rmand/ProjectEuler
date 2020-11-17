@@ -1,6 +1,7 @@
 const assert = require('assert');
 const Tracer = require('tools/tracer');
 const timeLogger = require('tools/timeLogger');
+const BigMap = require('tools/BigMap');
 
 const dummyGC = () => {};
 
@@ -71,35 +72,13 @@ function createTrolls(n, useIds)
     return trolls;
 }
 
-function getValue(trolls, height)
-{
-    let value = 0;
-    
-    for(const t of trolls)
-    {
-        height -= t.h;
-        if (t.l >= height)
-        {
-            t.escape = true;
-            value += t.q;
-        }
-        else
-        {
-            t.escape = false;
-        }
-    }
-    return value;
-}
-
-function bruteQ(n, trace)
+function Q(n, trace)
 {
     const memoize = new Map();
-    const tracer = new Tracer(1, trace);
+    const tracer  = new Tracer(1, trace);
 
     const allTrolls = createTrolls(n, true);
     const D         = Math.ceil(allTrolls.reduce((a, t) => a + t.h, 0) / Math.sqrt(2));
-
-    console.log(getValue(allTrolls, D));
 
     let biggest = 0;
 
@@ -119,6 +98,9 @@ function bruteQ(n, trace)
 
     function inner(height, trolls)
     {
+        if (biggest >= 45609)
+            return 0;
+
         if (height < 0)
             height = 0;
 
@@ -172,49 +154,6 @@ function bruteQ(n, trace)
 
     return maximum;
 }
-
-function smartQ(n, trace)
-{
-    const tracer = new Tracer(1, trace);
-
-    const trolls = createTrolls(n, true);
-    const D      = Math.ceil(trolls.reduce((a, t) => a + t.h, 0) / Math.sqrt(2));
-
-    let max = getValue(trolls, D);
-
-    for(let i = 0; i < trolls.length; i++)
-    {
-        const t1 = trolls[i];
-
-        for(let j = trolls.length-1; j > i; j--)
-        {
-            const t2 = trolls[j];
-
-            if (t1.escape && t2.escape)
-                continue;
-
-            trolls[i] = t2;
-            trolls[j] = t1;
-            const m = getValue(trolls, D);
-            if (m > max) {
-                i = -1;
-                max = m;
-                tracer.print(_ => max);
-                break;
-            } else {
-                trolls[i] = t1;
-                trolls[j] = t2;
-                getValue(trolls, D);
-            }
-        }
-    }
-
-    tracer.clear();
-
-    return max;
-}
-
-const Q = bruteQ;
 
 assert.strictEqual(Q(5), 401);
 assert.strictEqual(timeLogger.wrap('Q(15)', _ => Q(15)), 941);
