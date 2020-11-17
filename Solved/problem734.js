@@ -12,9 +12,9 @@ const MODULO = 1000000007;
 primeHelper.initialize(MAX_PRIME);
 
 const primeMap = (function() {
-    const map = [];
+    const map = new Uint8Array(MAX_PRIME+1);
     for(let p of primeHelper.allPrimes())
-        map[p] = true;
+        map[p] = 1;
 
     return map;
 })();
