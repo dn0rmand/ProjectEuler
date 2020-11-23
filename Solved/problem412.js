@@ -36,8 +36,6 @@ function LC(m, n, trace)
 {
     let divisor = 1;
 
-    const counts = [];
-
     const tracer1 = new Tracer(500, trace, 'Calculate Divisor');
 
     forXY(m, n, (x, y) => {
@@ -50,7 +48,6 @@ function LC(m, n, trace)
 
         const items = top+right-1;
 
-        counts[items] = (counts[items] || 0)+1;
         divisor = divisor.modMul(items, MODULO);
     });
     tracer1.clear();

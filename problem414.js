@@ -48,12 +48,12 @@ function countPattern(values)
             word += String.fromCharCode(c).repeat(s);
             c++;
         }
-        assert.equal(word.length, 5);
+        assert.strictEqual(word.length, 5);
         return word.split('');
     }
 
     const letters = makeLetters();
-    const words = [];
+    const words = new Array(letters.length);
     const visited = new Set();
 
     function inner(index)
@@ -85,8 +85,8 @@ function countPattern(values)
 
 function routine(digits, base)
 {
-    const v2 = [];
     const l  = digits.length;
+    const v2 = new Array(l);
 
     let remainder = 0;
     for(let i = 0; i < l; i++)
@@ -190,7 +190,7 @@ function S(base, trace)
     const used   = new Uint16Array(base);
     const digits = new Uint16Array(5);
 
-    const $steps = [];
+    const $steps = new Array(base);
 
     function inner(patternIndex)
     {
@@ -227,7 +227,7 @@ function S(base, trace)
                 start = digits[length-1];
             }
 
-            const tracer = new Tracer(1, trace && index < 2);
+            const tracer = new Tracer(100*index+1, trace && index < 2);
 
             for(let digit = start; digit < base; digit++)
             {
@@ -282,15 +282,16 @@ let values = [
 ];
 */
 
-assert.equal(timeLogger.wrap('', _ => S(15)), 5274369);
-assert.equal(timeLogger.wrap('', _ => S(getBase(3))), 34289199);
-assert.equal(timeLogger.wrap('', _ => S(getBase(4))), 132630799);
-assert.equal(timeLogger.wrap('', _ => S(getBase(5))), 403303329);
-assert.equal(timeLogger.wrap('', _ => S(getBase(6))), 1012505449);
-assert.equal(timeLogger.wrap('', _ => S(getBase(7))), 2261868699);
+assert.strictEqual(timeLogger.wrap('', _ => S(15)), 5274369n);
+assert.strictEqual(timeLogger.wrap('', _ => S(getBase(3))), 34289199n);
+assert.strictEqual(timeLogger.wrap('', _ => S(getBase(4))), 132630799n);
+assert.strictEqual(timeLogger.wrap('', _ => S(getBase(5))), 403303329n);
+assert.strictEqual(timeLogger.wrap('', _ => S(getBase(6))), 1012505449n);
+assert.strictEqual(timeLogger.wrap('', _ => S(getBase(7))), 2261868699n);
 
-assert.equal(timeLogger.wrap('', _ => S(111, true)), 400668930299);
+//assert.strictEqual(timeLogger.wrap('', _ => S(111, true)), 400668930299n);
 
 console.log('Tests passed');
 
-// timeLogger.wrap('', _ => S(1803, true));
+const answer = timeLogger.wrap('', _ => S(1803, true));
+console.log(`Answer is ${answer}`);
