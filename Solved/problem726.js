@@ -8,13 +8,6 @@ const MODULO = 1000000033n;
 const MAX = 1E4;
 const MAX_BOTTLES = 50005000; // Because of MAX 1e4
 
-`
-1
-3 1
-5 3 1
-7 5 3 1 => 7 = n*2 + 1
-`
-
 const factorial = timeLogger.wrap('Pre-loading Factorial', _ => {
     const $factorial = new BigUint64Array(MAX_BOTTLES+1);
 
