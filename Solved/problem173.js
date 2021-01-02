@@ -5,7 +5,30 @@
 
 const assert = require('assert');
 
-const MILLION = 1000000;
+const MAX_TILES = 1000000;
+
+const L = new Int32Array(MAX_TILES+1).fill(0);
+
+function preLoad()
+{
+    for(let outer = 3; ; outer++)
+    {
+        const outer2 = outer*outer;
+        let tiles = outer2 - (outer-2)*(outer-2);
+        if (tiles > MAX_TILES)
+            break;
+
+        for(let inner = outer-2; inner > 0; inner -= 2) 
+        {
+            tiles = outer2 - inner*inner;
+
+            if (tiles > MAX_TILES)
+                break;
+            
+            L[tiles]++;
+        }
+    }
+}
 
 function formSquare(tiles, n)
 {
@@ -41,26 +64,14 @@ function countSquare(tiles)
 function solve(max)
 {
     let total = 0;
-    let percent = '';
-    
-    max = max - (max % 4);
-
-    for (let n = max; n >= 8; n -= 4)
-    {
-        let t = countSquare(n);
-        total += t;
-        let p = ((n * 100)/max).toFixed(0);
-        if (p !== percent)
-        {
-            percent = p;
-            console.log(percent);
-        }
-    }
+    for(let i = 0; i <= max; i++)
+        total += L[i];
     return total;
 }
 
-assert.equal(countSquare(32), 2);
+preLoad();
+assert.strictEqual(solve(100), 41);
 
-let answer = solve(MILLION);
+let answer = solve(MAX_TILES);
 
-console.log('Using up to', MAX, 'tiles,', answer, 'different square laminae can be formed?');
+console.log('Using up to', MAX_TILES, 'tiles,', answer, 'different square laminae can be formed');
