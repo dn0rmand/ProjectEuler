@@ -28,38 +28,31 @@ const $factorial = timeLogger.wrap('Loading factorials', _ => {
     return f;
 });
 
-function getPossibleWindows(sum, ones)
-{
-    const remaining = sum - ones;
-
-    if (remaining % 2 !== 0)
-        return 0;
-
-    const twos = remaining / 2;
-    const zeros= sum - ones - twos;
-
-    // now we need to calculate the possible way of making zeros * 00, twos * 11 and ones * (01 or 10) 
-
-    const top = $factorial[sum];
-    const bottom = $factorial[zeros].modMul($factorial[ones].modMul($factorial[twos], MODULO), MODULO);
-
-    return top.modDiv(bottom, MODULO);
-}
-
 function A(k, n, trace)
 {
-    // const diff  = (n-k);//Number((BigInt(n)-BigInt(k)) % BigInt(MODULO));
+    const getPossibleWindows = (sum, ones) =>
+    {
+        const remaining = sum - ones;
+        const twos  = remaining / 2;
+        const zeros = sum - ones - twos;
+        const top = $factorial[sum];
+        const bottom = $factorial[zeros].modMul($factorial[ones].modMul($factorial[twos], MODULO), MODULO);
+    
+        return top.modDiv(bottom, MODULO);
+    }
 
-    const ratio = Number((BigInt(n)-BigInt(k)) / BigInt(k)); // (diff.modDiv(k, MODULO)) % MODULO;
-    const POW2  = TWO.modPow(ratio, MODULO);
+    const ratio = Number((BigInt(n)-BigInt(k)) / BigInt(k));
 
-    let total = 0;
+    let POW2  = TWO.modPow(ratio+1, MODULO);
 
     const tracer = new Tracer(SPEED, trace);
     const start = k & 1 ? 1 : 0;
 
-    let twos = TWO.modPow(start, MODULO);
     let pow2 = POW2.modPow(start, MODULO);
+
+    POW2 = POW2.modMul(POW2, MODULO);
+
+    let total = 0;
 
     for(let ones = start; ones <= k; ones += 2) {
         tracer.print(_ => k - ones);
@@ -68,12 +61,10 @@ function A(k, n, trace)
         if (count === 0)
             continue;
 
-        count = twos.modMul(count, MODULO);
         const v = pow2.modMul(count, MODULO);
 
         total = (total + v) % MODULO;
 
-        twos = twos.modMul(TWO, MODULO);
         pow2 = pow2.modMul(POW2, MODULO);
     }
 
