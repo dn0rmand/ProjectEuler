@@ -1,0 +1,96 @@
+const assert = require('assert');
+const Tracer = require('tools/tracer');
+const timeLogger = require('tools/timeLogger');
+
+require('tools/numberHelper');
+
+const MODULO = 1000000007
+const MAX = 10n ** 16n;
+const MAX_K = 1E8;
+
+const TWO = 2;
+
+const SPEED = 50000;
+
+const $factorial = timeLogger.wrap('Loading factorials', _ => {
+    const ONE = 1;
+    const f = new Uint32Array(MAX_K+1);
+
+    f[0] = f[1] = ONE;
+
+    const tracer = new Tracer(SPEED, true);
+    for(let i = 2; i <= MAX_K; i++) 
+    {
+        tracer.print(_ => MAX_K-i);
+        f[i] = f[i-1].modMul(i, MODULO);
+    }
+    tracer.clear();
+    return f;
+});
+
+function getPossibleWindows(sum, ones)
+{
+    const remaining = sum - ones;
+
+    if (remaining % 2 !== 0)
+        return 0;
+
+    const twos = remaining / 2;
+    const zeros= sum - ones - twos;
+
+    // now we need to calculate the possible way of making zeros * 00, twos * 11 and ones * (01 or 10) 
+
+    const top = $factorial[sum];
+    const bottom = $factorial[zeros].modMul($factorial[ones].modMul($factorial[twos], MODULO), MODULO);
+
+    return top.modDiv(bottom, MODULO);
+}
+
+function A(k, n, trace)
+{
+    // const diff  = (n-k);//Number((BigInt(n)-BigInt(k)) % BigInt(MODULO));
+
+    const ratio = Number((BigInt(n)-BigInt(k)) / BigInt(k)); // (diff.modDiv(k, MODULO)) % MODULO;
+    const POW2  = TWO.modPow(ratio, MODULO);
+
+    let total = 0;
+
+    const tracer = new Tracer(SPEED, trace);
+    const start = k & 1 ? 1 : 0;
+
+    let twos = TWO.modPow(start, MODULO);
+    let pow2 = POW2.modPow(start, MODULO);
+
+    for(let ones = start; ones <= k; ones += 2) {
+        tracer.print(_ => k - ones);
+
+        let count = getPossibleWindows(k, ones);
+        if (count === 0)
+            continue;
+
+        count = twos.modMul(count, MODULO);
+        const v = pow2.modMul(count, MODULO);
+
+        total = (total + v) % MODULO;
+
+        twos = twos.modMul(TWO, MODULO);
+        pow2 = pow2.modMul(POW2, MODULO);
+    }
+
+    tracer.clear();
+
+    return total;
+}
+
+assert.strictEqual(A(3, 9), 560);
+assert.strictEqual(A(4, 20), 1060870);
+
+assert.strictEqual(A(8, 1E8), 34361002);
+assert.strictEqual(A(8, 1E9), 176222383);
+assert.strictEqual(A(8, MAX), 637480935);
+
+console.log('Tests passed');
+
+const answer = timeLogger.wrap('', _ => A(MAX_K, MAX, true));
+
+console.log(`Answer is ${answer}`);
