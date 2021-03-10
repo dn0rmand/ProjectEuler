@@ -1,54 +1,51 @@
 const assert = require('assert')
-const Tracer = require('tools/tracer');
 const timeLogger = require('tools/timeLogger');
+
+function getPositions(N)
+{
+    const cards = [];
+
+    let card = 1;
+
+    for (let i = 1; i <= N; i++) {
+        card = (card*3) % (N+1);
+        cards[card] = i;
+    }
+
+    return cards
+}
+
+let $cost = [];
+let positions = [];
+
+function cost(min, max) 
+{
+    if (min === max) {
+        return 0
+    }
+
+    const key = (min * 1000) + max;
+    if ($cost[key] !== undefined) {
+        return $cost[key];
+    }
+
+    let value = Number.MAX_SAFE_INTEGER;
+
+    for(let i = min; i < max; i++) {
+        let c = Math.abs(positions[i]-positions[max]) + cost(min, i) + cost(i+1, max);
+        value = Math.min(value, c);
+    }
+
+    $cost[key] = value;
+    return value;
+}
 
 function G(N) 
 {
-    function getPositions(N)
-    {
-        N = BigInt(N);
-        const cards = [];
-    
-        for (let i = 1n; i <= N; i++) {
-            const card = Number((3n**i) % (N+1n));
-            cards[card] = Number(i);
-        }
-    
-        return cards
-    }
+    positions = getPositions(N);
+    $cost = [];
 
-    const positions = getPositions(N);
-
-    if (!positions) {
-        return 0;
-    }
-
-    const $cost = [];
-
-    function cost(min, max) 
-    {
-        if (min === max) {
-            return 0
-        }
-
-        const key = (min * 1000) + max;
-        if ($cost[key] !== undefined) {
-            return $cost[key];
-        }
-
-        let value = Number.MAX_SAFE_INTEGER;
-
-        for(let i = min; i < max; i++) {
-            let c = Math.abs(positions[i]-positions[max]) + cost(min, i) + cost(i+1, max);
-            value = Math.min(value, c);
-        }
-
-        $cost[key] = value;
-        return value;
-    }
-
-    let total = cost(1, N);
-    return total;
+    return cost(1, N);
 }
 
 timeLogger.wrap('Testing', _ => {
@@ -59,5 +56,5 @@ timeLogger.wrap('Testing', _ => {
     assert.strictEqual(G(30), 153); 
 });
 
-let answer = timeLogger.wrap('G(976)', _ => G(976, true));
+let answer = timeLogger.wrap('', _ => G(976));
 console.log(`Answer is ${answer}`);
