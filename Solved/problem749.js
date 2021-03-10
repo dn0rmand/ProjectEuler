@@ -4,7 +4,7 @@ const timeLogger = require('tools/timeLogger');
 
 function S(N, trace) 
 {
-    const MAX = (10**N);
+    const MAX = Math.min(Number.MAX_SAFE_INTEGER, (10**N));
 
     let total = 0;
     let maxK  = 1;
@@ -74,7 +74,7 @@ function S(N, trace)
     const tracer = new Tracer(1000, trace);
 
     tracer.print(_ => "loading digit sets");
-    const sets = [...getSets(0, [])];
+    const sets = timeLogger.wrap('', _ => [...getSets(0, [])]);
 
     for(let i = 0; i < sets.length; i++) {
         tracer.print(_ => sets.length-i);
