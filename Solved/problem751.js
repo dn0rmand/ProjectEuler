@@ -1,8 +1,17 @@
+const timeLogger= require('tools/timeLogger');
 const getDigits = require('tools/digits');
+const BigNumber = require('bignumber.js');
+
+const DECIMALS = 24;
+
+BigNumber.set({ 
+    ROUNDING_MODE: 1, // 3
+    DECIMAL_PLACES: DECIMALS+5,
+});
 
 function getNext(digits)
 {
-    const θ = +('2.'+digits.join(''));
+    const θ = BigNumber('2.'+digits.join(''));
 
     function bθ(n)
     {
@@ -12,16 +21,16 @@ function getNext(digits)
         }
 
         const b = bθ(n-1);
-        const B = Math.floor(b);
+        const B = b.integerValue();
 
-        const r = B * (b - B + 1);
+        const r = B.times(b.minus(B).plus(1));
 
         return r;
     }
 
     function aθ(n) 
     {
-        return Math.floor(bθ(n));
+        return Number(bθ(n).integerValue());
     }
 
     let n = 2;
@@ -59,5 +68,5 @@ function solve(bits)
     return digits.join('');
 }
 
-const answer = solve(24);
+const answer = timeLogger.wrap('', _ => solve(DECIMALS));
 console.log(`Answer is ${answer}`);
