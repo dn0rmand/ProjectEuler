@@ -1,97 +1,48 @@
-const bigInt = require('big-integer');
-const isPrime = require("tools/isPrime");
+require('tools/numberHelper');
 
-const MOD    = 5764801;
-const modulo = MOD * Math.pow(2, 8);
+const MODULO = 14 ** 8;
+const TWO = 2;
 
-function A(m, n)
+function H(n, x, y)
 {
-    if (m == 0)
-        return n+1;
-    
-    if (n == 0)
-    {
-        v = A(m-1, 1);
-        return v;
-    }
-    else
-    {
-        let x = A(m, n-1);
-        v = A(m-1, x);
-        return v;
-    }
-}
-
-function A1(m, n)
-{
-    let s = [];
-
-    s.push(m);
-
-    let maxLength = 1;
-
-    while (s.length > 0)
-    {
-        m = s.pop();
-        while (true)
-        {
-            if(m == 0) 
-            { 
-                n++; 
-                break;
-            }
-            else if(n == 0)
-            {
-                n++;
-                m--;
-            }
-            else
-            {
-                s.push(m-1);
-                if (s.length > maxLength)
-                    maxLength = s.length;
-                n--;
-            }
+    if (n === 0) {
+        return (y+1) % MODULO;
+    } else if (n === 1) {
+        return (x+y) % MODULO;
+    } else if (n === 2) {
+        return x.modMul(y, MODULO);
+    } else if (n === 3) {
+        return x.modPow(y, MODULO);
+    } else if (n === 4) {        
+        let p = 1;
+        for (let i = 0; i < y; i++) {
+            p = x.modPow(p, MODULO);
         }
+        return p;
+    } else {
+        H(n-1, x, H(n, x, y-1));
     }
-    console.log(maxLength);
-    return n;
 }
 
-function A2(m)
+function Ackerman(n)
 {
-    if (m < 4)
-    {
-        return A(m, m);
-    }
-    else if (m === 4)
-    {
-        let v = bigInt(2).pow(bigInt(65536));
-        v = bigInt(2).pow(v);
-        v = bigInt(2).pow(v);
-        return v.subtract(3);
-    }
-    else if (m === 5)
-    {
-        return 0;
-    }
-    else if (m === 6)
-    {
-        return 0;
-    }
-    else   
-        throw "Not supported";
+    const value = (H(n, 2, n+3) + MODULO - 3) % MODULO;
+    console.log(`${n} -> ${value}`)
+    return value;
 }
 
-function Ackerman(m)
+function solve(N)
 {
-    return A1(m, m);
+    let total = 0;
+
+    for (let n = 0; n <= N; n++)
+    {
+        total = (total + Ackerman(n)) % MODULO;
+    }
+
+    return total;
 }
 
-console.log('4,1 -> ' + A1(4,1));
-console.log('4,2 -> ' + A1(4,2));
+Ackerman(4);
 
-// for (let m = 0; m <= 6; m++)
-// {
-//     console.log("Ackerman(" + m + ", " + m + ") = " + Ackerman(m));
-// }
+console.log(`Answer is ${solve(6)}`);
