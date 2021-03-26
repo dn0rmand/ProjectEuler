@@ -1,5 +1,4 @@
 const assert = require('assert');
-const Tracer = require('tools/tracer');
 const timeLogger = require('tools/timeLogger');
 
 const MIN_COLOR = 1
@@ -25,7 +24,7 @@ class State
     {
         const s = new State();
 
-        s.previousRow = [...this.previousRow];
+        s.previousRow = this.previousRow;
         s.currentRow  = [...this.currentRow];
         s.count       = this.count;
         s.rows        = this.rows;
@@ -36,29 +35,37 @@ class State
     {
         if (this.$key === undefined) 
         {
-            let colors = [];
-            for(let i = 0; i < this.previousRow.length; i += 2) {
-                colors.push(this.previousRow[i]);
-            }
-            colors.push(...this.currentRow);
-            // let colors = [...this.previousRow, ...this.currentRow];
-            // make colors more generic
-            let map = [];
-            for(let i = 0; i < colors.length; i++) {
-                const c = colors[i];
-                let color = map.indexOf(c);
+            const map = [];
+
+            const convert = c => {
+                const color = map.indexOf(c);
 
                 if (color === -1) {
                     map.push(c);
-                    color = map.length-1;
+                    return map.length-1;
+                } else {
+                    return color;
                 }
-                colors[i] = color;
             }
 
             let key = 0;
-            for(const c of colors) {
-                key = (key * 3) + (c-1);
+
+            for(let i = 0; i < this.previousRow.length; i += 2) {
+                key = (key*3) + convert(this.previousRow[i]);
             }
+
+            const l = this.currentRow.length;
+            
+            if (l > 0) {
+                let i = 0;
+                for(; i < l; i += 2) {
+                    key = (key*3) + convert(this.currentRow[i]);
+                }
+
+                if (i === l) // add last color since it was "missed"
+                    key = (key*3) + convert(this.currentRow[l-1]);
+            }
+
             this.$key = key;
         }
         return this.$key;
@@ -89,7 +96,7 @@ class State
     }
 }
 
-function solve(maxRows, trace) 
+function solve(maxRows) 
 {
     let states = new Map();
     let newStates = new Map();
@@ -97,26 +104,17 @@ function solve(maxRows, trace)
     states.set(0, new State());
 
     let total = 0n;
-    let rows  = 0;
 
-    const tracer = new Tracer(10000, trace);
     while(states.size > 0) 
     {
-        let count = states.size;
         newStates.clear();
         for(const state of states.values()) 
         {
-            tracer.print(_ => `${maxRows - rows} - ${count} - ${newStates.size}`);
-            count--;
             for(let color = MIN_COLOR; color <= MAX_COLOR; color++) 
             {
                 const newState = state.addColor(color);
                 if (! newState) 
                     continue;
-
-                if (newState.rows > rows) {
-                    rows = newState.rows;
-                }
 
                 if (newState.rows >= maxRows) 
                 {
@@ -136,7 +134,6 @@ function solve(maxRows, trace)
 
         [states, newStates] = [newStates, states];
     }
-    tracer.clear();
 
     return total;
 }
@@ -146,5 +143,5 @@ assert.strictEqual(solve(6), 2450774016n);
 
 console.log('Tests passed');
 
-let answer = timeLogger.wrap('', _ => solve(8, true));
+let answer = timeLogger.wrap('', _ => solve(8));
 console.log(`Answer is ${answer}`);
