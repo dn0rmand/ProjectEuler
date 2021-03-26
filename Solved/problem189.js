@@ -36,7 +36,12 @@ class State
     {
         if (this.$key === undefined) 
         {
-            let colors = [...this.previousRow, ...this.currentRow];
+            let colors = [];
+            for(let i = 0; i < this.previousRow.length; i += 2) {
+                colors.push(this.previousRow[i]);
+            }
+            colors.push(...this.currentRow);
+            // let colors = [...this.previousRow, ...this.currentRow];
             // make colors more generic
             let map = [];
             for(let i = 0; i < colors.length; i++) {
@@ -94,7 +99,7 @@ function solve(maxRows, trace)
     let total = 0n;
     let rows  = 0;
 
-    const tracer = new Tracer(50000, trace);
+    const tracer = new Tracer(10000, trace);
     while(states.size > 0) 
     {
         let count = states.size;
