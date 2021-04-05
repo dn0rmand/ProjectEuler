@@ -56,6 +56,7 @@
     "sorted": "^0.1.1",
     "splaytreejs": "^1.0.5",
     "sqlite": "^3.0.6",
+    "turbojs": "^1.0.2",
     "utf8": "^3.0.0",
     "workerpool": "^5.0.4",
     "written-number": "^0.8.1",
