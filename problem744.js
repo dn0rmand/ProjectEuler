@@ -1,5 +1,4 @@
 const assert     = require('assert');
-const G = require('glob');
 const timeLogger = require('tools/timeLogger');
 const Tracer     = require('tools/tracer');
 
@@ -45,7 +44,7 @@ function f1(n, pTop, pBottom, trace)
 
             if (max >= n) {
                 wins += newState.probability;
-            } else {
+    } else {
                 const key = newState.diff;
                 const old = newStates.get(key);
                 if (old != null) {
@@ -55,7 +54,7 @@ function f1(n, pTop, pBottom, trace)
                     newStates.set(key, newState);
                 }
             }
-        }
+    }
 
         for(const state of states.values()) {            
             // pick non-red card
@@ -70,7 +69,7 @@ function f1(n, pTop, pBottom, trace)
                 count: state.count,
             });
 
-            // player wins
+    // player wins
 
             add({
                 diff: state.diff + 1,
@@ -86,117 +85,52 @@ function f1(n, pTop, pBottom, trace)
 
     tracer.clear();
 
-    return wins;// .toFixed(10);
-}
-
-const $factorials = [];
-
-function factorial(n)
-{
-    if (n < 2) return 1n;
-    const i = Number(n);
-
-    if (!$factorials[i]) {
-        $factorials[i] = n * factorial(n-1n);
-    }
-    return $factorials[i];
-}
-
-function nCp(n, p)
-{
-    const top    = factorial(n);
-    const bottom = factorial(p) * factorial(n-p);
-
-    return top / bottom;
-}
-
-class Probability 
-{
-    static ONE() { 
-        return new Probability(1n, 1n);
-    }
-
-    constructor(top, bottom) {
-        this.top    = top === undefined ? 1n : BigInt(top);
-        this.bottom = bottom === undefined ? 1n : BigInt(bottom);
-        this.simplify();
-    }
-
-    multiply(other) {
-        return new Probability(this.top * other.top, this.bottom * other.bottom);
-    }
-
-    simplify() {
-        const g = this.top.gcd(this.bottom).valueOf();
-        if (g == 0) {
-            this.top = 0n;
-            this.bottom = 1n;
-        } else if (g !== 1n) {
-            this.top /= g;
-            this.bottom /= g;
-        }
-        return this;
-    }
-
-    add(other) {
-        return new Probability(
-            this.top*other.bottom + other.top*this.bottom,
-            this.bottom * other.bottom);
-    }
-
-    minus(other) {
-        return new Probability(
-            this.top*other.bottom - other.top*this.bottom,
-            this.bottom * other.bottom
-            );
-    }
-
-    pow(n) {
-        n = BigInt(n);
-        return new Probability(this.top ** n, this.bottom ** n);
-    }
-
-    toNumber() {
-        return this.top.divise(this.bottom, 30);
-    }
-
-    equal(other) {
-        return this.top === other.top && this.bottom === other.bottom;
-    }
+    wins = wins.toFixed(13);
+    return wins.substr(0, 12);
 }
 
 function f2(n, pTop, pBottom, trace)
 {
-    let wins = 0;
+    const expertWins  = pTop / pBottom;
+    const playerWins  = 1 - expertWins;
+    const nExpertWins = Math.pow(expertWins, n);
+    const nPlayerWins = Math.pow(playerWins, n);
 
-    const expertWins = new Probability(pTop, pBottom);
-    const playerWins = Probability.ONE().minus(expertWins);
+    const CARDS = 2*n+1;
 
-    n = BigInt(n);
+    const tracer = new Tracer(10000, trace);
 
-    const CARDS       = 2n*n+1n;
-    const nExpertWins = expertWins.pow(n);
-    const nPlayerWins = playerWins.pow(n);
+    let ways = 1;
+    let expertSum = 0;
+    let playerSum = 0;
 
-    // for(let played = n; played < )
     for(let played = n; played < n+n; played++) {
-        const reverse = played-n;
-        const prob    = new Probability(CARDS-played, CARDS); 
-        const ways    = new Probability(nCp(played-1n, reverse));  
+        tracer.print(_ => n+n-played);
+        
+        const otherCards = played-n;
+        const prob       = (CARDS-played) / CARDS; 
+        
+        ways = played === n ? 1 : ways * (played-1) / otherCards;
+
+        const times = prob * ways;
 
         // Expert wins
-        const expert = nExpertWins.multiply(playerWins.pow(reverse)).multiply(prob).multiply(ways); 
+        const expert = nExpertWins * Math.pow(playerWins, otherCards) * times; 
 
         // player wins
-        const player = nPlayerWins.multiply(expertWins.pow(reverse)).multiply(prob).multiply(ways); 
+        const player = nPlayerWins * Math.pow(expertWins, otherCards) * times; 
 
         // total 
-        const total = expert.add(player);    
 
-        wins += total.toNumber();
+        expertSum += expert;
+        playerSum += player;
     }
 
-    return wins;
+    tracer.clear();
+
+    let wins = expertSum + playerSum;
+    wins = wins.toFixed(13);
+    return wins.substr(0, 12);
 }
 
 function f3(n, top, bottom, trace)
@@ -217,7 +151,7 @@ function f3(n, top, bottom, trace)
     const tracer = new Tracer(10000, trace);
 
     for(let played = n; played < n+n; played++) {
-        // tracer.print(_ => n+n-played);
+        tracer.print(_ => n+n-played);
 
         const otherCards = played-n;
         const prob       = Math.log10(1 - (1 / CARDS)*played);
@@ -245,7 +179,7 @@ function f3(n, top, bottom, trace)
     return wins.substr(0, 12);
 }
 
-const f = f3;
+const f = f2;
 
 assert.strictEqual(f(6, 1, 2), '0.2851562500');
 assert.strictEqual(f(10,3, 7), '0.2330040743');
