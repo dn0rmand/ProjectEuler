@@ -51,8 +51,6 @@ function reduce(values)
         values = differences(values);
     }
 
-    if (values.length > 1)
-        debugger;
     if (values.length < 10)
         throw "No solution or not enough data";
 
