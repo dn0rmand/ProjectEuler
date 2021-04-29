@@ -1,6 +1,6 @@
 module.exports = function(maxPrime, noMap)
 {
-    const Database = require('better-sqlite3');
+    let Database = undefined;
     const BitArray = require('tools/bitArray');
     const BigSet   = require('tools/BigSet');
 
@@ -12,6 +12,10 @@ module.exports = function(maxPrime, noMap)
         if ($db)
             return $db;
 
+        if (! Database) {
+            Database = require('better-sqlite3');
+        }
+        
         $db = new Database(`${__dirname}/primeCounts.sqlite`);
         $db.exec(`
         CREATE TABLE IF NOT EXISTS "prime_counts" 
