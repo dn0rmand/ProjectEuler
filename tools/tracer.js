@@ -4,6 +4,13 @@ const assert = require('assert');
 
 class Tracer
 {
+    static create(speed, enabled, prefix)
+    {
+        if (enabled) {
+            return new Tracer(speed, enabled, prefix);
+        }
+    }
+
     constructor(speed, enabled, prefix)
     {
         this.enabled    = enabled;

@@ -519,7 +519,7 @@ module.exports = function(maxPrime, noMap)
         mobius: (n) =>
         {
             let result = 1;
-            this.factorize(n, (prime, factor) => {
+            factorize(n, (prime, factor) => {
                 if (factor > 1)
                 {
                     result = 0;
