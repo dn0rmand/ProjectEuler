@@ -1,13 +1,36 @@
 const assert = require('assert');
 const Tracer = require('tools/tracer');
 const timeLogger = require('tools/timeLogger');
-const { quickSort } = require('sort-algorithms-js');
 
 const MAX = 1E14;
 
+class DistinctCollection
+{
+    static HASHCODE = 2**23-1;
+    constructor()
+    {
+        this.length = 0;
+        this.buckets = new Array(DistinctCollection.HASHCODE+1);
+    }
+
+    push(value) {
+        const h = value & DistinctCollection.HASHCODE;
+        const b = this.buckets[h];
+        if (b === undefined) {
+            this.buckets[h] = [value];
+            this.length++;
+        } else {
+            if (! b.includes(value)) {
+                b.push(value);
+                this.length++;
+            }
+        }
+    }
+}
+
 function count(max, trace)
 {
-    const values = [];
+    const values = new DistinctCollection();
 
     const tracer = new Tracer(1, trace);
     const m = Math.floor(Math.sqrt(max));
@@ -34,19 +57,7 @@ function count(max, trace)
         }
     }
 
-    tracer.print(_ => `Sorting ... ${values.length} items`);
-    const sorted = values.sort((a, b) => a-b);
-
-    tracer.print(_ => 'Counting ...');
-    let previous = 0;
-
-    let answer = 0;
-    for(const v of sorted) {
-        if (v !== previous) {
-            answer++;
-            previous = v;
-        }
-    }
+    let answer = values.length;
 
     tracer.clear();
 
