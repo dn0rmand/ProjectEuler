@@ -1,32 +1,9 @@
 const assert = require('assert');
 const Tracer = require('tools/tracer');
 const timeLogger = require('tools/timeLogger');
+const DistinctCollection = require('tools/distinctCollection');
 
 const MAX = 1E14;
-
-class DistinctCollection
-{
-    static HASHCODE = 2**23-1;
-    constructor()
-    {
-        this.length = 0;
-        this.buckets = new Array(DistinctCollection.HASHCODE+1);
-    }
-
-    push(value) {
-        const h = value & DistinctCollection.HASHCODE;
-        const b = this.buckets[h];
-        if (b === undefined) {
-            this.buckets[h] = [value];
-            this.length++;
-        } else {
-            if (! b.includes(value)) {
-                b.push(value);
-                this.length++;
-            }
-        }
-    }
-}
 
 function count(max, trace)
 {
@@ -39,19 +16,14 @@ function count(max, trace)
         const p1 = x*(x+1);
         const n1 = p1*p1;
 
-        if (n1 > max) {
-            break;
-        }
+        if (n1 > max) break;
 
         tracer.print(_ => m-p1);
         values.push(n1)
 
         for(let y = x+1; ; y++) {            
-            const p2 = y*(y+1);
-            const n2 = p1*p2;
-            if (n2 > max) {
-                break;
-            }
+            const n2 = p1 * y * (y+1);
+            if (n2 > max) break;
 
             values.push(n2);
         }
