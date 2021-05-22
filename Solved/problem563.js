@@ -68,6 +68,9 @@ function solve()
         }
     });
 
+    if (values.length != MAX_M+1) {
+        throw "MAX_SIZE is too small";
+    }
     const result = values.reduce((a, v) => a + BigInt(v), -1n); // -1n because should count from 2 not from 1
 
     return result;
