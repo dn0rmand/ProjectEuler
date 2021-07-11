@@ -115,6 +115,45 @@ function solve(n)
     return v.get(m.rows-1, 0);
 }
 
+function test(n)
+{
+    let states = new Matrix(1, 4);
+    states.set(0, 0, 1);
+    // states.set(1, 0, 1);
+
+    const matrix = new Matrix(4, 4);
+
+    let b = 1;
+    while(true)
+    {
+        if (n & b) {
+            matrix.set(0, 0, 3+2*b); matrix.set(0, 1, 1+1*b); matrix.set(0, 2,     0); matrix.set(0, 3,     0); 
+            matrix.set(1, 0,     1); matrix.set(1, 1, 3+3*b); matrix.set(1, 2,     0); matrix.set(1, 3,     0); 
+            matrix.set(2, 0,     1); matrix.set(2, 1, 1+1*b); matrix.set(2, 2, 2+2*b); matrix.set(2, 3,     0); 
+            matrix.set(3, 0,     0); matrix.set(3, 1, 2+2*b); matrix.set(3, 2,     1); matrix.set(3, 3, 1+1*b); 
+        } else {
+            matrix.set(0, 0,     1); matrix.set(0, 1, 1+1*b); matrix.set(0, 2, 2+2*b); matrix.set(0, 3,     0); 
+            matrix.set(1, 0,     0); matrix.set(1, 1, 2+2*b); matrix.set(1, 2,     1); matrix.set(1, 3, 1+1*b); 
+            matrix.set(2, 0,     0); matrix.set(2, 1,     0); matrix.set(2, 2, 3+2*b); matrix.set(2, 3, 1+1*b); 
+            matrix.set(3, 0,     0); matrix.set(3, 1,     0); matrix.set(3, 2,     1); matrix.set(3, 3, 3+3*b); 
+        }
+
+        states = states.multiply(matrix, MODULO);
+        if (b >= n) {
+            break;
+        }
+
+        b *= 2;
+    }
+
+    const under = (states.get(0, 0) + states.get(0, 1)) % MODULO;
+    const over  = (states.get(0, 2) + states.get(0, 3)) % MODULO;
+
+    const result = (under - over + MODULO) % MODULO;
+
+    return result;
+}
+
 assert.strictEqual(S(10), 1530);
 assert.strictEqual(S(100), 4798445);
 assert.strictEqual(S(2**5), 120064);
@@ -122,6 +161,8 @@ assert.strictEqual(S(2**6), 1302064);
 
 console.log('Tests passed');
 
-const answer = timeLogger.wrap('', _ => S(MAX, true));
+console.log(test(100))
+console.log(test(12345))
+// const answer = timeLogger.wrap('', _ => S(MAX, true));
 
-console.log(`Answer is ${answer}`);
+// console.log(`Answer is ${answer}`);
