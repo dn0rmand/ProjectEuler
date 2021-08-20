@@ -32,6 +32,22 @@ class Matrix
         return matrix;
     }
 
+    static fromRecurrenceWithSum(factors)
+    {
+        const l = factors.length;
+        const matrix = new Matrix(l+1, l+1);
+
+        matrix.array[0] = [0, ...factors].reverse().map(a => BigInt(a)); 
+
+        for(let i = 1; i < factors.length; i++) {
+            matrix.set(i, i-1, 1n);
+        }
+
+        matrix.array[l] = [1, ...factors].reverse().map(a => BigInt(a)); 
+        return matrix;
+    }
+
+
     get(row, column) 
     {
         if (row < 0 || row >= this.rows || column < 0 || column >= this.columns)

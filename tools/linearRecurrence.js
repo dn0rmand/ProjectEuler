@@ -1,4 +1,5 @@
 const assert = require('assert');
+const Tracer = require('tools/tracer');
 
 require('tools/bigintHelper');
 
@@ -195,18 +196,52 @@ function solveRecurrence(data, size)
         return { factors: undefined, divisor: undefined };
 }
 
-function findRecurrence(data, minSize, modulo)
+function findSize(a)
 {
-    if (modulo)
-        modulo = BigInt(modulo);
+    let a1 = new Array(a.length + 2).fill(1n);
+    let a2 = a;
+    for (let depth = 1; a2.length >= 3; depth++) {
+      const a3 = [];
+      for (let i = 1; i < a2.length - 1; i++) {
+        a3.push((a2[i] * a2[i] - a2[i + 1] * a2[i - 1]) / a1[i + 1]);
+      }
+      [a1, a2] = [a2, a3];
+      let zeros = true;
+      for (let i = 0; i < a2.length; i++) {
+        if (a2[i]) {
+          zeros = false;
+          break;
+        }
+      }
+      if (zeros) return depth;
+    }
+    return 0;
+}
 
-    const trace = !!minSize;
-    minSize = minSize || 2;
-    for(let size = minSize; ; size++)
-    {
-        let { factors, divisor } = solveRecurrence(data, size, modulo, trace);
-        if (factors)
-            return { factors, divisor };
+function findRecurrence(data, minSize, trace)
+{
+    const tracer = new Tracer(1, trace);
+    if (minSize) {
+        minSize = findSize(data);
+        if (minSize === 0) {
+            throw "No recurrence";
+        }
+    } else {
+        minSize = 2;
+    }
+
+    // Math.min(minSize || 2);
+    try {
+        for(let size = minSize; ; size++)
+        {
+            tracer.print(_ => size);
+            let { factors, divisor } = solveRecurrence(data, size);
+            if (factors) {
+                return { factors, divisor };
+            }
+        }
+    } finally {
+        tracer.clear();
     }
 }
 
@@ -281,12 +316,12 @@ function makeRecurrence(factors, divisor)
     }
 }
 
-module.exports = function(data) 
+module.exports = function(data, minSize, trace) 
 {
     if (data && data.factors && data.divisor)
         return makeRecurrence(data.factors, data.divisor);
         
-    const {factors, divisor}  = findRecurrence(toBigInt(data));
+    const {factors, divisor}  = findRecurrence(toBigInt(data), minSize, trace);
 
     return makeRecurrence(factors, divisor);
 }

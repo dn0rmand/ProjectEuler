@@ -1,12 +1,14 @@
 const assert = require('assert');
-const BigMap = require('tools/BigMap');
+const timeLogger = require('tools/timeLogger');
 const Tracer = require('tools/tracer');
-const matrix = require('tools/matrix-small');
+const matrix = require('tools/matrix');
 const linearRecurrence = require('tools/linearRecurrence');
 
 require('tools/numberHelper');
 
 const MODULO = 1E9;
+const MODULO_N = BigInt(1E9);
+const MAX = 1E14;
 
 class State
 {
@@ -78,8 +80,8 @@ function bruteF(n)
     }
     const start = new State({ max: n, position: 1, visited: 2n, count: 1 });
 
-    let states = new BigMap();
-    let newStates = new BigMap();
+    let states = new Map();
+    let newStates = new Map();
     let total = 0;
 
     states.set(start.key, start);
@@ -121,57 +123,98 @@ function bruteF(n)
     return total;
 }
 
-function prepare()
+function findRecurrence(start, end, getValue, minSize, trace) 
 {
     const values = [];
 
-    for(let i = 2; i < 18; i++) 
-    {
-        values.push(bruteF(i));
+    for(let n = start; n <= end; n++) {
+        values.push(getValue(n));
     }
 
-    const l = linearRecurrence(values);
+    const l = linearRecurrence(values, minSize, trace);
     const M = matrix.fromRecurrenceWithSum(l.factors);
     const id = new matrix(M.rows, 1);
+    const offset = M.rows-1;
 
-    let sum = 0;
-    for(let r = 0; r < M.rows-1; r++) {
-        const v = bruteF(8-r);
+    let sum = 0n;
+    for(let r = 0; r < M.rows-1; r++) 
+    {
+        const v = getValue(offset-r);
         sum += v;
         id.set(r, 0, v);
     }
     id.set(M.rows-1, 0, sum);
-    return { M, id };
+
+    return { M , id };
 }
 
-const { M, id } = prepare();
+const { M, id } = findRecurrence(2, 18, n => BigInt(bruteF(n)));
 
 function calculate(n)
 {
-    if (n < 8) {
-        return { f: bruteF(n) };
+    if (n < 1) {
+        return { f: 0n };
+    }
+    if (n <= 8) {
+        return { f: BigInt(bruteF(n)) };
     }
 
-    const m = M.pow(n-8, MODULO);
-    const result = m.multiply(id, MODULO);
+    const offset = M.rows - 1;
+    const m = M.pow(n-offset);
+    const result = m.multiply(id);
 
     return { f: result.get(0, 0), sum: result.get(m.rows-1, 0) };
 }
 
 function F(n)
 {
-    return calculate(n).f;
+    const f = calculate(n).f;
+    return f;
 }
 
-assert.strictEqual(calculate(1E6).sum, 76247083);
+function squares(max)
+{
+    const { M, id } = findRecurrence(9, 81, n => F(n)**2n, false);
 
-assert.strictEqual(F(6), 14);
-assert.strictEqual(F(10), 254);
-assert.strictEqual(F(20), 453355);
-assert.strictEqual(F(25), 19138115);
-assert.strictEqual(F(30), 807895636);
-assert.strictEqual(F(40), 682432976);
+    const OFFSET = M.rows-1;
+    const m = M.pow(max-OFFSET, MODULO);
+    const result = m.multiply(id, MODULO);
+
+    const x = result.get(0, 0);
+    const y = result.get(m.rows-1, 0);  
+
+    console.log(`${x}, ${y}`);
+}
+
+function cubes(max)
+{
+    const { M, id } = timeLogger.wrap('findRecurrence', _ => findRecurrence(100, 500, n => F(n)**3n, true, true));
+
+    const OFFSET = M.rows-1;
+    const m = M.pow(max-OFFSET, MODULO);
+    const result = m.multiply(id, MODULO);
+
+    const answer = result.get(m.rows-1, 0);  
+
+    return answer;
+}
+
+// squares();
+
+function f(n)
+{
+    const f = Number(calculate(n).f % MODULO_N);
+    return f;
+}
+
+assert.strictEqual(f(6), 14);
+assert.strictEqual(f(10), 254);
+assert.strictEqual(f(20), 453355);
+assert.strictEqual(f(25), 19138115);
+assert.strictEqual(f(30), 807895636);
+assert.strictEqual(f(40), 682432976);
 
 console.log('Tests passed');
 
-console.log(F(1E14));
+const answer = timeLogger.wrap('', _ => cubes(MAX));
+console.log(`Answer is ${answer}`);
