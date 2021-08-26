@@ -61,7 +61,7 @@ class Matrix
         if (row < 0 || row >= this.rows || column < 0 || column >= this.columns)
             throw "Argument out of range";
 
-        this.array[row][column] = value;
+        this.array[row][column] = BigInt(value);
     }
 
     multiply(right, modulo) 

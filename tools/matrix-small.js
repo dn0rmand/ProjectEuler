@@ -59,7 +59,7 @@ class Matrix
         if (row < 0 || row >= this.rows || column < 0 || column >= this.columns)
             throw "Argument out of range";
 
-        this.array[row][column] = value;
+        this.array[row][column] = Number(value);
     }
 
     multiply(right, modulo, trace) 
@@ -120,8 +120,9 @@ class Matrix
     }
 
     pow(pow, modulo, trace)
-    {
-        if (pow == 1)
+    {        
+        pow = BigInt(pow);
+        if (pow === 1n)
             return this;
 
         let m  = this;
@@ -129,11 +130,11 @@ class Matrix
 
         const tracer = new Tracer(1, trace);
 
-        while (pow > 1)
+        while (pow > 1n)
         {
             tracer.print(_ => pow);
 
-            if ((pow & 1) !== 0)
+            if ((pow & 1n) !== 0n)
             {
                 if (mm === undefined)
                     mm = m;
@@ -143,9 +144,9 @@ class Matrix
                 pow--;
             }
 
-            while (pow > 1 && (pow & 1) === 0)
+            while (pow > 1n && (pow & 1n) === 0n)
             {
-                pow /= 2;
+                pow /= 2n;
                 m =  m.multiply(m, modulo, trace);
             }
         }
