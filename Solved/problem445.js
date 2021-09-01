@@ -30,11 +30,14 @@ function solve(n)
 
     const factors = new Uint32Array(n+1);
     const changed = new Map();
+    const middle = n/2;
 
-    for(let k = 1; k < n; k++) {
-        tracer.print(_ => n-k);
+    for(let k = 1; k <= middle; k++) {
+        const factor = k === middle ? 1 : 2;
+
+        tracer.print(_ => middle-k);
         nCk = nCk.modMul(n+1-k, MODULO).modMul(modInv(k), MODULO);
-        nCkSum = (nCkSum + nCk) % MODULO;
+        nCkSum = (nCkSum + factor*nCk) % MODULO;
 
         changed.clear();
 
@@ -65,7 +68,7 @@ function solve(n)
             }
         });
 
-        total = (total + R) % MODULO;
+        total = (total + factor*R) % MODULO;
     }
 
     total = (total + MODULO - nCkSum) % MODULO;
