@@ -19,7 +19,7 @@
     "atlas-pretty-hrtime": "^1.0.0",
     "axios": "^0.20.0",
     "base-64": "^0.1.0",
-    "better-sqlite3": "^6.0.1",
+    "better-sqlite3": "^7.4.3",
     "big-integer": "^1.6.48",
     "bignumber.js": "^7.2.1",
     "bintrees": "^1.0.2",
@@ -58,7 +58,7 @@
     "sqlite": "^3.0.6",
     "turbojs": "^1.0.2",
     "utf8": "^3.0.0",
-    "workerpool": "^5.0.4",
+    "workerpool": "^6.1.5",
     "written-number": "^0.8.1",
     "xmlbuilder": "^13.0.2",
     "xmldoc": "^1.1.2"
