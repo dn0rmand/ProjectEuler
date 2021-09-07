@@ -11,6 +11,7 @@ if (MAX > Number.MAX_SAFE_INTEGER)
 primeHelper.initialize(MAX_PRIME, true);
 const allPrimes = primeHelper.allPrimes();
 
+// Dirichlet
 // A061142: http://oeis.org/A061142
 function f(n)
 {
