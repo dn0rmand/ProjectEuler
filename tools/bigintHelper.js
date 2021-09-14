@@ -57,12 +57,29 @@ const bigIntHelper = function()
         return s;
     }
 
+    BigInt.prototype.sqrt = function() 
+    {
+        const value = this.valueOf();
+
+        let s = BigInt(Math.floor(Math.sqrt(Number(value))));
+        
+        if (value > Number.MAX_SAFE_INTEGER) {
+            while (s*s <= value) {
+                s++;
+            }
+    
+            return s - 1n;
+        } else {
+            return s;
+        }
+    }
+
     BigInt.prototype.gcd = function(b)
     {
         let a = this;
         if (a < b)
             [a, b] = [b, a];
-
+                    
         while (b != BigInt.ZERO)
         {
             let c = a % b;
@@ -70,6 +87,24 @@ const bigIntHelper = function()
             b = c;
         }
         return a;
+    }
+
+    const firstPrimes = [3n, 5n, 7n, 11n, 13n];
+    
+    Number.prototype.isCoPrime = function(b)
+    {
+        let a = this.valueOf();
+        if ((a & 1n) === 0n && (b & 1n) === 0n) { return false; }
+        
+        if (a >= 13n && b >= 13n) {
+            for (const prime of firstPrimes) {
+                if (a % prime === 0n && b % prime === 0n) { 
+                    return false; 
+                }
+            }
+        }
+
+        return this.gcd(b) === 1n;
     }
 
     BigInt.prototype.lcm = function(b)

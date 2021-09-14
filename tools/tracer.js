@@ -16,12 +16,13 @@ class Tracer
         this.enabled    = enabled;
         this.speed      = speed;
         this.prefix     = prefix;
-        this.traceCount = 0;
         this.lastLength = 0;
+        this.lastString = '';
         this.start      = undefined;
         this.remaining  = undefined;
         this.executed   = undefined;
         this.estimated  = undefined;
+        this.lastPrint  = undefined;
     }
 
     get prefix() 
@@ -34,8 +35,10 @@ class Tracer
         this.clear(false);
         this.$prefix = value || '';
 
-        if (this.$prefix && this.enabled)
+        if (this.$prefix && this.enabled) {
             process.stdout.write(` ${ this.$prefix} `);
+            this.lastPrint = undefined;
+        }
     }
 
     clear(excludePrefix)
@@ -51,6 +54,10 @@ class Tracer
             {
                 process.stdout.write(back(length));
                 process.stdout.write(eraseLine());
+            }
+
+            if (! excludePrefix) {
+                this.lastPrint = undefined;
             }
         }
     }
@@ -75,24 +82,39 @@ class Tracer
         }
     }
 
+    get shouldPrint() 
+    {
+        if (! this.enabled) 
+        {
+            return false;
+        }
+
+        const now = Date.now();
+
+        if (this.lastPrint === undefined || (now - this.lastPrint) >= 1000) 
+        {
+            this.lastPrint = now;
+            return true;
+        }
+
+        return false;
+    }
+
     print(callback)
     {
-        if (this.enabled)
+        if (this.shouldPrint)
         {
-            if (this.traceCount === 0)
-            {
+            let str = ` ${callback()} `;
+            if (str !== this.lastString) {
                 this.clear(true);
-                let str = ` ${callback()} `;
                 if (this.estimated !== undefined)
                 { 
                     str += ` - estimated time ${ prettyHrtime(this.estimated, 2) }`;
                 }
                 process.stdout.write(str);
                 this.lastLength = str.length;
+                this.lastString = str;
             }
-
-            if (++this.traceCount >= this.speed)
-                this.traceCount = 0;
         }
     }
 }

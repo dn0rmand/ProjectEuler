@@ -1,5 +1,11 @@
 const numberHelper = function()
 {
+    Number.prototype.sqrt = function() 
+    {
+        const value = this.valueOf()
+        return Math.floor(Math.sqrt(value));
+    }
+
     Number.prototype.gcd = function(b)
     {
         let a = this.valueOf();
@@ -13,6 +19,24 @@ const numberHelper = function()
             b = c;
         }
         return a;
+    }
+
+    const firstPrimes = [3, 5, 7, 11, 13];
+
+    Number.prototype.isCoPrime = function(b)
+    {
+        let a = this.valueOf();
+        if ((a & 1) === 0 && (b & 1) === 0) { return false; }
+        
+        if (a >= 13 && b >= 13) {
+            for (const prime of firstPrimes) {
+                if (a % prime === 0 && b % prime === 0) { 
+                    return false; 
+                }
+            }
+        }
+
+        return this.gcd(b) === 1;
     }
 
     Number.prototype.lcm = function(b)
