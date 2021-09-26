@@ -64,6 +64,7 @@ const bigIntHelper = function()
         let s = BigInt(Math.floor(Math.sqrt(Number(value))));
         
         if (value > Number.MAX_SAFE_INTEGER) {
+            s++;
             while (s*s <= value) {
                 s++;
             }
