@@ -47,8 +47,15 @@ function gozinta(n)
     return total;
 }
 
-function primeSum(n, factor, sumFunction)
+let $S = undefined;
+
+function primeSum(n, factor, sumFunction, modulo, trace)
 {
+    if ($S && $S[n] !== undefined) {
+        return $S[n];
+    }
+
+    const tracer = new Tracer(1, trace);
     const r = Math.floor(Math.sqrt(n));
 
     const V = [];
@@ -66,40 +73,41 @@ function primeSum(n, factor, sumFunction)
         S[last] = sumFunction(last);
     }
 
-    factor = BigInt(factor);
-
     for(let p = 2; p < r+1; p++) {
+        tracer.print(_ => r-p);
         const sp1 = S[p-1];
-        if (S[p] > sp1) {
+        if (S[p] !== sp1) {
             const p2 = p*p;
-            const P  = BigInt(p) ** factor;
+            const P  = p.modPow(factor, modulo);
             for (const v of V) {
                 if (v < p2) {
                     break;
                 }
                 const vp = Math.floor(v / p);
-                S[v] -= P * (S[vp] - sp1);
+                S[v] = (S[v] - P.modMul(S[vp] + modulo - sp1, modulo) + modulo) % modulo;
             }
         }
     }
+    tracer.clear();
 
+    $S = S;
     return S[n];
 }
 
-function cubeSum(max) 
+function cubeSum(max, trace) 
 {
     const sum = primeSum(max, 3, n => {
         let v;
         if (n & 1) {
-            v = BigInt((n+1)/2)*BigInt(n);
+            v = n.modMul((n+1)/2, MODULO);
         } else {
-            v = BigInt(n/2)*BigInt(n+1);
+            v = (n/2).modMul(n+1, MODULO);
         }
         
-        return v*v - 1n;
-    });
+        return (v.modMul(v, MODULO) + MODULO - 1) % MODULO;
+    }, MODULO, trace);
 
-    return Number(sum % MODULO_N);
+    return sum;
 }
 
 function cbrt(n)
@@ -123,6 +131,10 @@ function S(n, trace)
     let lowerSum = 0;
     let total = 0;
 
+    $S = undefined;
+
+    cubeSum(croot, trace);
+    
     for(const p of allPrimes) {
         if (p > croot) {
             break;
