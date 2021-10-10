@@ -1,15 +1,23 @@
+// THIS IS A TEMPLATE ... Not something to import
+
+const Tracer = require('tools/tracer');
+
 class State
 {
     constructor(previous)
     {
+        if (previous) {
+            this.count = previous.count;
+
+        } else {
+            this.count = 1;
+        }
         this.$key = undefined;
-        this.count = previous ? previous.count : 1;
     }
 
     merge(other) 
     {
         this.count += other.count;
-        return this;
     }
 
     clone() 
@@ -17,15 +25,10 @@ class State
         return new State(this);
     }
 
-    generateKey() 
-    { 
-        throw "Not implemented"; 
-    }
-
     get key() 
     { 
         if (this.$key === undefined) {
-            this.$key = this.generateKey();
+            this.$key = /* generate the key */
         }
         return this.$key;
     }
@@ -38,23 +41,16 @@ class State
 
 class StateMachine
 {
-    constructor(rounds)
+    constructor(trace)
     {
-        this.rounds     = rounds || -1;
         this.states     = new Map();
         this.newStates  = new Map();
+        this.Tracer     = new Tracer(1, trace);
     }
 
-    trace() {
-
-    }
-
-    isValid(state) {
-        return true;
-    }
-
-    endRound() {
-
+    trace() 
+    {
+        this.tracer.print(_ => this.states.size);
     }
 
     get result()
@@ -62,46 +58,39 @@ class StateMachine
         throw "Not implemented";
     }
 
-    get initialState() 
+    setInitialState()
     {
-        throw "Not implemented";
+        const state = new State();
+
+        this.states.set(state.key, state);
     }
 
     run()
     {
-        const start = this.initialState;
+        this.setInitialState();
 
-        this.states.set(start.key, start);
-
-        while (this.states.size > 0 && this.rounds-- !== 0) {    
+        while (this.states.size > 0) {    
 
             this.trace();
-
             this.newStates.clear();
 
             for(const state of this.states.values()) 
             {
                 state.nextStates(newState => 
                 {
-                    if (this.isValid(newState)) {
-                        let old = this.newStates.get(newState.key);
-                        if (old) {
-                            old.merge(newState);
-                        } else {
-                            this.newStates.set(newState.key, newState);
-                        }
+                    let old = this.newStates.get(newState.key);
+                    if (old) {
+                        old.merge(newState);
+                    } else {
+                        this.newStates.set(newState.key, newState);
                     }
                 });
             }
 
             [this.states, this.newStates] = [this.newStates, this.states];
-
-            this.endRound();
         }
 
         this.newStates.clear();
         return this; 
     }
 }
-
-module.exports = { State, StateMachine };

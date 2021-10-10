@@ -1,6 +1,4 @@
 const assert = require('assert');
-const { State, StateMachine } = require('tools/stateMachine');
-
 const Tracer = require('tools/tracer');
 const timeLogger = require('tools/timeLogger');
 
@@ -445,28 +443,39 @@ class dBlock extends Block
     }
 }
 
-class State766 extends State
+class State
 {
     constructor({ data, previous }) 
     {
-        super(previous);
         if (previous) {
             // Clone the map
             this.data = previous.data.map(r => [...r]);
             this.width = previous.width;
             this.height= previous.height;
+            this.count = previous.count;
         } else {
             this.data  = data;
             this.width = data[0].length;
             this.height= data.length;
+            this.count = 1;
         }
     }
 
-    merge(other)     { return this; }
-    clone()          { return new State766({ previous: this }); }
-    generateKey()    { return this.data.map(r => r.map(v => v ? v[0] : 'X').join('')).join(''); }
+    clone() { 
+        return new State({ previous: this }); 
+    }
 
-    set(x, y, value) { this.data[y][x] = value; }
+    get key() 
+    { 
+        if (this.$key === undefined) {
+            this.$key = this.data.map(r => r.map(v => v ? v[0] : 'X').join('')).join('');
+        }
+        return this.$key;
+    }
+
+    set(x, y, value) { 
+        this.data[y][x] = value; 
+    }
 
     get(x, y) {
         if (x < 0 || x >= this.width || y < 0 || y >= this.height) {
@@ -516,17 +525,21 @@ class State766 extends State
     }
 }
 
-class StateMachine766 extends StateMachine
-{
+
+class StateMachine
+{    
     constructor(data, trace)
     {
-        super(0);
-        this.visited = new Set();
-        this.data    = data;
-        this.tracer  = new Tracer(1, trace);
+        this.states     = new Map();
+        this.newStates  = new Map();
+        this.visited    = new Set();
+        this.data       = data;
+        this.tracer     = new Tracer(1, trace);
     }
 
-    trace() { this.tracer.print(_ => this.states.size); }
+    trace() { 
+        this.tracer.print(_ => this.states.size); 
+    }
 
     isValid(state) 
     {
@@ -541,15 +554,44 @@ class StateMachine766 extends StateMachine
 
     get initialState() 
     {
-        const state = new State766({ data: this.data });
+        const state = new State({ data: this.data });
         this.visited.add(state.key);
         return state;
+    }
+
+    run()
+    {
+        const start = this.initialState;
+
+        this.states.set(start.key, start);
+
+        while (this.states.size > 0) {    
+
+            this.trace();
+
+            this.newStates.clear();
+
+            for(const state of this.states.values()) 
+            {
+                state.nextStates(newState => 
+                {
+                    if (this.isValid(newState)) {
+                        this.newStates.set(newState.key, newState);
+                    }
+                });
+            }
+
+            [this.states, this.newStates] = [this.newStates, this.states];
+        }
+
+        this.newStates.clear();
+        return this; 
     }
 }
 
 function count(data, trace)
 {
-    return new StateMachine766(data, trace).run().result;
+    return new StateMachine(data, trace).run().result;
 }
 
 assert.strictEqual(count(example), 208);
