@@ -63,6 +63,13 @@ class BigMap
         this.map.clear();
     }
 
+    forEach(callback) {
+        for (let m of this.maps) {
+            m.forEach(callback);
+        }
+        this.map.forEach(callback);
+    }
+
     *values(autoClear)
     {
         for (let m of this.maps)
