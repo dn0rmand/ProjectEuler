@@ -71,11 +71,11 @@ function solve(target, maxRounds)
     return answer.toFixed(10);
 }
 
-// assert.strictEqual(solve(10, 10), '0.2244713472');
-// assert.strictEqual(solve(50, 100), '0.2687526424');
+assert.strictEqual(solve(10, 10), '0.2244713472');
+assert.strictEqual(solve(50, 100), '0.2687526424');
 assert.strictEqual(solve(1000, 50), '0.0373963699');
 
 console.log('Tests passed');
 
-// const answer = timeLogger.wrap('', _ => solve(100000, 1000));
-// console.log(`Answer is ${answer}`);
+const answer = timeLogger.wrap('', _ => solve(10000, 1000));
+console.log(`Answer is ${answer}`);
