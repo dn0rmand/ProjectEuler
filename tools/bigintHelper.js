@@ -150,10 +150,9 @@ const bigIntHelper = function()
             throw new Error("Cannot take modPow with modulus 0");
 
         let value = this;
-        if (typeof(exp) !== 'bigint')
-            exp = BigInt(exp);
-        if (typeof(mod) !== 'bigint')
-            mod = BigInt(mod);
+
+        exp = BigInt(exp);
+        mod = BigInt(mod);
 
         let r     = BigInt.ONE;
         let base  = value % mod;
@@ -164,9 +163,11 @@ const bigIntHelper = function()
         while (exp > BigInt.ZERO)
         {
             if ((exp & BigInt.ONE) == BigInt.ONE)
-                r = (r *base) % mod;
+                r = (r * base) % mod;
             exp  = exp >> BigInt.ONE;
-            base = (base * base) % mod;
+            if (exp) {
+                base = (base * base) % mod;
+            }
         }
 
         return r;

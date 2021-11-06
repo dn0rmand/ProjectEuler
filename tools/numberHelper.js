@@ -95,7 +95,9 @@ const numberHelper = function()
             if ((exp & 1) == 1)
             {
                 r = r.modMul(base, modulo);
-                exp--;
+                if (! --exp) {
+                    break;
+                }
             }
             exp /= 2;
             base = base.modMul(base, modulo);
