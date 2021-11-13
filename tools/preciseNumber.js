@@ -9,9 +9,14 @@ class PreciseNumber
     static create(numerator, divisor) 
     {
         const p = new PreciseNumber();
-        p.numerator = numerator;
-        p.divisor   = divisor;
-
+        if (numerator !== Infinity) {
+            p.numerator = BigInt(numerator);
+            p.divisor   = BigInt(divisor);
+            p.simplify();
+        } else {
+            p.numerator = numerator;
+            p.divisor   = 1n;
+        }
         return p;
     }
 
@@ -40,6 +45,7 @@ class PreciseNumber
                 value *= 10;
             }
             this.numerator = BigInt(value);
+            this.simplify();
         }
     }
 
@@ -169,7 +175,7 @@ class PreciseNumber
     greater(other)
     {
         if (this.equals(other)) { return false; }
-        return other.less(this);
+        return new PreciseNumber(other).less(this);
     }
 
     toString() {
