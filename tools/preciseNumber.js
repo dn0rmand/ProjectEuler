@@ -6,6 +6,8 @@ class PreciseNumber
     static Zero     = PreciseNumber.create(0n, 1n);
     static One      = PreciseNumber.create(1n, 1n);
 
+    static allowSimplification = true;
+
     static create(numerator, divisor) 
     {
         const p = new PreciseNumber();
@@ -51,6 +53,10 @@ class PreciseNumber
 
     simplify()
     {
+        if (!PreciseNumber.allowSimplification) {
+            return;
+        }
+
         if (this.divisor === 0n) {
             this.numerator = 0n;
             this.divisor   = 0n;
