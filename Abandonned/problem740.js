@@ -257,8 +257,8 @@ console.log(bruteSecretSanta(5),  secretSanta(5));
 console.log(bruteSecretSanta(3),  secretSanta(3));
 console.log(bruteSecretSanta(10), secretSanta(10));
 
-// assert.strictEqual(q(5).toFixed(10), '0.2476095994');
-// assert.strictEqual(q(3).toFixed(10), '0.3611111111');
+assert.strictEqual(bruteQ(5).toFixed(10), '0.2476095994');
+assert.strictEqual(bruteQ(3).toFixed(10), '0.3611111111');
 // assert.strictEqual(timeLogger.wrap('q(7)', _ => q(7).toFixed(10)), '0.1947307682');
 // assert.strictEqual(timeLogger.wrap('q(10)', _ => q(10).toFixed(10)), '0.1480206355');
 // assert.strictEqual(timeLogger.wrap('q(11)', _ => q(11).toFixed(10)), '0.1371658155');
