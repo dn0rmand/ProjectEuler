@@ -13,33 +13,26 @@ function countCoPrimes(a, max)
 
     primeHelper.factorize(a, p => primes.push(p));
 
-    function step(total, size, include)
+    const maxa = max - a;
+
+    function generate(value, index, count)
     {
-        function generate(value, index, count, callback)
-        {
-            if (count === 0) {
-                callback(value);
-            } else {
-                for(let i = index; i < primes.length; i++) {
-                    generate(primes[i] * value, i+1, count-1, callback);
-                }
-            }
-        }
-
-        if (include) {
-            generate(1, 0, size, value => total += Math.floor((max-a) / value));
+        if (count === 0) {
+            return Math.floor(maxa / value);
         } else {
-            generate(1, 0, size, value => total -= Math.floor((max-a) / value));
+            let t = 0;
+            for(let i = index; i < primes.length; i++) {
+                t += generate(primes[i] * value, i+1, count-1);
+            }
+            return t;
         }
-
-        return total;
     }
 
-    let total = max-a;
+    let total = maxa;
     let include = true;
     for(let size = 1; size <= primes.length; size++) {
         include = !include;
-        total = step(total, size, include);
+        total += include ? generate(1, 0, size) : -generate(1, 0, size);
     }
 
     return total;
