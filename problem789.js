@@ -1,18 +1,22 @@
 const assert = require('assert');
 const timeLogger = require('tools/timeLogger');
 const Tracer = require('tools/tracer');
-const BigSet = require('tools/BigSet');
+// const BigSet = require('tools/BigSet');
 
 require('tools/numberHelper');
+require('tools/bigintHelper');
 
-const MAX_PRIME = 104729; 
-const TARGET = 2000000011; 
+const MAX_PRIME = 2000000011;
 const THRESHOLD = 30;
+const BIG_THRESHOLD = Math.floor(Math.sqrt(MAX_PRIME)) * 10;
 
-function preloadInverse(prime) {
+const primeHelper = require('tools/primeHelper')(BIG_THRESHOLD);
+
+function preloadInverse(prime, tracer) {
     const results = new Map();
 
-    for(let i = 1; i < prime; i++) {
+    for (let i = 1; i < prime; i++) {
+        tracer.print(_ => prime - i);
         if (results[i]) {
             continue;
         }
@@ -24,100 +28,117 @@ function preloadInverse(prime) {
     return results;
 }
 
-const MOD_INV = (prime) => {
-    if (prime === MAX_PRIME) {
-        return value => value.modInv(prime);
-    } else {
-        const $cache = preloadInverse(prime);
-        return value => $cache.get(value); 
-        // return value => value.modInv(prime);
-    }
-};
-const MOD_MUL = (prime) => (a, b) => a.modMul(b, prime);
-
 let inverse;
 let multiply;
+let prime;
+
+function prepare($prime, $tracer) {
+    if ($prime === prime) {
+        return;
+    }
+    prime = $prime;
+    multiply = (a, b) => a.modMul(b, prime);
+
+    if (prime > 1E7) {
+        inverse = value => value.modInv(prime);
+    } else {
+        const $cache = preloadInverse(prime, $tracer);
+
+        inverse = value => $cache.get(value);
+    }
+}
+
+const comparer = (a, b) => a - b;
+const toBase36 = a => [...a].sort(comparer).map(v => v.toString(36)).join(':');
+const isPrime = v => v === 1 || primeHelper.isPrime(v);
+
+class MySet {
+    constructor(current) {
+        this.current = current;
+    }
+
+    has(value) {
+        for (let c = this.current; c; c = c.next) {
+            if (value === c.value) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    add(value) {
+        this.current = {
+            value: value,
+            next: this.current
+        }
+    }
+
+    * values() {
+        for (let c = this.current; c; c = c.next) {
+            yield c.value;
+        }
+    }
+
+    clone() {
+        return new MySet(this.current);
+    }
+}
 
 class State {
-    constructor(free, current, cost, product) {
-        this.current = current;
-        this.free    = free;
-        this.cost    = cost;
+    constructor(used, current, cost, product) {
+        this.current = current.sort((a, b) => a - b);
+        this.used = used;
+        this.cost = cost;
         this.product = product;
     }
 
-    static start(prime, tracer) {
-        const used = new BigSet();
+    static start(prime) {
+        const used = new MySet();
+        const current = [1, prime - 1];
+        const cost = prime - 1 + (prime - 3) / 2;
+        const product = BigInt(prime - 1);
 
-        const current = [1, prime-1];
-        const cost    = prime - 1 + (prime-3)/2;
-        const product = prime-1;
-        const free    = [];
-
-        for(let i = 2; i < prime-1; i++) {
-            tracer.print(_ => prime-1-i);
-
-            if (used.has(i)) {
-                continue;
-            }
-            const inv = inverse(i);
-            free.push(i);
-            used.add(i);
-            used.add(inv);
-        }
-
-        return new State(free, current, cost, product);
+        return new State(used, current, cost, product);
     }
 
     get key() {
-        const a = this.current.map(v => v.toString(36)).join(':');
-        const b = this.free.map(v => v.toString(36)).join(':');
-        return a+'-'+b;
+        const a = toBase36(this.current);
+        const b = toBase36(this.used.values());
+        return a + '-' + b;
     }
 
-    createState(a1, a2, free) {
+    next(a1, a2, callback) {
+        if (this.used.has(a1)) {
+            return;
+        }
+
         const [left, right] = this.current;
-        const diff = multiply(left, right);
 
-        const newCost = this.cost - 1 - diff + multiply(a1, left) + multiply(a2, right);
-        const newProd = (this.product / diff) * multiply(a1, left) * multiply(a2, right);
+        const costA = multiply(left, a1);
+        if (isPrime(costA)) {
+            const diff = multiply(left, right);
+            const costB = multiply(a2, right);
 
-        return new State(free, [a2, right], newCost, newProd);
-    }
+            const newCost = this.cost - 1 - diff + costA + costB;
+            const newProd = (this.product / BigInt(diff)) * BigInt(costA) * BigInt(costB);
 
-    next(bestCost, callback) {
-        for(const a1 of this.free) {
-            const newFree = this.free.filter(a => a !== a1);
-            const a2 = inverse(a1);
+            const newUsed = this.used.clone();
+            newUsed.add(a1);
 
-            const s1 = this.createState(a1, a2, newFree);
-            const s2 = this.createState(a2, a1, newFree);
+            const state = new State(newUsed, [a2, right], newCost, newProd);
 
-            const s = s1.cost > s2.cost ? s2 : s1;
-            if (s.cost <= bestCost()) {
-                callback(s);
-            } else {
-                callback();
-            }
-            // if (s1.cost <= bestCost()) {
-            //     callback(s1);
-            // }
-            // if (s2.cost <= bestCost()) {
-            //     callback(s2);
-            // }
+            callback(state);
         }
     }
 }
 
-function solve(prime, trace)
-{
+function solve(prime, trace) {
     const tracer = new Tracer(1, trace);
 
-    inverse = MOD_INV(prime);
-    multiply = MOD_MUL(prime);
+    prepare(prime, tracer);
 
     const startState = State.start(prime, tracer);
-    
+
     let states = new Map();
     let newStates = new Map();
 
@@ -125,59 +146,60 @@ function solve(prime, trace)
 
     let best = startState;
 
-    let count = startState.free.length;
+    const threshold = prime === MAX_PRIME ? BIG_THRESHOLD : THRESHOLD;
+    const isGoodCost = (cost) => true; //cost <= (best.cost + threshold);
 
-    const bestCost = () => best.cost+THRESHOLD;
-
-    while(states.size > 0) {
+    while (states.size > 0) {
         newStates.clear();
-        let size = states.size*count;
 
-        for(const state of states.values()) {
-            if (state.cost > bestCost()) {
-                size -= count;
+        for (let a1 = 2; a1 < prime - 1; a1++) {
+            const a2 = inverse(a1);
+            if (a2 < a1) {
                 continue;
             }
-            state.next(bestCost, newState => {
-                tracer.print(_ => `${count} - ${size} - ${newStates.size}`);
-                size--;
-                if (! newState) {
-                    return;
-                }
-                if (newState.cost < best.cost) {
-                    best = newState;                    
-                }
-                if (newState.free.length === 0) {
-                    return;
-                }
-                const k = newState.key;
-                const o = newStates.get(k);
-                if (!o || o.cost > newState.cost) {
-                    newStates.set(k, newState);
-                }                
-            });
+
+            for (const state of states.values()) {
+                tracer.print(_ => `${prime-a1} - ${states.size} - ${newStates.size}`);
+
+                state.next(a1, a2, newState => {
+                    if (newState && isGoodCost(newState.cost)) {
+                        if (newState.cost < best.cost) {
+                            best = newState;
+                        }
+                        const k = newState.key;
+                        const o = newStates.get(k);
+                        if (o) {
+                            if (o.cost > newState.cost) {
+                                o.cost = newState.cost;
+                                o.product = newState.product;
+                            }
+                        } else {
+                            newStates.set(k, newState);
+                        }
+                    }
+                });
+            }
         }
 
         [states, newStates] = [newStates, states];
-        count--;
     }
     tracer.clear();
 
-    // console.log(`Cost for ${prime} is ${best.cost}`);
+    if (prime === MAX_PRIME) {
+        console.log(`Cost for ${prime} is ${best.cost}`);
+    }
     return best.product;
 }
 
-assert.strictEqual(solve(23), 45);
-assert.strictEqual(solve(5), 4);
-assert.strictEqual(solve(11), 10);
-assert.strictEqual(solve(13), 12);
-
-assert.strictEqual(timeLogger.wrap('53', _ => solve(53, true)), 1536); // 29
-
-assert.strictEqual(timeLogger.wrap('43', _ => solve(43, true)), 128);
-assert.strictEqual(timeLogger.wrap('73', _ => solve(73, true)), 72);
-assert.strictEqual(timeLogger.wrap('97', _ => solve(97, true)), 96);
-assert.strictEqual(timeLogger.wrap('113', _ => solve(113, true)), 112);
+assert.strictEqual(timeLogger.wrap('5', _ => solve(5, true)), 4n);
+assert.strictEqual(timeLogger.wrap('11', _ => solve(11, true)), 10n);
+// assert.strictEqual(timeLogger.wrap('13', _ => solve(13, true)), 12n);
+assert.strictEqual(timeLogger.wrap('23', _ => solve(23, true)), 45n);
+assert.strictEqual(timeLogger.wrap('43', _ => solve(43, true)), 128n);
+// assert.strictEqual(timeLogger.wrap('53', _ => solve(53, true)), 1536n);
+assert.strictEqual(timeLogger.wrap('73', _ => solve(73, true)), 72n);
+assert.strictEqual(timeLogger.wrap('97', _ => solve(97, true)), 96n);
+assert.strictEqual(timeLogger.wrap('113', _ => solve(113, true)), 112n);
 
 console.log('Tests passed');
 
@@ -185,5 +207,3 @@ console.log('Tests passed');
 
 const answer = timeLogger.wrap(`${MAX_PRIME}`, _ => solve(MAX_PRIME, true));
 console.log(`Answer is ${answer}`);
-
-// answer is k*p - 1
