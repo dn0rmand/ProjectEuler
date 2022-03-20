@@ -10,6 +10,16 @@ class BigSet
         this.nogrow = !!nogrow;
     }
 
+    clone()
+    {
+        const set = new BigSet(this.name, this.nogrow);
+        if (this.map.size > 0) {
+            set.maps = [...this.maps, this.map];
+        }
+        set.map = new Set();
+        return set;
+    }
+
     get size()
     {
         return this.maps.reduce((a, m) => a + m.size, this.map.size);

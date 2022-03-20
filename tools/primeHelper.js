@@ -503,6 +503,7 @@ module.exports = function(maxPrime, noMap)
             $init = generateMorePrimes;
             return v;
         },
+        lastPrime: _ => _primes[_primes.length-1],
         allPrimes: _ => _primes,
         extraPrimes: _ => _extraPrimes,
         primes : function *(limitless) {
