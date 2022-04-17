@@ -19,7 +19,7 @@ const MIN_PRIME= 1E14;
 const {Matrix} = require('ml-matrix');
 const bigInt   = require('big-integer');
 //const A        = require('../data/304-primes.js');
-const offsetSieve = require('tools/sieve-offset');
+const offsetSieve = require('@dn0rmand/project-euler-tools/src/sieve-offset');
 
 const MODULO   = 1234567891011;
 

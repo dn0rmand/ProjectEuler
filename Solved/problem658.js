@@ -1,8 +1,8 @@
 const assert = require('assert');
 const prettyTime= require("pretty-hrtime");
-const announce = require('tools/announce');
+const announce = require('@dn0rmand/project-euler-tools/src/announce');
 
-require('tools/numberHelper');
+require('@dn0rmand/project-euler-tools/src/numberHelper');
 
 const modulo     = 1000000007;
 

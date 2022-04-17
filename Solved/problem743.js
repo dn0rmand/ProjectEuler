@@ -1,8 +1,8 @@
 const assert = require('assert');
-const Tracer = require('tools/tracer');
-const timeLogger = require('tools/timeLogger');
+const Tracer = require('@dn0rmand/project-euler-tools/src/tracer');
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
 
-require('tools/numberHelper');
+require('@dn0rmand/project-euler-tools/src/numberHelper');
 
 const MODULO = 1000000007
 const MAX = 10n ** 16n;

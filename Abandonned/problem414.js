@@ -1,12 +1,13 @@
 const assert = require('assert');
-const timeLogger = require('tools/timeLogger');
-const Tracer = require('tools/tracer');
-const BigMap = require('tools/BigMap');
 
-require('tools/bigintHelper');
+const {
+    TimeLogger: timeLogger,
+    Tracer,
+    BigMap
+} = require('@dn0rmand/project-euler-tools';)
 
-const ZERO   = 0n;
-const ONE    = 1n;
+const ZERO = 0n;
+const ONE = 1n;
 const MODULO = 10n ** 18n;
 
 const patterns = [
@@ -19,12 +20,12 @@ const patterns = [
 ];
 
 const makeKey = digits => digits.join(':');
-const isSame  = (a, b) => {
+const isSame = (a, b) => {
     if (a.length !== b.length)
         return false;
 
-    for(let i = a.length; i > 0; i--)
-        if (a[i-1] !== b[i-1])
+    for (let i = a.length; i > 0; i--)
+        if (a[i - 1] !== b[i - 1])
             return false;
 
     return true;
@@ -32,19 +33,16 @@ const isSame  = (a, b) => {
 
 const $countPattern = {}
 
-function countPattern(values)
-{
+function countPattern(values) {
     let k = values.join('_');
-    
+
     if ($countPattern[k])
         $countPattern[k];
 
-    function makeLetters()
-    {
+    function makeLetters() {
         let c = 'A'.charCodeAt(0);
         let word = "";
-        for(let s of values)
-        {
+        for (let s of values) {
             word += String.fromCharCode(c).repeat(s);
             c++;
         }
@@ -56,22 +54,18 @@ function countPattern(values)
     const words = new Array(letters.length);
     const visited = new Set();
 
-    function inner(index)
-    {
-        if (index === 5)
-        {
+    function inner(index) {
+        if (index === 5) {
             let k = words.slice().join('');
             visited.add(k);
         }
 
-        for(let i = 0; i < letters.length; i++)
-        {
+        for (let i = 0; i < letters.length; i++) {
             let c = letters[i];
-            if (c !== undefined)
-            {
+            if (c !== undefined) {
                 letters[i] = undefined;
                 words[index] = c;
-                inner(index+1);
+                inner(index + 1);
                 letters[i] = c;
             }
         }
@@ -83,24 +77,20 @@ function countPattern(values)
     return BigInt(visited.size);
 }
 
-function routine(digits, base)
-{
-    const l  = digits.length;
+function routine(digits, base) {
+    const l = digits.length;
     const v2 = new Array(l);
 
     let remainder = 0;
-    for(let i = 0; i < l; i++)
-    {
-        let v = (digits[i]-remainder) - digits[l-i-1];
-        if (v < 0)
-        {
+    for (let i = 0; i < l; i++) {
+        let v = (digits[i] - remainder) - digits[l - i - 1];
+        if (v < 0) {
             remainder = 1;
-            v = base+v;
-        }
-        else
+            v = base + v;
+        } else
             remainder = 0
 
-        v2[l-i-1] = v;
+        v2[l - i - 1] = v;
     }
 
     return v2;
@@ -108,10 +98,8 @@ function routine(digits, base)
 
 const $kaprekar = new BigMap('kaprekar', true);
 
-function getTarget(digits, base)
-{
-    if ($kaprekar.base !== base)
-    {
+function getTarget(digits, base) {
+    if ($kaprekar.base !== base) {
         $kaprekar.base = base;
         $kaprekar.clear();
         $kaprekar.target = undefined;
@@ -124,38 +112,33 @@ function getTarget(digits, base)
     const visited = new Set();
 
     visited.add(makeKey(digits));
-    while ($kaprekar.target === undefined)
-    {
-        digits.sort((a, b) => a-b);
+    while ($kaprekar.target === undefined) {
+        digits.sort((a, b) => a - b);
         digits = routine(digits, base);
 
         const k = makeKey(digits);
 
-        if(visited.has(k))
-        {
+        if (visited.has(k)) {
             $kaprekar.target = digits;
-            $kaprekar.sortedTarget = digits.slice().sort((a, b) => a-b);
-        }
-        else
+            $kaprekar.sortedTarget = digits.slice().sort((a, b) => a - b);
+        } else
             visited.add(k);
     }
 }
 
-function Kaprekar(digits, base)
-{
-    base   = base || 10;
-    digits = digits.slice().sort((a, b) => a-b);
+function Kaprekar(digits, base) {
+    base = base || 10;
+    digits = digits.slice().sort((a, b) => a - b);
 
     getTarget(digits, base);
-    
+
     const target = $kaprekar.target;
 
-    function inner(digits)
-    {
+    function inner(digits) {
         if (isSame(digits, target))
             return ZERO;
 
-        digits.sort((a, b) => a-b);
+        digits.sort((a, b) => a - b);
         const key = makeKey(digits);
 
         let result = $kaprekar.get(key);
@@ -170,74 +153,64 @@ function Kaprekar(digits, base)
         return result;
     }
 
-    const key = (digits[4]-digits[0]) * 2000 + (digits[3]-digits[1]);
+    const key = (digits[4] - digits[0]) * 2000 + (digits[3] - digits[1]);
 
     let r = $kaprekar.get(key);
-    if (r === undefined)
-    {
+    if (r === undefined) {
         r = inner(digits);
-        $kaprekar.set(key, r); 
+        $kaprekar.set(key, r);
         return r;
-    }
-    else
+    } else
         return r;
 }
 
-function S(base, trace)
-{
+function S(base, trace) {
     let total = ZERO;
 
-    const used   = new Uint16Array(base);
+    const used = new Uint16Array(base);
     const digits = new Uint16Array(5);
 
     const $steps = new Array(base);
 
-    function inner(patternIndex)
-    {
+    function inner(patternIndex) {
         used.fill(0);
 
         const pattern = patterns[patternIndex];
-        const count   = countPattern(pattern);
+        const count = countPattern(pattern);
 
-        function _inner_(index, length)
-        {
-            if (index === pattern.length)
-            {
+        function _inner_(index, length) {
+            if (index === pattern.length) {
                 const steps = Kaprekar(digits, base);
                 const s = Number(steps);
                 const x = used.reduce((a, v, i) => {
                     if (v)
                         a.push(i);
                     return a;
-                },[]);
-                if (x.length == 2)
-                {
-                    if (! $steps[s])
+                }, []);
+                if (x.length == 2) {
+                    if (!$steps[s])
                         $steps[s] = new Set();
                     $steps[s].add(makeKey(x));
                 }
-                total = (total + steps*count) % MODULO;
+                total = (total + steps * count) % MODULO;
                 return;
             }
 
             const s = pattern[index];
             let start = 0;
-            if (index > 0 && s === pattern[index-1])
-            {
-                start = digits[length-1];
+            if (index > 0 && s === pattern[index - 1]) {
+                start = digits[length - 1];
             }
 
-            const tracer = new Tracer(100*index+1, trace && index < 2);
+            const tracer = new Tracer(trace && index < 2);
 
-            for(let digit = start; digit < base; digit++)
-            {
-                if (! used[digit])
-                {
-                    tracer.print(_ => base-digit);
+            for (let digit = start; digit < base; digit++) {
+                if (!used[digit]) {
+                    tracer.print(_ => base - digit);
 
                     used[digit] = 1;
-                    digits.fill(digit, length, length+s);
-                    _inner_(index+1, length + s);
+                    digits.fill(digit, length, length + s);
+                    _inner_(index + 1, length + s);
                     used[digit] = 0;
                 }
             }
@@ -248,20 +221,18 @@ function S(base, trace)
         _inner_(0, 0);
     }
 
-    const tracer = new Tracer(1, trace, 'Pattern');
-    for(let pattern = 0; pattern < patterns.length; pattern++)
-    {
-        tracer.print(_ => patterns.length-pattern);
+    const tracer = new Tracer(trace, 'Pattern');
+    for (let pattern = 0; pattern < patterns.length; pattern++) {
+        tracer.print(_ => patterns.length - pattern);
         inner(pattern);
     }
 
     tracer.clear();
-    return total-1n;
+    return total - 1n;
 }
 
-function getBase(t)
-{
-    return 6*t + 3;
+function getBase(t) {
+    return 6 * t + 3;
 }
 
 /*

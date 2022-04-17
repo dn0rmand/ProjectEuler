@@ -11,7 +11,7 @@
 // How many elements would be contained in the set of reduced proper fractions for d ≤ 1,000,000?
 
 const assert = require('assert');
-const totient= require('tools/totient.js');
+const totient= require('@dn0rmand/project-euler-tools/src/totient.js');
 
 function solve(max)
 {

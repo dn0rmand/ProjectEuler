@@ -35,7 +35,7 @@
 // Find the sum of all S(10, d).
 
 const assert = require('assert');
-const primeHelper = require('tools/primeHelper')();
+const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper');
 
 const MAX_SIZE = 10;
 

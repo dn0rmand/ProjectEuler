@@ -14,13 +14,13 @@
 // Find ∑ S(N), for all squarefree N only divisible by primes of the form 4k+1 with 4k+1 < 150.
 
 const assert = require('assert');
-const primeHelper = require('tools/primeHelper')(150);
-const timerLog = require('tools/timeLogger');
+const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper');
+const timerLog = require('@dn0rmand/project-euler-tools/src/timeLogger');
 
-class Complex
-{
-    constructor(a, b)
-    {
+primeHelper.initialize(150);
+
+class Complex {
+    constructor(a, b) {
         this.a = Number(a);
         this.b = Number(b);
     }
@@ -46,17 +46,14 @@ class Complex
     }
 }
 
-function bruteForce(n)
-{
+function bruteForce(n) {
     let result = undefined;
-    for (let a = 0; ; a++)
-    {
-        let A = a*a;
-        let B = n-A;
+    for (let a = 0;; a++) {
+        let A = a * a;
+        let B = n - A;
         if (B < A) break;
         let b = Math.round(Math.sqrt(B));
-        if (b*b === B)
-        {
+        if (b * b === B) {
             if (result !== undefined)
                 throw "ERROR";
             result = new Complex(a, b);
@@ -67,8 +64,7 @@ function bruteForce(n)
 
 const allPrimes = timerLog.wrap('Loading primes', () => {
     var primes = primeHelper.allPrimes().reduce((a, p) => {
-        if ((p % 4)===1)
-        {
+        if ((p % 4) === 1) {
             a.push(bruteForce(p));
         }
         return a;
@@ -76,19 +72,16 @@ const allPrimes = timerLog.wrap('Loading primes', () => {
     return primes;
 });
 
-function generateNumbers(callback)
-{
+function generateNumbers(callback) {
     let usedPrimes = [];
 
-    function inner(index)
-    {
+    function inner(index) {
         if (index > 0)
             callback(usedPrimes);
 
-        for (let i = index; i < allPrimes.length; i++)
-        {
+        for (let i = index; i < allPrimes.length; i++) {
             usedPrimes.push(allPrimes[i]);
-            inner(i+1);
+            inner(i + 1);
             usedPrimes.pop();
         }
     }
@@ -96,31 +89,26 @@ function generateNumbers(callback)
     inner(0);
 }
 
-function Sum(primes)
-{
+function Sum(primes) {
     let total = 0;
     let extra = 0n;
 
-    function inner(current, index)
-    {
-        if (index >= primes.length)
-        {
+    function inner(current, index) {
+        if (index >= primes.length) {
             let a = current.value;
             let t = total + a;
-            if (t > Number.MAX_SAFE_INTEGER)
-            {
-                extra+= BigInt(total) + BigInt(a);
+            if (t > Number.MAX_SAFE_INTEGER) {
+                extra += BigInt(total) + BigInt(a);
                 total = 0;
-            }
-            else
+            } else
                 total = t;
             return;
         }
         let pa = primes[index];
         let c1 = current.mult1(pa);
         let c2 = current.mult2(pa);
-        inner(c1, index+1);
-        inner(c2, index+1);
+        inner(c1, index + 1);
+        inner(c2, index + 1);
     }
 
     inner(primes[0], 1);
@@ -128,8 +116,7 @@ function Sum(primes)
     return extra + BigInt(total);
 }
 
-function S(n)
-{
+function S(n) {
     var primes = [];
     primeHelper.factorize(n, (p, f) => {
         if ((p % 4) !== 1 || f !== 1)
@@ -140,8 +127,7 @@ function S(n)
     return Sum(primes);
 }
 
-function solve()
-{
+function solve() {
     let total = 0n;
     generateNumbers((primes) => {
         total += Sum(primes);

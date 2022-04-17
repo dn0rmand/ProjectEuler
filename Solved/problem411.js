@@ -1,7 +1,7 @@
 const assert     = require('assert');
-const Tracer     = require('tools/tracer');
-const timeLogger = require('tools/timeLogger');
-const BigSet     = require('tools/BigSet');
+const Tracer     = require('@dn0rmand/project-euler-tools/src/tracer');
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
+const BigSet     = require('@dn0rmand/project-euler-tools/src/BigSet');
 
 function sortStations(stations, trace)
 {

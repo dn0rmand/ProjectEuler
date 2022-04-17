@@ -1,5 +1,5 @@
 const assert = require('assert');
-const timeLogger = require('tools/timeLogger');
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
 const prettyTime= require("pretty-hrtime");
 
 const MODULO = 7n ** 10n;

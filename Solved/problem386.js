@@ -1,7 +1,7 @@
 const assert = require('assert');
-const primeHelper = require('tools/primeHelper')();
-const Tracer = require('tools/tracer');
-const timeLogger = require('tools/timeLogger');
+const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper');
+const Tracer = require('@dn0rmand/project-euler-tools/src/tracer');
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
 
 const MAX = 1E8;
 const MAX_PRIME = 1E8;

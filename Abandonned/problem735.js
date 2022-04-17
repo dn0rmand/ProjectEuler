@@ -1,49 +1,43 @@
 const assert = require('assert');
-const divisors = require('tools/divisors');
-const divisorsCount = require('tools/divisorsCount');
-const divisorCount = require('tools/divisorsCount');
 
-const polynomial = require('tools/polynomial');
+const {
+    divisors,
+    divisorsCount,
+} = require('@dn0rmand/project-euler-tools');
 
-function getCount(n)
-{
-    const value = 2*n*n;
+function getCount(n) {
+    const value = 2 * n * n;
 
-    return divisorCount(value);
+    return divisorsCount(value);
 }
 
-function f(n)
-{
-    const value = 2*n*n;
+function f(n) {
+    const value = 2 * n * n;
 
     let count = 0;
     let isMin = true;
 
-    for(const divisor of divisors(value))
-    {
+    for (const divisor of divisors(value)) {
         if (isMin) {
             if (divisor > n)
                 break;
             count++;
-        }            
-        isMin = ! isMin;
+        }
+        isMin = !isMin;
     }
     return count;
 }
 
 const $F = [];
 
-function F(n)
-{
+function F(n) {
     if ($F[n])
         return $F[n];
 
     let total = 0;
 
-    for(let i = n; i > 0; i--) 
-    {
-        if ($F[i])
-        {
+    for (let i = n; i > 0; i--) {
+        if ($F[i]) {
             total += $F[i];
             break;
         }
@@ -63,20 +57,23 @@ console.log('Tests passed')
 
 const values = [];
 
-for(let i = 1; ; i++)
-{
-    const c = divisorsCount(i*i);
+for (let i = 1;; i++) {
+    const c = divisorsCount(i * i);
     const v = f(i);
     let cc;
 
     if (c & 1)
-        cc = (c+1)/2;
+        cc = (c + 1) / 2;
     else
         cc = c / 2;
 
-    if (v !== cc)
-    {
-        values.push({i, c, f:v, cc});
+    if (v !== cc) {
+        values.push({
+            i,
+            c,
+            f: v,
+            cc
+        });
         if (values.length === 100)
             break;
     }

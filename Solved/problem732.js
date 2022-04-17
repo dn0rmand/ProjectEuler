@@ -1,13 +1,13 @@
 const assert = require('assert');
-const Tracer = require('tools/tracer');
-const timeLogger = require('tools/timeLogger');
-const BigMap = require('tools/BigMap');
+const Tracer = require('@dn0rmand/project-euler-tools/src/tracer');
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
+const BigMap = require('@dn0rmand/project-euler-tools/src/BigMap');
 
 const dummyGC = () => {};
 
 const GC = global.gc || dummyGC;
 
-require('tools/numberHelper');
+require('@dn0rmand/project-euler-tools/src/numberHelper');
 
 const FIVE = 5;
 const MODULO_1 = 1000000007;

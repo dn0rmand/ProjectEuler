@@ -1,16 +1,17 @@
 const assert = require('assert');
-const timeLogger = require('tools/timeLogger');
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
 
-MAX_POW   = 18;
-MAX       = 10n ** BigInt(MAX_POW);
-MAX_PRIME = 10 ** (MAX_POW/3 + 1);
+MAX_POW = 18;
+MAX = 10n ** BigInt(MAX_POW);
+MAX_PRIME = 10 ** (MAX_POW / 3 + 1);
 
-const allprimes = (function()
-{
+const allprimes = (function () {
     process.stdout.write('Loading primes ..');
 
-    const primeHelper = require('tools/primeHelper')(MAX_PRIME, true);
-    const primes      = primeHelper.allPrimes();
+    const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper');
+
+    primeHelper.initialize(MAX_PRIME, true);
+    const primes = primeHelper.allPrimes();
 
     for (let i = 0; i < primes.length; i++)
         primes[i] = BigInt(primes[i]);
@@ -19,24 +20,20 @@ const allprimes = (function()
     return primes;
 })();
 
-function calculate(max, callback)
-{
-    function makeCubes(value, index)
-    {
+function calculate(max, callback) {
+    function makeCubes(value, index) {
         if (value > max)
             return;
 
-        for (let i = index; i <= allprimes.length; i++)
-        {
+        for (let i = index; i <= allprimes.length; i++) {
             let p = allprimes[i];
-            let v = value * (p*p*p);
+            let v = value * (p * p * p);
             if (v > max)
                 break;
 
-            while (v <= max)
-            {
+            while (v <= max) {
                 callback(max / v);
-                makeCubes(v, i+1);
+                makeCubes(v, i + 1);
                 v *= p;
             }
         }
@@ -45,24 +42,19 @@ function calculate(max, callback)
     makeCubes(1n, 0);
 }
 
-function s(n)
-{
+function s(n) {
     let total = 1n;
 
-    for (let p of allprimes)
-    {
+    for (let p of allprimes) {
         if (p > n)
             break;
-        if (n % p === 0n)
-        {
+        if (n % p === 0n) {
             let f = 0n;
-            while (n % p === 0n)
-            {
+            while (n % p === 0n) {
                 n /= p;
                 f++;
             }
-            if (f >= 3)
-            {
+            if (f >= 3) {
                 let s = 2n + f - 3n;
                 total *= s;
             }
@@ -72,8 +64,7 @@ function s(n)
     return total;
 }
 
-function S(n)
-{
+function S(n) {
     let total = n;
 
     calculate(n, (count) => {
@@ -96,4 +87,3 @@ console.log('Tests passed');
 answer = timeLogger.wrap('', () => S(MAX));
 
 console.log(`Answer is ${ answer }`);
-

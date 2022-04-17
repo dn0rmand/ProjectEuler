@@ -10,9 +10,9 @@
 // Further you are given F(2×10^4)=130 and F(3×10^6)=2014
 // Find F(9×10^18)
 
-const primeHelper = require('tools/primeHelper')();
+const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper');
 const assert = require('assert');
-const announce = require('tools/announce');
+const announce = require('@dn0rmand/project-euler-tools/src/announce');
 
 const MAX = 9E18;
 const MAX_PRIME = Math.floor(Math.sqrt(MAX/8));

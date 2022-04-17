@@ -1,7 +1,7 @@
 const assert           = require('assert'); 
-const timeLogger       = require('tools/timeLogger');
-const linearRecurrence = require('tools/linearRecurrence');
-const Matrix           = require('tools/matrix-small');
+const timeLogger       = require('@dn0rmand/project-euler-tools/src/timeLogger');
+const linearRecurrence = require('@dn0rmand/project-euler-tools/src/linearRecurrence');
+const Matrix           = require('@dn0rmand/project-euler-tools/src/matrix-small');
 
 const MODULO   = 2 ** 30;
 const MODULO_N = BigInt(MODULO);

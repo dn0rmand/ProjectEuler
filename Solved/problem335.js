@@ -1,8 +1,8 @@
 const assert = require('assert');
-const timeLogger = require('tools/timeLogger');
-const Tracer = require('tools/tracer');
-const linearRecurrence = require('tools/linearRecurrence');
-const Matrix = require('tools/matrix-small');
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
+const Tracer = require('@dn0rmand/project-euler-tools/src/tracer');
+const linearRecurrence = require('@dn0rmand/project-euler-tools/src/linearRecurrence');
+const Matrix = require('@dn0rmand/project-euler-tools/src/matrix-small');
 
 const MAX = 10n**18n;
 const MODULO = 7**9;

@@ -1,13 +1,13 @@
 const assert = require('assert');
-const primeHelper = require('tools/primeHelper')();
-const divisors = require('tools/divisors');
-const timeLogger = require('tools/timeLogger');
-const Tracer = require('tools/tracer');
+const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper');
+const divisors = require('@dn0rmand/project-euler-tools/src/divisors');
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
+const Tracer = require('@dn0rmand/project-euler-tools/src/tracer');
 
 const MODULO = 1000000007
 const MAX = 1e14
 
-require('tools/numberHelper');
+require('@dn0rmand/project-euler-tools/src/numberHelper');
 
 primeHelper.initialize(Math.floor(Math.sqrt(MAX))+1);
 

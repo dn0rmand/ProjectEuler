@@ -1,5 +1,5 @@
 const assert = require('assert');
-const TimeLogger = require('tools/timeLogger');
+const TimeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
 
 let allTime = new TimeLogger();
 allTime.start();

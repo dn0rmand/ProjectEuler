@@ -1,5 +1,5 @@
 const assert = require('assert');
-const PreciseNumber = require('tools/preciseNumber');
+const PreciseNumber = require('@dn0rmand/project-euler-tools/src/preciseNumber');
 
 function format(value)
 {

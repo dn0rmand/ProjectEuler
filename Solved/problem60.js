@@ -1,4 +1,4 @@
-const isPrime = require('tools/isPrime.js');
+const isPrime = require('@dn0rmand/project-euler-tools/src/isPrime.js');
 
 const cache = [];
 
@@ -41,7 +41,7 @@ function FindOthers(primes, min)
 
 function solve()
 {
-    const primes  = require('tools/primes.js');
+    const primes  = require('@dn0rmand/project-euler-tools/src/primes.js');
     let primeIterator = primes();
 
     while (true)

@@ -1,7 +1,7 @@
-const primeHelper = require('tools/primeHelper')();
+const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper');
 const assert = require('assert');
 
-require('tools/numberHelper');
+require('@dn0rmand/project-euler-tools/src/numberHelper');
 
 primeHelper.initialize(1E7);
 

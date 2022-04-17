@@ -1,7 +1,8 @@
 const assert = require('assert');
-const primeHelper = require('tools/primeHelper')();
 
-const linearRecurrence = require('tools/linearRecurrence');
+const {
+    primeHelper
+} = require('@dn0rmand/project-euler-tools');
 
 const MAX = 10n ** 36n;
 const MAX_PRIME = 1E7;
@@ -14,65 +15,54 @@ primeHelper.initialize(MAX_PRIME);
 
 const allPrimes = primeHelper.allPrimes();
 
-class FactorArray
-{
-    constructor()
-    {
+class FactorArray {
+    constructor() {
         this.$factors = [];
-        this.$length  = 0;
+        this.$length = 0;
     }
 
-    length()
-    {
+    length() {
         return this.$length;
     }
 
-    setLength(value)
-    {
+    setLength(value) {
         if (value < 0)
             value = 0;
         if (value < this.$length)
             this.$length = value;
     }
 
-    push(value)
-    {
+    push(value) {
         this.$factors[this.$length] = value;
         this.$length++;
     }
 
-    pop()
-    {
+    pop() {
         if (this.$length > 0)
             this.$length--;
     }
 
-    get(index)
-    {
+    get(index) {
         if (index >= 0 && index < this.$length)
             return this.$factors[index];
     }
 
-    set(index, value)
-    {
+    set(index, value) {
         if (index >= 0 && index < this.$length)
             return this.$factors[index] = value;
     }
 }
 
-function $solve(size)
-{
-    let total     = 1;
-    let factors   = new FactorArray();
+function $solve(size) {
+    let total = 1;
+    let factors = new FactorArray();
     let processed = new Set();
 
-    let maxPower = (function()
-    {
+    let maxPower = (function () {
         let max = 1;
 
-        for(let p of allPrimes)
-        {
-            let pp = BigInt(p-1);
+        for (let p of allPrimes) {
+            let pp = BigInt(p - 1);
 
             if ((TWO ** pp) > size)
                 break;
@@ -82,11 +72,9 @@ function $solve(size)
         return max;
     })();
 
-    function pass1()
-    {
-        for (let prime of allPrimes)
-        {
-            let p      = BigInt(prime);
+    function pass1() {
+        for (let prime of allPrimes) {
+            let p = BigInt(prime);
             let factor = p ** SIX;
 
             p = factor;
@@ -94,8 +82,7 @@ function $solve(size)
             if (p > size)
                 break;
 
-            while (p < size)
-            {
+            while (p < size) {
                 total++;
                 processed.add(p);
                 p *= factor;
@@ -103,21 +90,17 @@ function $solve(size)
         }
     }
 
-    function pass3(powers)
-    {
+    function pass3(powers) {
         const usedPrimes = [];
 
         let pows = powers;
         let done = [];
 
-        function makePowers(callback)
-        {
+        function makePowers(callback) {
             let ps = [];
 
-            function inner(index)
-            {
-                if (index >= pows.length())
-                {
+            function inner(index) {
+                if (index >= pows.length()) {
                     if (ps.length > 1)
                         callback(ps);
                     return;
@@ -125,40 +108,34 @@ function $solve(size)
 
                 let f = BigInt(pows.get(index));
 
-                if (index > 0)
-                {
-                    for (let i = 0; i < ps.length; i++)
-                    {
+                if (index > 0) {
+                    for (let i = 0; i < ps.length; i++) {
                         let x1 = ps[i];
                         if (x1 % f == 0)
                             continue;
                         let x2 = x1 * f;
-                        if (x2 <= maxPower && !done[x2])
-                        {
+                        if (x2 <= maxPower && !done[x2]) {
                             ps[i] = x2;
                             done[x2] = 1;
-                            inner(index+1);
+                            inner(index + 1);
                             ps[i] = x1;
                         }
                     }
                 }
 
                 ps.push(f);
-                inner(index+1);
+                inner(index + 1);
                 ps.pop();
             }
 
             inner(0);
         }
 
-        function inner(value, index)
-        {
+        function inner(value, index) {
             if (value >= size)
                 return;
-            if (index >= powers.length)
-            {
-                if (! processed.has(value))
-                {
+            if (index >= powers.length) {
+                if (!processed.has(value)) {
                     total++;
                     processed.add(value);
                 }
@@ -166,8 +143,7 @@ function $solve(size)
             }
 
             let power = powers[index];
-            for (let p of allPrimes)
-            {
+            for (let p of allPrimes) {
                 if (usedPrimes.includes(p))
                     continue;
 
@@ -178,7 +154,7 @@ function $solve(size)
                     break;
 
                 usedPrimes.push(p);
-                inner(f, index+1);
+                inner(f, index + 1);
                 usedPrimes.pop();
             }
         }
@@ -189,19 +165,15 @@ function $solve(size)
         });
     }
 
-    function pass2()
-    {
-        function inner(value, index)
-        {
-            if (factors.length() > 1 && value % SIX === ONE)
-            {
+    function pass2() {
+        function inner(value, index) {
+            if (factors.length() > 1 && value % SIX === ONE) {
                 pass3(factors);
             }
 
             let c = factors.length();
 
-            for (let i = index; i < allPrimes.length; i++)
-            {
+            for (let i = index; i < allPrimes.length; i++) {
                 let prime = allPrimes[i];
                 if (prime > maxPower)
                     break;
@@ -212,10 +184,9 @@ function $solve(size)
                 if (v > size)
                     break;
 
-                while (v <= size && ((v % SIX) !== ZERO))
-                {
-                    factors.push(prime-1);
-                    inner(v, i+1);
+                while (v <= size && ((v % SIX) !== ZERO)) {
+                    factors.push(prime - 1);
+                    inner(v, i + 1);
                     v *= primen;
                 }
 
@@ -234,21 +205,17 @@ function $solve(size)
     return total;
 }
 
-function solve(size)
-{
-    let dice  = new Uint8Array(size);
+function solve(size) {
+    let dice = new Uint8Array(size);
 
     dice.fill(1);
 
-    function dump()
-    {
+    function dump() {
         let values = [];
-        for (let i = 0; i < size; i++)
-        {
-            if (dice[i] === 1)
-            {
+        for (let i = 0; i < size; i++) {
+            if (dice[i] === 1) {
                 let s = '';
-                primeHelper.factorize(i+1, (p, f) => {
+                primeHelper.factorize(i + 1, (p, f) => {
                     s += `${p}^${f}  `
                 });
                 console.log(s);
@@ -257,11 +224,9 @@ function solve(size)
     }
 
     let count = size;
-    for (let i = 2; i < size; i++)
-    {
-        let x = i-1;
-        while (x < size)
-        {
+    for (let i = 2; i < size; i++) {
+        let x = i - 1;
+        while (x < size) {
             let v1 = dice[x];
             let v2 = (v1 % 6) + 1;
             dice[x] = v2;
@@ -279,22 +244,21 @@ function solve(size)
     return count;
 }
 
-function analyze()
-{
+function analyze() {
     let values = [];
     let current = undefined;
     let max = 10000;
-    for (let i = 1; ; i++)
-    {
+    for (let i = 1;; i++) {
         let v = solve(i);
-        if (current === undefined || current.value != v)
-        {
+        if (current === undefined || current.value != v) {
             if (i > max)
                 break;
-            current = { value:v, count: 1};
+            current = {
+                value: v,
+                count: 1
+            };
             values.push(current);
-        }
-        else
+        } else
             current.count++;
     }
     console.log(values);

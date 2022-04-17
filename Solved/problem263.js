@@ -1,6 +1,6 @@
-const primeHelper = require('tools/primeHelper')();
-const timeLogger  = require('tools/timeLogger');
-const Tracer      = require('tools/tracer');
+const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper');
+const timeLogger  = require('@dn0rmand/project-euler-tools/src/timeLogger');
+const Tracer      = require('@dn0rmand/project-euler-tools/src/tracer');
 
 timeLogger.wrap('Loading lots of primes', _ => primeHelper.initialize(12E8, true));
 

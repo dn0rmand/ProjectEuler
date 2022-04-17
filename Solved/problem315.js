@@ -1,7 +1,7 @@
 'use strict';
 
 const assert = require('assert');
-const primes = require('tools/primeHelper.js')();
+const primes = require('@dn0rmand/project-euler-tools/src/primeHelper.js')();
 
 const $digits = [
     [0,1,0,1,0,1,0,0,0,1,0,1,0,1,0], // 0

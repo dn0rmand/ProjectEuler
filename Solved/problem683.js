@@ -1,4 +1,4 @@
-const timeLog = require('tools/timeLogger');
+const timeLog = require('@dn0rmand/project-euler-tools/src/timeLogger');
 const assert  = require('assert');
 
 let DELTA   = 1E-7;

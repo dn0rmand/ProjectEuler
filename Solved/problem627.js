@@ -10,11 +10,11 @@
 
 // Find F(30,10001) mod 1000000007.
 
-require('tools/bigintHelper');
+require('@dn0rmand/project-euler-tools/src/bigintHelper');
 
 const gcd = require('gcd');
 const assert = require('assert');
-const primeHelper = require('tools/primeHelper')();
+const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper');
 const MODULO = BigInt(1000000007);
 
 primeHelper.initialize(300);

@@ -1,17 +1,17 @@
 const assert = require('assert');
-const timeLogger = require('tools/timeLogger'); 
+const {
+    TimeLogger: timeLogger,
+} = require('@dn0rmand/project-euler-tools');
 
-function bruteQ(n)
-{
+function bruteQ(n) {
     const used = Array(n).fill(2);
 
-    function makeKey(player)
-    {
+    function makeKey(player) {
         let key = 0;
-        for(let i = 0; i < player; i++)
+        for (let i = 0; i < player; i++)
             key += used[i];
 
-        for(let i = player; i < used.length; i++)
+        for (let i = player; i < used.length; i++)
             key = (key * 4) + used[i];
 
         return key;
@@ -19,10 +19,9 @@ function bruteQ(n)
 
     const $inner = new Map();
 
-    function inner(remaining, player, pick)
-    {
+    function inner(remaining, player, pick) {
         if (remaining === 2) {
-            if (used[n-1] !== 0)
+            if (used[n - 1] !== 0)
                 return 1;
             else
                 return 0;
@@ -38,8 +37,7 @@ function bruteQ(n)
 
         odds = 0;
 
-        for(let i = 0; i < n; i++) 
-        {
+        for (let i = 0; i < n; i++) {
             if (used[i] === 0 || i === player) continue; // 
 
             const options = used[i];
@@ -47,9 +45,9 @@ function bruteQ(n)
             used[i]--;
 
             if (pick)
-                odds += options * inner(remaining-1, player+1, 0);
+                odds += options * inner(remaining - 1, player + 1, 0);
             else
-                odds += options * inner(remaining-1, player, 1);
+                odds += options * inner(remaining - 1, player, 1);
 
             used[i]++;
         }
@@ -59,37 +57,30 @@ function bruteQ(n)
         return odds / ways;
     }
 
-    const answer = inner(2*n, 0, 0, used);
+    const answer = inner(2 * n, 0, 0, used);
 
     return answer;
 }
 
-function q(n)
-{
-    function count(set1, set2)
-    {
-        if (set2 === undefined)
-        {
+function q(n) {
+    function count(set1, set2) {
+        if (set2 === undefined) {
             if (set1 < 2)
                 throw "ERROR";
 
-            return (set1*(set1-1))/2;
-        }
-        else 
-        {
+            return (set1 * (set1 - 1)) / 2;
+        } else {
             if (set1 < 1 || set2 < 1)
                 throw "ERROR";
 
-            return set1*set2;
+            return set1 * set2;
         }
     }
 
-    function inner(player, remaining)
-    {
+    function inner(player, remaining) {
         let totalWays = 0;
 
-        function process(odds, ways)
-        {
+        function process(odds, ways) {
             if (ways <= 0)
                 throw "ERROR";
 
@@ -107,67 +98,64 @@ function q(n)
 
         let odds = 0;
 
-        const backCards = (2*player) - remaining;
+        const backCards = (2 * player) - remaining;
 
         // both the player's cards are in the hat
-        if (remaining >= 2)
-        {
+        if (remaining >= 2) {
             // player play 1 forward and 1 back
 
             if (backCards >= 1 && remaining >= 3)
-                odds += process(inner(player-1, remaining-3), count(remaining-2, backCards));
+                odds += process(inner(player - 1, remaining - 3), count(remaining - 2, backCards));
 
             // player plays both back
 
             if (backCards >= 2)
-                odds += process(inner(player-1, remaining-2), count(backCards));
+                odds += process(inner(player - 1, remaining - 2), count(backCards));
 
             // player plays both forward
 
             if (remaining >= 4)
-                odds += process(inner(player-1, remaining-4), count(remaining-2));
+                odds += process(inner(player - 1, remaining - 4), count(remaining - 2));
         }
 
         // one of the player's cards is still in the hat
 
-        if (backCards >= 1) 
-        {
+        if (backCards >= 1) {
             // player play 1 forward and 1 back
 
             if (backCards >= 2 && remaining >= 2)
-                odds += process(inner(player-1, remaining-2), count(remaining-1, backCards-1));
+                odds += process(inner(player - 1, remaining - 2), count(remaining - 1, backCards - 1));
 
             // player plays both back
 
             if (backCards >= 3 && remaining >= 1)
-                odds += process(inner(player-1, remaining-1), count(backCards-1));
+                odds += process(inner(player - 1, remaining - 1), count(backCards - 1));
 
             // player plays both forward
 
             if (remaining >= 3)
-                odds += process(inner(player-1, remaining-3), count(remaining-1));
+                odds += process(inner(player - 1, remaining - 3), count(remaining - 1));
         }
 
         // none of the player's cards are in the hat 
 
-        if (backCards >= 2)
-        {
+        if (backCards >= 2) {
             // player play 1 forward and 1 back
 
             if (backCards > 2 && remaining >= 1)
-                odds += process(inner(player-1, remaining-1), count(remaining, backCards-2));
+                odds += process(inner(player - 1, remaining - 1), count(remaining, backCards - 2));
 
             // player plays both back
 
             if (backCards >= 4)
-                odds += process(inner(player-1, remaining), count(backCards-2));
+                odds += process(inner(player - 1, remaining), count(backCards - 2));
 
             // player plays both forward
 
             if (remaining >= 2)
-                odds += process(inner(player-1, remaining-2), count(remaining));
+                odds += process(inner(player - 1, remaining - 2), count(remaining));
         }
-        
+
         if (totalWays === 0)
             throw "ERROR";
         else
@@ -176,30 +164,27 @@ function q(n)
         return odds;
     }
 
-    const odds = inner(n, 2*n);
+    const odds = inner(n, 2 * n);
     return odds;
 }
 
-function bruteSecretSanta(n)
-{
+function bruteSecretSanta(n) {
     const used = new Array(n).fill(0);
 
-    function inner(remaining, player)
-    {
+    function inner(remaining, player) {
         if (remaining === 1) {
-            return used[n-1] ? 0 : 1;
+            return used[n - 1] ? 0 : 1;
         }
 
         let ways = 0;
         let odds = 0;
 
-        for(let i = 0; i < n; i++) 
-        {
+        for (let i = 0; i < n; i++) {
             if (used[i] || i === player) continue; // 
 
             used[i] = 1;
             ways++;
-            odds += inner(remaining-1, player+1);
+            odds += inner(remaining - 1, player + 1);
             used[i] = 0;
         }
 
@@ -211,10 +196,8 @@ function bruteSecretSanta(n)
     return answer;
 }
 
-function secretSanta(n)
-{
-    function inner(player, remaining)
-    {
+function secretSanta(n) {
+    function inner(player, remaining) {
         if (remaining < 0) {
             throw "ERROR";
         }
@@ -223,38 +206,37 @@ function secretSanta(n)
             return (remaining === 0 ? 0 : 1);
         }
 
-        const played     = n - player;
-        const unplayed   = n - played;
+        const played = n - player;
+        const unplayed = n - played;
         const otherCards = unplayed - remaining;
 
         // player plays forward
 
-        let odds1 = 0, odds2 = 0;
+        let odds1 = 0,
+            odds2 = 0;
 
-        if (remaining > 0)
-        {
+        if (remaining > 0) {
             // player's card is in the hat
-            odds1 += (remaining > 1 ? inner(player-1, remaining-2) : inner(1, 0))/2;
+            odds1 += (remaining > 1 ? inner(player - 1, remaining - 2) : inner(1, 0)) / 2;
             // player's cards is NOT in the hat
-            odds1 += inner(player-1, remaining-1)/2;
-        }
-        else
+            odds1 += inner(player - 1, remaining - 1) / 2;
+        } else
             odds1 += inner(1, 0);
 
         // player plays back
-        odds2 += (remaining > 0 ? inner(player-1, remaining-1) : inner(1, 0))/2;
+        odds2 += (remaining > 0 ? inner(player - 1, remaining - 1) : inner(1, 0)) / 2;
         // player's cards is NOT in the hat
-        odds2 += inner(player-1, remaining)/2;
+        odds2 += inner(player - 1, remaining) / 2;
 
-        return (odds1*remaining + odds2*otherCards) / unplayed;
+        return (odds1 * remaining + odds2 * otherCards) / unplayed;
     }
 
     const odds = inner(n, n);
     return odds;
 }
 
-console.log(bruteSecretSanta(5),  secretSanta(5));
-console.log(bruteSecretSanta(3),  secretSanta(3));
+console.log(bruteSecretSanta(5), secretSanta(5));
+console.log(bruteSecretSanta(3), secretSanta(3));
 console.log(bruteSecretSanta(10), secretSanta(10));
 
 assert.strictEqual(bruteQ(5).toFixed(10), '0.2476095994');

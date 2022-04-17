@@ -1,8 +1,8 @@
 const assert = require('assert');
-const timeLogger = require('tools/timeLogger');
-const { rank, unrank } = require('tools/permutationRanking');
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
+const { rank, unrank } = require('@dn0rmand/project-euler-tools/src/permutationRanking');
 
-// require('tools/numberHelper');
+// require('@dn0rmand/project-euler-tools/src/numberHelper');
 
 const MODULO = 1000000007;
 const MODULO_N = BigInt(MODULO);

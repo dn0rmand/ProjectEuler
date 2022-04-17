@@ -1,7 +1,7 @@
 const assert = require('assert');
-const timeLogger = require('tools/timeLogger');
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
 
-const linearRecurrence = require('tools/linearRecurrence');
+const linearRecurrence = require('@dn0rmand/project-euler-tools/src/linearRecurrence');
 
 function bigSQRT(N)
 {

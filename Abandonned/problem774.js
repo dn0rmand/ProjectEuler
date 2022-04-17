@@ -1,26 +1,24 @@
 const assert = require('assert');
-const binomial = require('tools/binomial');
-
-require('tools/numberHelper');
+const {
+    binomial
+} = require('@dn0rmand/project-euler-tools');
 
 const MODULO = 998244353;
 
-function getMax(b)
-{
-    for(let i = 1; ; i *= 2) {
+function getMax(b) {
+    for (let i = 1;; i *= 2) {
         if (i > b) {
-            return i-1;
+            return i - 1;
         }
     }
 }
 
-function getBitCount(v)
-{
+function getBitCount(v) {
     let count = 0;
     while (v > 0) {
         if (v & 1) {
             count++;
-            v = (v-1)/2;
+            v = (v - 1) / 2;
         } else {
             v /= 2;
         }
@@ -31,31 +29,27 @@ function getBitCount(v)
 let $inner = [];
 let $b = undefined;
 
-function c(n, b)
-{
+function c(n, b) {
     if ($b !== b) {
         $b = b;
         $inner = [];
     }
 
-    function get(count, previous)
-    {
-        if ($inner[count]) { 
-            return $inner[count][previous]; 
+    function get(count, previous) {
+        if ($inner[count]) {
+            return $inner[count][previous];
         }
     }
 
-    function set(count, previous, value)
-    {
+    function set(count, previous, value) {
         let a = $inner[count];
-        if (! a) {
+        if (!a) {
             $inner[count] = a = [];
         }
         a[previous] = value;
     }
 
-    function inner(count, previous)
-    {
+    function inner(count, previous) {
         if (count === 0) {
             return 1;
         }
@@ -65,9 +59,9 @@ function c(n, b)
             return total;
         }
         total = 0;
-        for(let a = 1; a <= b; a++) {
+        for (let a = 1; a <= b; a++) {
             if (previous & a) {
-                total = (total + inner(count-1, a)) % MODULO;
+                total = (total + inner(count - 1, a)) % MODULO;
             }
         }
         set(count, bits, total);
@@ -78,14 +72,12 @@ function c(n, b)
     return value;
 }
 
-function c1(n, b)
-{
+function c1(n, b) {
     const cache = [];
 
-    function add(from, to)
-    {
+    function add(from, to) {
         from = getBitCount(from);
-        to   = getBitCount(to);
+        to = getBitCount(to);
 
         if (cache[from] === undefined) {
             cache[from] = [];
@@ -93,8 +85,8 @@ function c1(n, b)
         cache[from][to] = (cache[from][to] || 0) + 1;
     }
 
-    for(let a1 = 1; a1 <= b; a1++) {
-        for(let a2 = 1; a2 <= b; a2++) {
+    for (let a1 = 1; a1 <= b; a1++) {
+        for (let a2 = 1; a2 <= b; a2++) {
             if (a1 & a2) {
                 add(a1, a2);
             }
@@ -106,11 +98,11 @@ function c1(n, b)
 
     states.set(getBitCount(b), 1);
 
-    for(let i = 1; i <= n; i++) {
+    for (let i = 1; i <= n; i++) {
         newStates.clear();
 
         let total = 0;
-        for(let from of states.keys()) {
+        for (let from of states.keys()) {
             let count = states.get(from);
             for (const to in cache[from]) {
                 let newCount = count.modMul(cache[from][to], MODULO);
@@ -123,8 +115,8 @@ function c1(n, b)
     return 0;
 }
 
-console.log(c(10, 2**3-1));
-console.log(c1(10, 2**3-1));
+console.log(c(10, 2 ** 3 - 1));
+console.log(c1(10, 2 ** 3 - 1));
 // assert.strictEqual(c1(20, 2**3 - 1), 137131919);
 // assert.strictEqual(c(20, 2**4 - 1), 667431985);
 // assert.strictEqual(c(20, 2**5 - 1), 404701472);

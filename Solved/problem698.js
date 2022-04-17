@@ -1,5 +1,5 @@
 const assert = require('assert');
-const timeLogger = require('tools/timeLogger');
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
 
 const MODULO = 123123123n;
 const MAX    = 111111111111222333n;

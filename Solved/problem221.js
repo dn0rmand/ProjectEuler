@@ -1,4 +1,4 @@
-const timeLog = require('tools/timeLogger');
+const timeLog = require('@dn0rmand/project-euler-tools/src/timeLogger');
 const Sorted = require('sorted');
 
 const MAX = 150000;

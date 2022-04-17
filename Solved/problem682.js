@@ -1,6 +1,6 @@
 const assert    = require('assert');
-const timeLog   = require('tools/timeLogger');
-const announce  = require('tools/announce');
+const timeLog   = require('@dn0rmand/project-euler-tools/src/timeLogger');
+const announce  = require('@dn0rmand/project-euler-tools/src/announce');
 const fs        = require('fs');
 const workerpool= require('workerpool').pool();
 

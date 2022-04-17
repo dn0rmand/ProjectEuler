@@ -11,7 +11,7 @@
 // Find the least value of n for which the remainder first exceeds 10^10.
 
 const bigInt = require('big-integer');
-const primeHelper = require('tools/primeHelper')();
+const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper');
 const assert = require('assert');
 
 const TEST_MAX = 1000000000;

@@ -1,7 +1,7 @@
 const assert = require('assert');
-const timeLogger = require('tools/timeLogger');
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
 
-require('tools/bigIntHelper');
+require('@dn0rmand/project-euler-tools/src/bigIntHelper');
 
 const MAX = 10n ** 10n;
 const MIN = 1n;

@@ -9,9 +9,9 @@
 // Find the sum of the terms in the prime factorisation of 20000000C15000000.
 
 const assert = require('assert');
-const bigIntHelper = require('tools/bigintHelper');
+const bigIntHelper = require('@dn0rmand/project-euler-tools/src/bigintHelper');
 
-const primeHelper = require('tools/primeHelper')();
+const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper');
 
 const MAX_N     = 20000;
 const MODULO    = 1000000007;

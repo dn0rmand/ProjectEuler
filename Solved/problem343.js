@@ -17,7 +17,7 @@
 // Find Σf(k^3) for 1 ≤ k ≤ 2×10^6.
 
 const assert = require('assert');
-const primeHelper = require('tools/primeHelper')();
+const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper');
 const prettyTime= require("pretty-hrtime");
 
 const MAX = 2000000;

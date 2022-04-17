@@ -1,8 +1,8 @@
 const assert = require('assert');
-const primeHelper = require('tools/primeHelper')();
-const divisors = require('tools/divisors');
-const timeLogger = require('tools/timeLogger');
-const announce = require('tools/announce');
+const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper');
+const divisors = require('@dn0rmand/project-euler-tools/src/divisors');
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
+const announce = require('@dn0rmand/project-euler-tools/src/announce');
 
 const MAX = 1e6;
 primeHelper.initialize(MAX);

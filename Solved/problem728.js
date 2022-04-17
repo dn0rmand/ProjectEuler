@@ -1,10 +1,10 @@
 const assert = require('assert');
-const calculateDivisors = require('tools/divisors');
-const timeLogger = require('tools/timeLogger');
-const Tracer = require('tools/tracer');
-const primeHelper = require('tools/primeHelper')();
+const calculateDivisors = require('@dn0rmand/project-euler-tools/src/divisors');
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
+const Tracer = require('@dn0rmand/project-euler-tools/src/tracer');
+const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper');
 
-require('tools/numberHelper');
+require('@dn0rmand/project-euler-tools/src/numberHelper');
 
 const MODULO = 1000000007;
 const TWO = 2;

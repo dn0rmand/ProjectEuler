@@ -2,9 +2,9 @@
 // Javascript too slow. Solved with C# in 3 hours 30 minutes
 //
 const assert = require('assert');
-const timeLogger = require('tools/timeLogger');
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
 const ProgressBar = require('progress');
-const ULong = require('tools/ulong');
+const ULong = require('@dn0rmand/project-euler-tools/src/ulong');
 
 const MODULO = 2n**60n;
 const MAX    = 10n ** 8n; // 1091173346864234358

@@ -26,22 +26,23 @@
 // Find Σ(M(n))3 for 1 ≤ n ≤ 1000.
 
 const assert = require('assert');
-const Tracer = require('tools/tracer');
-const timeLogger = require('tools/timeLogger');
-const BigMap = require('tools/BigMap');
-const BigSet = require('tools/BigSet');
+const {
+    Tracer,
+    BigMap,
+    BigSet,
+    TimeLogger: timeLogger
+} = require('@dn0rmand/project-euler-tools');
 
-const MAX   = 1000;
+const MAX = 1000;
 const MAX_S = 1E6;
 
 const $S = new BigMap();
 const $SS = new BigSet();
 
-let $maxS  = 0;
+let $maxS = 0;
 let $maxN = 0;
 
-function S(n)
-{
+function S(n) {
     if (n < 1) {
         return 0;
     }
@@ -52,11 +53,11 @@ function S(n)
     }
 
     if (n & 1) {
-        const m = (n-1)/2;
-        s = 2*S(m) + m + 1;
+        const m = (n - 1) / 2;
+        s = 2 * S(m) + m + 1;
     } else {
         const m = n / 2;
-        s = S(m) + S(m-1) + m;
+        s = S(m) + S(m - 1) + m;
     }
 
     if (n > $maxN) {
@@ -73,11 +74,10 @@ function S(n)
     return s;
 }
 
-function isValid(c)
-{
+function isValid(c) {
     if (c > $maxS) {
         while ($maxS < c) {
-            const s = S($maxN+1);
+            const s = S($maxN + 1);
             if (s === c) {
                 return true;
             }
@@ -88,21 +88,19 @@ function isValid(c)
     }
 }
 
-function M(max, trace)
-{
+function M(max, trace) {
     class State {
-        constructor(position, player)
-        {
+        constructor(position, player) {
             this.position = position;
-            this.player   = player;
-            this.key      = position * player; 
+            this.player = player;
+            this.key = position * player;
         }
 
-        *moves(direction = -1) {
-            for(let i = 1; i <= max; i++) {
-                const p = this.position + i*direction;
+        * moves(direction = -1) {
+            for (let i = 1; i <= max; i++) {
+                const p = this.position + i * direction;
                 if (isValid(p)) {
-                    yield new State(p, -this.player); 
+                    yield new State(p, -this.player);
                 }
             }
         }
@@ -112,7 +110,7 @@ function M(max, trace)
 
     // if (trace) {
     //     timeLogger.wrap('calculating start position', _ => {
-    //         const t = new Tracer(1000, trace);
+    //         const t = new Tracer(trace);
     //         let maxDiff = 0;
     //         // Find winning target
     //         while (S(idx+1)-S(idx) <= max) {
@@ -129,10 +127,10 @@ function M(max, trace)
     // }
 
     // const P1 = S(idx);
-    const p = (2**max) * (max+1) - (max+1);
+    const p = (2 ** max) * (max + 1) - (max + 1);
 
     let visited = new Set();
-    let minVisited = p+1;
+    let minVisited = p + 1;
 
     let states = new Map();
     let newStates = new Map();
@@ -142,8 +140,8 @@ function M(max, trace)
 
     states.set(s.key, s);
 
-    const tracer = new Tracer(10000, trace);
-    while(states.size > 0) {
+    const tracer = new Tracer(trace);
+    while (states.size > 0) {
         tracer.print(_ => minVisited);
 
         newStates.clear();
@@ -171,16 +169,16 @@ function M(max, trace)
             visited = newVisited;
         }
 
-        for(const state of states.values()) {
+        for (const state of states.values()) {
             if (state.player === -1 && state.position <= max && state.position > best) {
                 best = state.position;
             }
 
-            for(const newState of state.moves(-1)) {
+            for (const newState of state.moves(-1)) {
                 let good = true;
                 if (newState.player === -1) {
-                    for(const forward of newState.moves(1)) {
-                        if (! visited.has(forward.key)) {
+                    for (const forward of newState.moves(1)) {
+                        if (!visited.has(forward.key)) {
                             good = false;
                             break;
                         }
@@ -198,24 +196,22 @@ function M(max, trace)
     return best;
 }
 
-function solve(value)
-{
+function solve(value) {
     let total = 0;
-    for(let n = value; n >= 1; n--)
-    {
-        process.stdout.write('\r'+n);
+    for (let n = value; n >= 1; n--) {
+        process.stdout.write('\r' + n);
         let v = M(n);
-        total += (v*v*v);
+        total += (v * v * v);
     }
     console.log('');
     return total;
 }
 
 const values = [0, 2, 1, 4, 2, 2, 1, 7, 5, 5, 7, 4, 13, 7, 15, 2, 9, 1, 7, 4, 15, 5, 9];
-for(let i = values.length-1; i > 0; i--) {
+for (let i = values.length - 1; i > 0; i--) {
     const v = values[i];
     const b = {};
-    for(let mask = 1; mask <= i; mask *= 2) {
+    for (let mask = 1; mask <= i; mask *= 2) {
         if (i & mask) {
             b[mask] = values[mask];
         }

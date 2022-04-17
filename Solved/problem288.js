@@ -1,5 +1,5 @@
 const assert = require('assert');
-const timeLogger = require('tools/timeLogger');
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
 
 const MODULO_1 = 3n ** 20n;
 const MODULO_2 = 61n ** 10n;

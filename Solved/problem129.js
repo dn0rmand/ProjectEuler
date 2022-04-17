@@ -1,5 +1,5 @@
 const assert = require('assert');
-const primeHelper = require('tools/primeHelper')();
+const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper');
 
 primeHelper.initialize(1E6);
 

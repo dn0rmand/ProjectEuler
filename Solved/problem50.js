@@ -9,8 +9,8 @@
 
 // Which prime, below one-million, can be written as the sum of the most consecutive primes?
 
-const primes = require('tools/primes.js');
-const isPrime = require('tools/isPrime.js');
+const primes = require('@dn0rmand/project-euler-tools/src/primes.js');
+const isPrime = require('@dn0rmand/project-euler-tools/src/isPrime.js');
 
 let allPrimes = [];
 

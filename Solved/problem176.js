@@ -3,8 +3,8 @@ If n = (p1^a1)(p2^a2)...(pt^at), a(n) = ((2*a1 + 1)(2*a2 + 1) ... (2*at + 1) + 1
 */
 
 const assert = require('assert');
-const timeLogger = require('tools/timeLogger');
-const primeHelper = require('tools/primeHelper')();
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
+const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper');
 
 primeHelper.initialize(1E6);
 

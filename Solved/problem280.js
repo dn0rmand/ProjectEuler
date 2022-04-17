@@ -1,5 +1,5 @@
-const Tracer = require('tools/tracer');
-const timeLogger = require('tools/timeLogger');
+const Tracer = require('@dn0rmand/project-euler-tools/src/tracer');
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
 
 class State
 {

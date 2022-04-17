@@ -1,4 +1,4 @@
-const primes = require('tools/primes.js');
+const primes = require('@dn0rmand/project-euler-tools/src/primes.js');
 
 let primeIterator = primes();
 

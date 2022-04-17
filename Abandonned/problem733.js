@@ -1,27 +1,26 @@
 const assert = require('assert');
-const timeLogger = require('tools/timeLogger');
-const Tracer = require('tools/tracer');
+
+const {
+    Tracer,
+    TimeLogger: timeLogger,
+} = require('@dn0rmand/project-euler-tools');
 
 const MODULO = 1000000007;
-const MAX    = 1E3;
+const MAX = 1E3;
 
-function *sequence()
-{
+function* sequence() {
     const modulo = 10000019;
 
     let value = 1;
-    while(true)
-    {
+    while (true) {
         value = (value * 153) % modulo;
         yield value;
     }
 }
 
-function getValues(n)
-{
+function getValues(n) {
     const values = [];
-    for(const v of sequence())
-    {
+    for (const v of sequence()) {
         values.push(v);
         if (values.length === n)
             break;
@@ -34,7 +33,7 @@ function getValues(n)
 // {
 //     const map = [];
 
-//     const tracer = new Tracer(1000, trace, "Preparing");
+//     const tracer = new Tracer(trace, "Preparing");
 //     for(let i = 0; i < values.length; i++)
 //     {
 //         tracer.print(_ => values.length-i);
@@ -53,9 +52,8 @@ function getValues(n)
 //     return map;
 // }
 
-function S(n, trace)
-{
-    const counts    = [];
+function S(n, trace) {
+    const counts = [];
     const allValues = getValues(n);
     // const valuesMap = prepare(allValues, trace);
 
@@ -63,34 +61,31 @@ function S(n, trace)
 
     let total = 0;
 
-    function process()
-    {
-        for(const v of sequence) {
+    function process() {
+        for (const v of sequence) {
             counts[v] = (counts[v] || 0) + 1;
         }
 
-        const s = (sequence[0]+sequence[1]+sequence[2]+sequence[3]) % MODULO;
-        total = (total + s) %  MODULO;
+        const s = (sequence[0] + sequence[1] + sequence[2] + sequence[3]) % MODULO;
+        total = (total + s) % MODULO;
     }
 
-    function inner(index, count, previous)
-    {
+    function inner(index, count, previous) {
         if (count === 4) {
             process();
             return;
         }
 
-        const tracer = new Tracer(10**count, trace);
+        const tracer = new Tracer(trace);
 
-        for(let i = index; i < allValues.length; i++)
-        {
+        for (let i = index; i < allValues.length; i++) {
             tracer.print(_ => allValues.length - i);
             const v = allValues[i];
             if (v <= previous)
                 continue;
 
             sequence[count] = v;
-            inner(i+1, count+1, v);
+            inner(i + 1, count + 1, v);
         }
 
         tracer.clear();

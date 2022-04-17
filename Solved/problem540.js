@@ -1,9 +1,9 @@
 const assert = require('assert');
-const timeLogger = require('tools/timeLogger');
-const Tracer = require('tools/tracer');
-const primeHelper = require('tools/primeHelper')();
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
+const Tracer = require('@dn0rmand/project-euler-tools/src/tracer');
+const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper');
 
-require('tools/numberHelper');
+require('@dn0rmand/project-euler-tools/src/numberHelper');
 
 const MAX = 3141592653589793;
 const MAX_PRIME = Math.ceil(Math.sqrt(MAX))+1

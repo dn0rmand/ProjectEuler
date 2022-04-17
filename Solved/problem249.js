@@ -1,5 +1,5 @@
-const timeLogger  = require('tools/timeLogger');
-const primeHelper = require('tools/primeHelper')();
+const timeLogger  = require('@dn0rmand/project-euler-tools/src/timeLogger');
+const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper');
 const assert      = require('assert');
 
 const MAX_SUM   = 2000000;

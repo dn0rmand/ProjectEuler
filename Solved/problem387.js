@@ -1,5 +1,5 @@
 const assert = require('assert');
-const $isPrime= require('tools/isPrime.js');
+const $isPrime= require('@dn0rmand/project-euler-tools/src/isPrime.js');
 
 function memoizeIt(fn)
 {

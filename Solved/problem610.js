@@ -1,5 +1,5 @@
 const { deromanize, romanize } = require("romans");
-const timeLogger = require('tools/timeLogger');
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
 
 const letters = ['I', 'V', 'X', 'L', 'C', 'D', 'M'];
 

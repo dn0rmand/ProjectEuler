@@ -1,10 +1,10 @@
 const assert = require('assert');
-const timeLogger = require('tools/timeLogger');
-const Tracer = require('tools/tracer');
-const matrix = require('tools/matrix');
-const linearRecurrence = require('tools/linearRecurrence');
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
+const Tracer = require('@dn0rmand/project-euler-tools/src/tracer');
+const matrix = require('@dn0rmand/project-euler-tools/src/matrix');
+const linearRecurrence = require('@dn0rmand/project-euler-tools/src/linearRecurrence');
 
-require('tools/numberHelper');
+require('@dn0rmand/project-euler-tools/src/numberHelper');
 
 const MODULO = 1E9;
 const MODULO_N = BigInt(1E9);

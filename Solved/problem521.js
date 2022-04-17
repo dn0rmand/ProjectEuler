@@ -1,10 +1,10 @@
 const assert = require('assert');
-const primeHelper = require('tools/primeHelper')();
-const Tracer = require('tools/tracer');
-const BigMap = require('tools/BigMap');
-const timeLogger = require('tools/timeLogger');
+const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper');
+const Tracer = require('@dn0rmand/project-euler-tools/src/tracer');
+const BigMap = require('@dn0rmand/project-euler-tools/src/BigMap');
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
 
-require('tools/numberHelper');
+require('@dn0rmand/project-euler-tools/src/numberHelper');
 
 const MODULO    = 1E9;
 const MAX       = 1E12;

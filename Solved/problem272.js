@@ -4,8 +4,8 @@
 // -----------
 
 const assert = require('assert');
-const primeHelper = require('tools/primeHelper')();
-const timelogger = require('tools/timeLogger');
+const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper');
+const timelogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
 
 const MAX_PRIME = 6426323;
 const MAX_TEST = 300000000;

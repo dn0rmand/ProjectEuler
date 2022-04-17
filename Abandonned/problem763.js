@@ -1,30 +1,30 @@
 const assert = require('assert');
-const Tracer = require('tools/tracer');
-const timeLogger = require('tools/timeLogger');
-const linearRecurrence = require('tools/linearRecurrence');
-const BigMap = require('tools/BigMap');
-const BigSet = require('tools/BigSet');
+
+const {
+    Tracer,
+    TimeLogger: timeLogger,
+    linearRecurrence,
+    BigMap,
+    BigSet
+} = require('@dn0rmand/project-euler-tools');
 
 const MODULO = 1E9;
 const MAX = 10000;
 
-class State
-{
+class State {
     static LIMIT = 32;
     static MAX_KEY = 1200n;
     static _keys = new BigMap();
     static _nextKey = 0n;
 
-    static clearKeys()
-    {
+    static clearKeys() {
         State._nextKey = 0n;
         State._keys.clear();
     }
 
-    static mapKey(key)
-    {
+    static mapKey(key) {
         let k = State._keys.get(key);
-        if (! k) {
+        if (!k) {
             k = ++State._nextKey;
             if (k >= State.MAX_KEY) {
                 throw "Too many keys";
@@ -34,8 +34,7 @@ class State
         return k;
     }
 
-    constructor(previous)
-    {
+    constructor(previous) {
         this.map = new BigSet();
         if (previous) {
             previous.map.forEach(v => this.map.add(v));
@@ -43,15 +42,19 @@ class State
         } else {
             this.set(0, 0, 0, 1);
             this.count = 1;
-        }        
+        }
     }
 
     decode(k) {
         const x = k % State.LIMIT;
-        k = (k-x) / State.LIMIT;
+        k = (k - x) / State.LIMIT;
         const y = k % State.LIMIT;
-        const z = (k-y) / State.LIMIT;
-        return {x, y, z };
+        const z = (k - y) / State.LIMIT;
+        return {
+            x,
+            y,
+            z
+        };
     }
 
     encode(x, y, z) {
@@ -64,32 +67,36 @@ class State
         return 0;
     }
 
-    get key() { 
+    get key() {
         const keysA = [...this.map.values()].map(k => State.mapKey(k));
         return keysA.sort(State.sort)
-                    .reduce((a, v) => a*State.MAX_KEY + v);
+            .reduce((a, v) => a * State.MAX_KEY + v);
     }
 
-    get keys() { 
-        const values = [...this.map.values()]; 
+    get keys() {
+        const values = [...this.map.values()];
         const keysA = values.map(k => State.mapKey(k))
-                            .sort(State.sort)
-                            .reduce((a, v) => a*State.MAX_KEY + v);
-        const keysC = []; 
+            .sort(State.sort)
+            .reduce((a, v) => a * State.MAX_KEY + v);
+        const keysC = [];
         const keysB = values.map(v => {
-            const { x, y, z } = this.decode(v);
-            keysC.push(this.encode(z, x, y));
-            return this.encode(y, z, x);
-        }).map(k => State.mapKey(k))
-          .sort(State.sort)
-          .reduce((a, v) => a*State.MAX_KEY + v);
+                const {
+                    x,
+                    y,
+                    z
+                } = this.decode(v);
+                keysC.push(this.encode(z, x, y));
+                return this.encode(y, z, x);
+            }).map(k => State.mapKey(k))
+            .sort(State.sort)
+            .reduce((a, v) => a * State.MAX_KEY + v);
 
         return [
-            keysA, 
-            keysB, 
+            keysA,
+            keysB,
             keysC.map(k => State.mapKey(k))
-                 .sort(State.sort)
-                 .reduce((a, v) => a*State.MAX_KEY + v)
+            .sort(State.sort)
+            .reduce((a, v) => a * State.MAX_KEY + v)
         ];
     }
 
@@ -113,21 +120,24 @@ class State
     }
 
     canMove(x, y, z) {
-        if (this.get(x+1, y, z) || this.get(x, y+1, z) || this.get(x, y, z+1))
+        if (this.get(x + 1, y, z) || this.get(x, y + 1, z) || this.get(x, y, z + 1))
             return false;
         return true;
     }
 
-    next(callback)
-    {
+    next(callback) {
         this.map.forEach(k => {
-            const {x, y, z} = this.decode(k);
+            const {
+                x,
+                y,
+                z
+            } = this.decode(k);
 
             if (this.canMove(x, y, z)) {
                 const newState = new State(this);
-                newState.set(x+1, y, z, 1);
-                newState.set(x, y+1, z, 1);
-                newState.set(x, y, z+1, 1);
+                newState.set(x + 1, y, z, 1);
+                newState.set(x, y + 1, z, 1);
+                newState.set(x, y, z + 1, 1);
                 newState.set(x, y, z, 0);
 
                 callback(newState);
@@ -136,31 +146,30 @@ class State
     }
 }
 
-function D(N, trace, callback)
-{
+function D(N, trace, callback) {
     let states = new BigMap();
     let newStates = new BigMap();
 
     states.set(0, new State());
 
-    const tracer = new Tracer(1, trace);
+    const tracer = new Tracer(trace);
     while (N--) {
-        tracer.print(_ => N+1);
+        tracer.print(_ => N + 1);
         newStates.clear();
         State.clearKeys();
 
         let s = states.size;
-        const tracer2 = new Tracer(10000, trace);
-        for(let state of states.values()) {
+        const tracer2 = new Tracer(trace);
+        for (let state of states.values()) {
             tracer2.print(_ => s);
             s--;
             state.next(newState => {
                 // const [keya, keyb, keyc] = newState.keys;
                 let old = newStates.get(keya);
-                if (! old) {
+                if (!old) {
                     old = newStates.get(keyb);
                 }
-                if (! old) {
+                if (!old) {
                     old = newStates.get(keyc);
                 }
                 if (old) {
@@ -179,7 +188,7 @@ function D(N, trace, callback)
         if (callback) {
             tracer.clear();
             let total = 0;
-            for(s of states.values())
+            for (s of states.values())
                 total += s.count;
             callback(total);
         }
@@ -187,22 +196,24 @@ function D(N, trace, callback)
     tracer.clear();
 
     let total = 0;
-    for(s of states.values())
+    for (s of states.values())
         total += s.count;
     return total;
 }
 
-function analyze()
-{
+function analyze() {
     const values = [];
 
-    C(18, size => { 
-        values.push(size); 
+    C(18, size => {
+        values.push(size);
     });
 
     values.shift();
     console.log(values.join(', '));
-    const { factors, divisor } = linearRecurrence(values);
+    const {
+        factors,
+        divisor
+    } = linearRecurrence(values);
 
     console.log(factors, divisor);
 }

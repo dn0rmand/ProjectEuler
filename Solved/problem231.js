@@ -8,7 +8,7 @@
 
 // Find the sum of the terms in the prime factorisation of 20000000C15000000.
 
-const primeHelper = require('tools/primeHelper')();
+const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper');
 
 const N = 20000000;
 const K = 15000000;

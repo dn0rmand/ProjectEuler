@@ -9,8 +9,8 @@
 // How many numbers t(n) are prime for n ≤ 50,000,000 ?
 
 const assert = require('assert');
-const isMillerRabinPrime = require('tools/millerRabin');
-const primeHelper = require('tools/primeHelper')();
+const isMillerRabinPrime = require('@dn0rmand/project-euler-tools/src/millerRabin');
+const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper');
 const prettyTime= require("pretty-hrtime");
 
 const MAX = 50000000;

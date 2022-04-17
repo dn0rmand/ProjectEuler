@@ -1,5 +1,5 @@
 const assert = require('assert');
-const timeLogger = require('tools/timeLogger');
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
 
 const MAX_ROOM = 30;
 const MAX_HAND = 40;

@@ -1,77 +1,68 @@
 const FOUR_MILLIONS = 4000000;
-const bigInt        = require('big-integer');
-const assert        = require('assert');
-const primeHelper   = require('tools/primeHelper')(FOUR_MILLIONS);
+const bigInt = require('big-integer');
+const assert = require('assert');
+const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper');
 
-function solve()
-{
+primeHelper.initialize(FOUR_MILLIONS);
+
+function solve() {
     let primes = [];
-    let TARGET = FOUR_MILLIONS*2;
+    let TARGET = FOUR_MILLIONS * 2;
 
     // Count number of primes needed with each a factor of 1
 
-    function prepare()
-    {
+    function prepare() {
         let allPrimes = primeHelper.allPrimes();
-        let v         = 1;
-        let p         = 0;
-        while (v < TARGET)
-        {
+        let v = 1;
+        let p = 0;
+        while (v < TARGET) {
             primes.push(allPrimes[p++]);
-            v = v*3;
+            v = v * 3;
         }
     }
 
-    function divisors(factors)
-    {
-        let divs = factors.reduce((a, v) => { return a * (2*v+1); }, 1);
+    function divisors(factors) {
+        let divs = factors.reduce((a, v) => {
+            return a * (2 * v + 1);
+        }, 1);
         return divs;
     }
 
     let bestValue;
 
-    function generateValue(factors)
-    {
+    function generateValue(factors) {
         let value = 1;
         let big = false;
 
-        for (let i = 0; i < factors.length; i++)
-        {
+        for (let i = 0; i < factors.length; i++) {
             let p = primes[i];
             let f = factors[i];
             if (f > 1)
                 p = Math.pow(p, f);
 
-            if (big)
-            {
+            if (big) {
                 value = bigInt(value).times(p);
                 if (bestValue !== undefined && value.greater(bestValue))
                     return value;
-            }
-            else
-            {
+            } else {
                 let v = value * p;
-                if (v > Number.MAX_SAFE_INTEGER)
-                {
+                if (v > Number.MAX_SAFE_INTEGER) {
                     big = true;
                     value = bigInt(value).times(p);
                     if (bestValue !== undefined && value.greater(bestValue))
                         return value;
-                }
-                else
+                } else
                     value = v;
             }
         }
-        if (! big)
+        if (!big)
             value = bigInt(value);
         return value;
     }
 
-    function inner(factors, count)
-    {
+    function inner(factors, count) {
         let divs = divisors(factors);
-        if (divs > TARGET)
-        {
+        if (divs > TARGET) {
             let value = generateValue(factors);
             if (bestValue === undefined)
                 bestValue = value;
@@ -85,11 +76,10 @@ function solve()
             return true;
 
         factors.push(0);
-        let idx = factors.length-1;
-        for (let i = 1; i <= count; i++)
-        {
+        let idx = factors.length - 1;
+        for (let i = 1; i <= count; i++) {
             factors[idx] = i;
-            if (! inner(factors, count))
+            if (!inner(factors, count))
                 break;
         }
         factors.pop();

@@ -1,8 +1,8 @@
 const assert      = require('assert');
-const primeHelper = require('tools/primeHelper')();
-const fibonacci   = require('tools/fibonacci');
-const divisors    = require('tools/divisors');
-const time        = require('tools/timeLogger');
+const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper');
+const fibonacci   = require('@dn0rmand/project-euler-tools/src/fibonacci');
+const divisors    = require('@dn0rmand/project-euler-tools/src/divisors');
+const time        = require('@dn0rmand/project-euler-tools/src/timeLogger');
 
 const MAX = 100000000;
     

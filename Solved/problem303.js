@@ -1,6 +1,6 @@
 const assert = require('assert');
 const prettyTime= require("pretty-hrtime");
-const getDigits = require('tools/digits');
+const getDigits = require('@dn0rmand/project-euler-tools/src/digits');
 
 const MAX = 10000;
 const $f  = [];

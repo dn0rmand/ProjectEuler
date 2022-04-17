@@ -1,5 +1,5 @@
 const assert = require('assert');
-const Tracer = require('tools/tracer');
+const Tracer = require('@dn0rmand/project-euler-tools/src/tracer');
 
 function s({a, b})
 {

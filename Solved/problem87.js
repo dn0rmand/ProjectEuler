@@ -1,4 +1,4 @@
-const primes = require('tools/primes.js')();
+const primes = require('@dn0rmand/project-euler-tools/src/primes.js')();
 const assert = require('assert');
 
 const allPrimes2 = new Map();

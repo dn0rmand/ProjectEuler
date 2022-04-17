@@ -1,5 +1,5 @@
-const primeHelper = require('tools/primeHelper')();
-const announce = require('tools/announce');
+const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper');
+const announce = require('@dn0rmand/project-euler-tools/src/announce');
 const assert = require('assert');
 
 const MAX = 110000000;

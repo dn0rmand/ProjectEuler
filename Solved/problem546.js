@@ -1,6 +1,6 @@
 const assert = require('assert');
-const linearRecurrence = require('tools/linearRecurrence');
-const timeLogger = require('tools/timeLogger');
+const linearRecurrence = require('@dn0rmand/project-euler-tools/src/linearRecurrence');
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
 
 const MODULO = 1E9 + 7;
 const MAX = 1E14;

@@ -1,8 +1,8 @@
 const assert     = require('assert');
-const timeLogger = require('tools/timeLogger');
-const Tracer     = require('tools/tracer');
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
+const Tracer     = require('@dn0rmand/project-euler-tools/src/tracer');
 
-const linearRecurrence = require('tools/linearRecurrence');
+const linearRecurrence = require('@dn0rmand/project-euler-tools/src/linearRecurrence');
 
 const MODULO    = 1117117717; // Prime #                  
 const MAX       = 1000000000;

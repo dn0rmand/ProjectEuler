@@ -1,5 +1,5 @@
 const assert = require('assert');
-const linearRecurrence = require('tools/linearRecurrence');
+const linearRecurrence = require('@dn0rmand/project-euler-tools/src/linearRecurrence');
 
 const MAX_ROW    = 10000;
 const MAX_COLUMN = 20000;

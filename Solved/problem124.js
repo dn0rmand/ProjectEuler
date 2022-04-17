@@ -25,31 +25,29 @@
 
 // If rad(n) is sorted for 1 ≤ n ≤ 100000, find E(10000).
 
-const primeHelper = require('tools/primeHelper')(100000);
 const assert = require('assert');
+const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper');
 
-function rad(n)
-{
+primeHelper.initialize(100000);
+
+function rad(n) {
     if (n === 1)
         return 1;
     if (primeHelper.isPrime(n))
         return n;
 
     let result = 1;
-    for (let p of primeHelper.primes())
-    {
+    for (let p of primeHelper.primes()) {
         if (p > n)
             break;
-        if (n % p === 0)
-        {
+        if (n % p === 0) {
             result *= p;
             while (n % p === 0)
                 n /= p;
-            
+
             if (n === 1)
                 break;
-            if (primeHelper.isPrime(n))
-            {
+            if (primeHelper.isPrime(n)) {
                 result *= n;
                 break;
             }
@@ -59,14 +57,15 @@ function rad(n)
     return result;
 }
 
-function E(max, index)
-{
+function E(max, index) {
     let values = [];
 
-    for (let n = 1; n <= max; n++)
-    {
+    for (let n = 1; n <= max; n++) {
         let r = rad(n);
-        values.push({n: n, rad: r});
+        values.push({
+            n: n,
+            rad: r
+        });
     }
 
     values.sort((a, b) => {
@@ -76,7 +75,7 @@ function E(max, index)
             return a.rad - b.rad;
     });
 
-    let x = values[index-1];
+    let x = values[index - 1];
     return x.n;
 }
 

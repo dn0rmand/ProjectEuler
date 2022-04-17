@@ -1,41 +1,40 @@
 const MAX = 1E8;
 const MODULO = 1000000007;
 
-require('tools/numberHelper');
+require('@dn0rmand/project-euler-tools/src/numberHelper');
 
 const assert = require('assert');
-const timeLogger = require('tools/timeLogger');
-const Tracer = require('tools/tracer');
-const primeHelper = require('tools/primeHelper')(MAX);
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
+const Tracer = require('@dn0rmand/project-euler-tools/src/tracer');
+const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper');
 
-function divisorsAndMobius(n, callback)
-{
+primeHelper.initialize(MAX);
+
+function divisorsAndMobius(n, callback) {
     const primes = [];
     primeHelper.factorize(n, (p) => primes.push(p));
 
-    function inner(d, μ, index) 
-    {
+    function inner(d, μ, index) {
         callback(d, μ);
 
-        for(let i = index; i < primes.length; i++) {
+        for (let i = index; i < primes.length; i++) {
             const p = primes[i];
             const v = p * d;
             if (v > n) break;
 
-            inner(v, -μ, i+1);
+            inner(v, -μ, i + 1);
         }
     }
 
     inner(1, 1, 0);
 }
 
-function c(N, n)
-{
+function c(N, n) {
     let total = 0;
 
     divisorsAndMobius(n, (d, μ) => {
-        const nd = Math.floor((N - n)/d);
-        total += (μ * nd) ;
+        const nd = Math.floor((N - n) / d);
+        total += (μ * nd);
     });
 
     if (total > Number.MAX_SAFE_INTEGER) {
@@ -44,14 +43,13 @@ function c(N, n)
     return total;
 }
 
-function G(n, trace)
-{
+function G(n, trace) {
     const tracer = new Tracer(10000, trace);
 
     let total = 1;
 
-    for(let i = 2; i <= n; i++) {
-        tracer.print(_ => n-i);
+    for (let i = 2; i <= n; i++) {
+        tracer.print(_ => n - i);
         const C = c(n, i);
         if (C) {
             total = total.modMul(i.modPow(C, MODULO), MODULO);

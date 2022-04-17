@@ -1,24 +1,34 @@
 const assert = require('assert');
-const timeLogger = require('tools/timeLogger');
-const Tracer = require('tools/tracer');
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
+const Tracer = require('@dn0rmand/project-euler-tools/src/tracer');
 
-require('tools/bigintHelper');
+require('@dn0rmand/project-euler-tools/src/bigintHelper');
 
 const MAX_PRIME = 1000;
 
 const MODULO = 1000000007n;
 const TWO = 2n;
 
-const primeHelper = require('tools/primeHelper')(MAX_PRIME);
+const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper');
+
+primeHelper.initialize(MAX_PRIME);
 const allPrimes = primeHelper.allPrimes();
-const primes = allPrimes.map(p => BigInt(p) ** 5n); 
+const primes = allPrimes.map(p => BigInt(p) ** 5n);
 
 // extended euclidean algorithm for 2^a-1, 2^b-1
-function extendedEuclidean(a, b)
-{
-    let r = { a: BigInt(a), b: BigInt(b) };
-    let s = { a: 1n, b: 0n };
-    let t = { a: 0n, b: 1n };
+function extendedEuclidean(a, b) {
+    let r = {
+        a: BigInt(a),
+        b: BigInt(b)
+    };
+    let s = {
+        a: 1n,
+        b: 0n
+    };
+    let t = {
+        a: 0n,
+        b: 1n
+    };
 
     let cycles = 0n;
 
@@ -26,7 +36,7 @@ function extendedEuclidean(a, b)
         const q = {
             a: TWO.modPow(r.a, MODULO),
             b: TWO.modPow(r.a % r.b, MODULO),
-            c: ((TWO.modPow(r.b, MODULO) + MODULO - 1n) %  MODULO),
+            c: ((TWO.modPow(r.b, MODULO) + MODULO - 1n) % MODULO),
         };
 
         const factor = (q.a - q.b + MODULO).modDiv(q.c, MODULO);
@@ -38,16 +48,19 @@ function extendedEuclidean(a, b)
         cycles++;
     }
 
-    return { a: s.a, b: t.a, cycles };
+    return {
+        a: s.a,
+        b: t.a,
+        cycles
+    };
 }
 
-function P(a, b)
-{    
+function P(a, b) {
     a = BigInt(a);
     b = BigInt(b);
 
-    const x = (a + 1n).modDiv(a, a+b);
-    const y = (b + 1n).modDiv(b, a+b);
+    const x = (a + 1n).modDiv(a, a + b);
+    const y = (b + 1n).modDiv(b, a + b);
 
     let steps;
     let choice;
@@ -60,24 +73,28 @@ function P(a, b)
         choice = 'B';
     }
 
-    return { steps: steps, choice };
+    return {
+        steps: steps,
+        choice
+    };
 }
 
-function solve()
-{
+function solve() {
     let total = 0n;
 
     const tracer = new Tracer(1, true);
-    for(let i = 0; i < primes.length; i++)
-    {
+    for (let i = 0; i < primes.length; i++) {
         tracer.print(_ => primes.length - i);
-        for(let j = i+1; j < primes.length; j++) 
-        {
+        for (let j = i + 1; j < primes.length; j++) {
             const p = primes[i];
             const q = primes[j];
 
-            const { a, b, cycles } = extendedEuclidean(p, q);
-            const factor = ((cycles % 2n) ? b-a-1n+MODULO : a-b-1n+MODULO) % MODULO;
+            const {
+                a,
+                b,
+                cycles
+            } = extendedEuclidean(p, q);
+            const factor = ((cycles % 2n) ? b - a - 1n + MODULO : a - b - 1n + MODULO) % MODULO;
             total = (total + TWO.modMul(factor, MODULO)) % MODULO;
         }
     }

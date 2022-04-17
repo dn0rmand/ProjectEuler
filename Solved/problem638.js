@@ -1,5 +1,5 @@
 const assert = require('assert');
-const int64  = require('tools/bigintHelper');
+const int64  = require('@dn0rmand/project-euler-tools/src/bigintHelper');
 
 const MODULO_N  = BigInt(1000000007);
 

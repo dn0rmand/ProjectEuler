@@ -1,9 +1,9 @@
 const assert = require('assert');
-const divisors = require('tools/divisors');
-const Tracer = require('tools/tracer');
-const timeLogger = require('tools/timeLogger');
+const divisors = require('@dn0rmand/project-euler-tools/src/divisors');
+const Tracer = require('@dn0rmand/project-euler-tools/src/tracer');
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
 
-require('tools/numberHelper');
+require('@dn0rmand/project-euler-tools/src/numberHelper');
 
 const MAX_N = 1234567898765;
 const MAX_K = 4321;

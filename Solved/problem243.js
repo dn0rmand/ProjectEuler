@@ -1,6 +1,6 @@
 const assert = require('assert');
-const totient = require('tools/totient.js');
-const primes = require('tools/primes.js');
+const totient = require('@dn0rmand/project-euler-tools/src/totient.js');
+const primes = require('@dn0rmand/project-euler-tools/src/primes.js');
 
 let targetN = 15499;
 let targetD = 94744;

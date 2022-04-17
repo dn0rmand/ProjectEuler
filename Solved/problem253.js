@@ -1,6 +1,6 @@
 const assert = require('assert');
-const timeLogger = require('tools/timeLogger');
-require('tools/bigintHelper');
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
+require('@dn0rmand/project-euler-tools/src/bigintHelper');
 
 const MASKS = [0];
 const MIDPOINT = 21; // 1..20 & 21..40

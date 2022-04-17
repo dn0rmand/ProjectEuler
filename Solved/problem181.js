@@ -1,7 +1,7 @@
 const assert     = require('assert');
-const Tracer     = require('tools/tracer');
-const timeLogger = require('tools/timeLogger');
-const BigMap     = require('tools/BigMap');
+const Tracer     = require('@dn0rmand/project-euler-tools/src/tracer');
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
+const BigMap     = require('@dn0rmand/project-euler-tools/src/BigMap');
 
 const MAX_W = 40;
 const MAX_B = 60;

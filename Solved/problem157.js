@@ -1,11 +1,11 @@
 const assert  = require('assert');
-const timeLogger = require('tools/timeLogger');
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
 
 const MAX = 9;
 
 const allPrimes = timeLogger.wrap('Loading primes', _ => 
 {
-    const primeHelper = require('tools/primeHelper')();
+    const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper');
     const MAX_PRIME   = 10**MAX;
     
     primeHelper.initialize(MAX_PRIME, true);

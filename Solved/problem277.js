@@ -1,5 +1,5 @@
 const assert = require('assert');
-const announce = require('tools/announce');
+const announce = require('@dn0rmand/project-euler-tools/src/announce');
 
 function *generateSequence(a)
 {

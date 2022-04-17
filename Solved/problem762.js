@@ -1,6 +1,6 @@
 const assert = require('assert');
-const linearRecurrence = require('tools/linearRecurrence');
-const Matrix = require('tools/matrix-small');
+const linearRecurrence = require('@dn0rmand/project-euler-tools/src/linearRecurrence');
+const Matrix = require('@dn0rmand/project-euler-tools/src/matrix-small');
 
 const MODULO = 1E9;
 const MAX = 100000;

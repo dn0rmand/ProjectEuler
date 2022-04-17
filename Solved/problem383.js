@@ -1,5 +1,5 @@
 const assert = require('assert');
-const time   = require('tools/timeLogger');
+const time   = require('@dn0rmand/project-euler-tools/src/timeLogger');
 const MAX    = 10n ** 18n
 
 // A180168		

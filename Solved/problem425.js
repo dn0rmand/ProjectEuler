@@ -19,8 +19,8 @@
 // Find F(1E7).
 
 const assert      = require('assert');
-const primeHelper = require('tools/primeHelper')();
-const getDigits   = require('tools/digits');
+const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper');
+const getDigits   = require('@dn0rmand/project-euler-tools/src/digits');
 
 const MAX = 1E7;
 

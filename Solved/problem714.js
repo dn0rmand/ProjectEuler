@@ -1,8 +1,8 @@
 const assert = require('assert');
-const Tracer = require('tools/tracer');
-const timeLogger = require('tools/timeLogger');
+const Tracer = require('@dn0rmand/project-euler-tools/src/tracer');
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
 
-require('tools/bigintHelper');
+require('@dn0rmand/project-euler-tools/src/bigintHelper');
 
 const MAX      = 50000;
 const LIMIT    = 1E9;

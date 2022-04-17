@@ -1,9 +1,9 @@
 const assert = require('assert');
-const Tracer = require('tools/tracer');
-const timeLogger = require('tools/timeLogger');
-const polynomial = require('tools/polynomial');
+const Tracer = require('@dn0rmand/project-euler-tools/src/tracer');
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
+const polynomial = require('@dn0rmand/project-euler-tools/src/polynomial');
 
-require('tools/numberHelper');
+require('@dn0rmand/project-euler-tools/src/numberHelper');
 
 const $MODULO = 1000000007;
 const MAXIMUM = 1E12;

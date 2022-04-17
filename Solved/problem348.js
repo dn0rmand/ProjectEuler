@@ -1,4 +1,4 @@
-const timeLogger = require('tools/timeLogger');
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
 
 const MAX_LENGTH = 9;
 const MAX = 10**MAX_LENGTH;

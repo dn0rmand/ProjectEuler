@@ -1,6 +1,6 @@
 const assert = require('assert');
-const binomial = require('tools/binomial');
-const timeLogger = require('tools/timeLogger');
+const binomial = require('@dn0rmand/project-euler-tools/src/binomial');
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
 
 function T(N, m)
 {

@@ -1,35 +1,37 @@
 const assert = require('assert');
-const timeLogger = require('tools/timeLogger');
-const Tracer = require('tools/tracer');
-const BigSet = require('tools/BigSet');
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
+const Tracer = require('@dn0rmand/project-euler-tools/src/tracer');
+const BigSet = require('@dn0rmand/project-euler-tools/src/BigSet');
 
-const MODULO = 2**32;
+const MODULO = 2 ** 32;
 const MAX = 1E12;
 
 const MAX_PRIME = Math.sqrt(MAX);
-const primeHelper = require('tools/primeHelper')(MAX_PRIME);
+const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper');
 
-const { factorize, isPrime } = primeHelper;
+primeHelper.initialize(MAX_PRIME);
+
+const {
+    factorize,
+    isPrime
+} = primeHelper;
 const allPrimes = primeHelper.allPrimes();
 
-function brute(L)
-{
-    function PHI(n)
-    {
+function brute(L) {
+    function PHI(n) {
         let x = 1;
         let m = n;
 
         factorize(n, p => {
             m /= p;
-            x *= p-1;
+            x *= p - 1;
         });
 
         m *= x;
         return m;
     }
 
-    function isHamming(n)
-    {
+    function isHamming(n) {
         let hamming = true;
 
         factorize(n, p => {
@@ -42,14 +44,13 @@ function brute(L)
         return hamming;
     }
 
-    function S(L, trace)
-    {
+    function S(L, trace) {
         const tracer = new Tracer(1, trace);
 
         let total = 0;
-        for(let n = 1; n <= L; n++) {
-            tracer.print(_ => L-n);
-            
+        for (let n = 1; n <= L; n++) {
+            tracer.print(_ => L - n);
+
             const t = PHI(n);
 
             if (isHamming(t)) {
@@ -64,70 +65,66 @@ function brute(L)
     return S(L);
 }
 
-function S(L, trace)
-{
+function S(L, trace) {
     const tracer = new Tracer(1, trace);
 
     const hammings = [];
-    const primes   = [];
+    const primes = [];
     const products = [];
-    const allPrimes= [2, 3, 5];
+    const allPrimes = [2, 3, 5];
 
-    function inner1(value, index)
-    {
+    function inner1(value, index) {
         hammings.push(value);
-        if (isPrime(value+1)) {
-            primes.push(value+1);
+        if (isPrime(value + 1)) {
+            primes.push(value + 1);
         }
 
-        for(let i = index; i < allPrimes.length; i++)
-        {
+        for (let i = index; i < allPrimes.length; i++) {
             const p = allPrimes[i];
             let v = value * p;
-            if (v > L) { 
-                break; 
+            if (v > L) {
+                break;
             }
             while (v <= L) {
-                inner1(v, i+1);
-                v = v*p;
+                inner1(v, i + 1);
+                v = v * p;
             }
         }
     }
 
-    function inner2(value, index)
-    {
+    function inner2(value, index) {
         products.push(value);
 
-        for(let i = index; i < primes.length; i++) {
+        for (let i = index; i < primes.length; i++) {
             const p = primes[i];
             const v = value * p;
             if (v > L) {
                 break;
             }
-            inner2(v, i+1);
+            inner2(v, i + 1);
         }
     }
 
     tracer.print(_ => 'Loading Hammings & Primes');
     inner1(1, 0);
 
-    hammings.sort((a, b) => a-b);
-    primes.sort((a, b) => a-b);
+    hammings.sort((a, b) => a - b);
+    primes.sort((a, b) => a - b);
 
     tracer.print(_ => 'Calculating Products');
     inner2(1, 0);
 
-    products.sort((a, b) => a-b);
+    products.sort((a, b) => a - b);
 
     let total = 0;
     let visited = new BigSet();
 
     let count = products.length;
-    for(const p of products) {
+    for (const p of products) {
         tracer.print(_ => count);
         count--;
-        for(const h of hammings) {
-            const v = h*p;
+        for (const h of hammings) {
+            const v = h * p;
             if (v > L) {
                 break;
             }

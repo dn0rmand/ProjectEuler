@@ -1,28 +1,28 @@
 const assert = require('assert');
-const timeLogger = require('tools/timeLogger');
-const Tracer = require('tools/tracer');
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
+const Tracer = require('@dn0rmand/project-euler-tools/src/tracer');
 
 const MAX = 1E9;
-const MAX_PRIME = Math.ceil(Math.sqrt(MAX))+1;
+const MAX_PRIME = Math.ceil(Math.sqrt(MAX)) + 1;
 
-const primeHelper = require('tools/primeHelper')(MAX_PRIME);
+const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper');
 
-function countCoPrimes(a, max)
-{
+primeHelper.initialize(MAX_PRIME);
+
+function countCoPrimes(a, max) {
     const primes = [];
 
     primeHelper.factorize(a, p => primes.push(p));
 
     const maxa = max - a;
 
-    function generate(value, index, count)
-    {
+    function generate(value, index, count) {
         if (count === 0) {
             return Math.floor(maxa / value);
         } else {
             let t = 0;
-            for(let i = index; i < primes.length; i++) {
-                t += generate(primes[i] * value, i+1, count-1);
+            for (let i = index; i < primes.length; i++) {
+                t += generate(primes[i] * value, i + 1, count - 1);
             }
             return t;
         }
@@ -30,7 +30,7 @@ function countCoPrimes(a, max)
 
     let total = maxa;
     let include = true;
-    for(let size = 1; size <= primes.length; size++) {
+    for (let size = 1; size <= primes.length; size++) {
         include = !include;
         total += include ? generate(1, 0, size) : -generate(1, 0, size);
     }
@@ -38,24 +38,23 @@ function countCoPrimes(a, max)
     return total;
 }
 
-function H(N, trace)
-{
-    let total = N-2;
+function H(N, trace) {
+    let total = N - 2;
     let extra = 0n;
 
-    const max = Math.floor(N/4);
+    const max = Math.floor(N / 4);
 
     const tracer = new Tracer(1, trace);
 
-    for(let i = 1; i < max; i++) {
+    for (let i = 1; i < max; i++) {
         tracer.print(_ => max - i);
-        const a = i*2 + 1;
+        const a = i * 2 + 1;
 
-        const coPrimes = countCoPrimes(a, N-a);
+        const coPrimes = countCoPrimes(a, N - a);
         const t = total + coPrimes;
         if (t > Number.MAX_SAFE_INTEGER) {
             extra += BigInt(total) + BigInt(coPrimes);
-            total  = 0;
+            total = 0;
         } else {
             total = t;
         }
@@ -64,7 +63,7 @@ function H(N, trace)
     tracer.clear();
 
     total = extra + BigInt(total);
-    return total*2n + 1n;
+    return total * 2n + 1n;
 }
 
 assert.strictEqual(H(4), 5n);

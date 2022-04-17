@@ -8,7 +8,7 @@
 
 // How many distinct sets containing each of the digits one through nine exactly once contain only prime elements?
 
-const primeHelper = require('tools/primeHelper')();
+const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper');
 
 const MAX = 987654321;
 

@@ -1,6 +1,8 @@
 const assert = require('assert');
-const timeLogger = require('tools/timeLogger');
-const Tracer = require('tools/tracer');
+const {
+    TimeLogger: timeLogger,
+    Tracer
+} = require('@dn0rmand/project-euler-tools');
 
 const MAX = 50;
 const MAXI = MAX ** 3;
@@ -22,7 +24,7 @@ const S = timeLogger.wrap('Loading S', () => {
 
     let total = 0n;
 
-    const tracer = new Tracer(1, true);
+    const tracer = new Tracer(true);
     for (let k = 1; k <= MAXI; k++) {
         tracer.print(_ => MAXI - k);
         b = (4n * b) - ((2n * b) / BigInt(k));
@@ -48,7 +50,7 @@ function u(n) {
 
 function U(n, trace) {
     let total = 0;
-    const tracer = new Tracer(1, trace);
+    const tracer = new Tracer(trace);
     for (let k = 1; k <= n; k++) {
         tracer.print(_ => n - k);
         const u3 = u(k ** 3);

@@ -1,6 +1,6 @@
 const assert = require('assert');
 
-require('tools/numberHelper');
+require('@dn0rmand/project-euler-tools/src/numberHelper');
 
 const MODULO = 1000000009;
 const MAX_M  = 765432;
@@ -185,7 +185,7 @@ const values = [];
 for(let i = 1; i < 20; i++) {
     values.push(F(i, 999));
 }
-const LN = require('tools/linearRecurrence');
+const LN = require('@dn0rmand/project-euler-tools/src/linearRecurrence');
 console.log(LN(values));
 
 assert.strictEqual(product(234, 765), 480);

@@ -1,16 +1,16 @@
 const assert = require('assert');
-const timeLogger = require('tools/timeLogger');
-const Tracer = require('tools/tracer');
-// const BigSet = require('tools/BigSet');
-
-require('tools/numberHelper');
-require('tools/bigintHelper');
+const {
+    TimeLogger,
+    Tracer,
+    BigSet,
+    primeHelper
+} = require('@dn0rmand/project-euler-tools');
 
 const MAX_PRIME = 2000000011;
 const THRESHOLD = 30;
 const BIG_THRESHOLD = Math.floor(Math.sqrt(MAX_PRIME)) * 10;
 
-const primeHelper = require('tools/primeHelper')(BIG_THRESHOLD);
+primeHelper.initialize(BIG_THRESHOLD);
 
 function preloadInverse(prime, tracer) {
     const results = new Map();
@@ -87,7 +87,8 @@ class MySet {
 class State {
     constructor(used, current, cost, product) {
         this.current = current.sort((a, b) => a - b);
-        this.used = used;
+        this.pairs = used;
+
         this.cost = cost;
         this.product = product;
     }
@@ -133,7 +134,7 @@ class State {
 }
 
 function solve(prime, trace) {
-    const tracer = new Tracer(1, trace);
+    const tracer = new Tracer(trace);
 
     prepare(prime, tracer);
 
@@ -191,19 +192,19 @@ function solve(prime, trace) {
     return best.product;
 }
 
-assert.strictEqual(timeLogger.wrap('5', _ => solve(5, true)), 4n);
-assert.strictEqual(timeLogger.wrap('11', _ => solve(11, true)), 10n);
-// assert.strictEqual(timeLogger.wrap('13', _ => solve(13, true)), 12n);
-assert.strictEqual(timeLogger.wrap('23', _ => solve(23, true)), 45n);
-assert.strictEqual(timeLogger.wrap('43', _ => solve(43, true)), 128n);
-// assert.strictEqual(timeLogger.wrap('53', _ => solve(53, true)), 1536n);
-assert.strictEqual(timeLogger.wrap('73', _ => solve(73, true)), 72n);
-assert.strictEqual(timeLogger.wrap('97', _ => solve(97, true)), 96n);
-assert.strictEqual(timeLogger.wrap('113', _ => solve(113, true)), 112n);
+assert.strictEqual(TimeLogger.wrap('5', _ => solve(5, true)), 4n);
+assert.strictEqual(TimeLogger.wrap('11', _ => solve(11, true)), 10n);
+// assert.strictEqual(TimeLogger.wrap('13', _ => solve(13, true)), 12n);
+assert.strictEqual(TimeLogger.wrap('23', _ => solve(23, true)), 45n);
+assert.strictEqual(TimeLogger.wrap('43', _ => solve(43, true)), 128n);
+// assert.strictEqual(TimeLogger.wrap('53', _ => solve(53, true)), 1536n);
+assert.strictEqual(TimeLogger.wrap('73', _ => solve(73, true)), 72n);
+assert.strictEqual(TimeLogger.wrap('97', _ => solve(97, true)), 96n);
+assert.strictEqual(TimeLogger.wrap('113', _ => solve(113, true)), 112n);
 
 console.log('Tests passed');
 
 // console.log(13431419535872807041n / 2000000011n);
 
-const answer = timeLogger.wrap(`${MAX_PRIME}`, _ => solve(MAX_PRIME, true));
+const answer = TimeLogger.wrap(`${MAX_PRIME}`, _ => solve(MAX_PRIME, true));
 console.log(`Answer is ${answer}`);

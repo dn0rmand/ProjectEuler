@@ -1,11 +1,11 @@
 const assert = require('assert');
-const timeLogger = require('tools/timeLogger');
-const Tracer = require('tools/tracer');
-const announce = require('tools/announce');
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
+const Tracer = require('@dn0rmand/project-euler-tools/src/tracer');
+const announce = require('@dn0rmand/project-euler-tools/src/announce');
 
 const MODULO = 433494437;
 
-require('tools/numberHelper');
+require('@dn0rmand/project-euler-tools/src/numberHelper');
 
 function S(n, trace) {
     let total = 0;

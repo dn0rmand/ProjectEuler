@@ -1,12 +1,14 @@
 const assert = require('assert');
-const timeLogger = require('tools/timeLogger');
-const Tracer = require('tools/tracer');
+const {
+    TimeLogger,
+    Tracer
+} = require('@dn0rmand/project-euler-tools');
 
 const MAX = 1000003;
 
 const compare = (a, b) => a < b ? -1 : (a > b ? 1 : 0);
 
-const sequence = timeLogger.wrap('Loading Sequence', _ => {
+const sequence = TimeLogger.wrap('Loading Sequence', _ => {
     const seq = new BigUint64Array(MAX + 1);
     seq[0] = 290797n;
 
@@ -99,7 +101,7 @@ function M(n, trace) {
     const target = (entries - 1) / 2; // entries always odd
 
     let answer = undefined;
-    const tracer = new Tracer(1, trace);
+    const tracer = new Tracer(trace);
 
     let remaining = Math.floor(n / 2);
 
@@ -157,9 +159,9 @@ assert.strictEqual(M(3), 3878983057768n);
 assert.strictEqual(M(11), 139717475685424n);
 assert.strictEqual(M(103), 492700616748525n);
 assert.strictEqual(M(503), 513141732392608n);
-assert.strictEqual(timeLogger.wrap('', _ => M(5003, true)), 465534708372414n);
+assert.strictEqual(TimeLogger.wrap('', _ => M(5003, true)), 465534708372414n);
 
 console.log('Tests passed');
 
-const answer = M(MAX, true);
+const answer = TimeLogger.wrap('Solving', _ => M(MAX, true));
 console.log(`Answer is ${answer}`);

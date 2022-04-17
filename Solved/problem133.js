@@ -1,7 +1,7 @@
-const primeHelper = require('tools/primeHelper')();
+const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper');
 const assert = require('assert');
 
-require('tools/bigintHelper');
+require('@dn0rmand/project-euler-tools/src/bigintHelper');
 
 const MAX = 100000;
 primeHelper.initialize(MAX+1);

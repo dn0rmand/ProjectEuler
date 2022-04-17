@@ -1,6 +1,6 @@
 const assert = require('assert');
-const timeLogger = require('tools/timeLogger');
-const announce = require('tools/announce');
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
+const announce = require('@dn0rmand/project-euler-tools/src/announce');
 const fs = require('fs');
 const zlib = require('zlib');
 

@@ -1,6 +1,6 @@
 const assert = require('assert');
-const timeLogger = require('tools/timeLogger');
-const Tracer = require('tools/tracer');
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
+const Tracer = require('@dn0rmand/project-euler-tools/src/tracer');
 
 const MAX_SF = 150;
 const factorials = [1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880];

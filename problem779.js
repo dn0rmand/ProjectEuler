@@ -1,11 +1,12 @@
 const assert = require('assert');
-const primeHelper = require('tools/primeHelper')();
-const Tracer = require('tools/tracer');
+const {
+    primeHelper,
+    Tracer
+} = require('@dn0rmand/project-euler-tools');
 
 primeHelper.initialize(1E8);
 
-function f(k, n)
-{
+function f(k, n) {
     let value = 0;
 
     primeHelper.factorize(n, (p, alpha) => {
@@ -16,20 +17,18 @@ function f(k, n)
     return value;
 }
 
-function solve()
-{
+function solve() {
     let P = 1
     let ans = 0
     const primes = primeHelper.allPrimes();
-    const maxP = primes[primes.length-1];
+    const maxP = primes[primes.length - 1];
 
-    const tracer = new Tracer(1, true);
+    const tracer = new Tracer(true);
 
-    for(const p of primes) 
-    {
+    for (const p of primes) {
         tracer.print(_ => maxP - p);
-        ans += P / (p * (p-1) * (p-1));
-        P   *= (p - 1) / p;
+        ans += P / (p * (p - 1) * (p - 1));
+        P *= (p - 1) / p;
     }
 
     tracer.clear()

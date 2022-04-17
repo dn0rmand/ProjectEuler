@@ -1,59 +1,57 @@
-const timeLogger = require('tools/timeLogger');
 const assert = require('assert');
 
+const {
+    TimeLogger: timeLogger
+} = require('@dn0rmand/project-euler-tools');
+
 const WIN = 0.6;
-const LOST= 0.4;
+const LOST = 0.4;
 const TARGET = 1E12;
 
-function solve(target, maxRounds)
-{
+function solve(target, maxRounds) {
     const $inner = [];
 
-    function get(gold, rounds)
-    {
+    function get(gold, rounds) {
         const a = $inner[gold];
         if (a) {
             return a[rounds];
         }
     }
 
-    function set(gold, rounds, best) 
-    {
+    function set(gold, rounds, best) {
         let a = $inner[gold];
-        if (! a) {
+        if (!a) {
             $inner[gold] = a = [];
         }
         a[rounds] = best;
     }
 
-    function inner(gold, rounds) 
-    {
+    function inner(gold, rounds) {
         if (gold >= target) {
             return 1;
         }
         if (gold === 0 || rounds === 0) {
             return 0;
         }
-                
+
         let best = get(gold, rounds);
         if (best !== undefined) {
             return best
         }
 
-        if (((2**rounds) * gold) < target) {
+        if (((2 ** rounds) * gold) < target) {
             set(gold, rounds, 0);
             return 0;
         }
 
         best = 0;
 
-        for(let bet = gold; bet > 0; bet -= 1) 
-        {
-            const win  = inner(gold+bet, rounds-1);
+        for (let bet = gold; bet > 0; bet -= 1) {
+            const win = inner(gold + bet, rounds - 1);
             if (win === 0) {
                 break;
             }
-            const lost  = inner(gold-bet, rounds-1);
+            const lost = inner(gold - bet, rounds - 1);
             const P = lost * LOST + win * WIN;
             if (P >= best) {
                 best = P;

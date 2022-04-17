@@ -1,4 +1,4 @@
-const primeHelper = require('tools/primeHelper')();
+const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper');
 const assert = require('assert');
 
 const TARGET = 2000;

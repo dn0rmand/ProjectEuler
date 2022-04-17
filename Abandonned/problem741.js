@@ -1,60 +1,53 @@
 const assert = require('assert');
-const timeLogger = require('tools/timeLogger');
-const Tracer = require('tools/tracer');
-const BigMap = require('tools/BigMap');
-
-require('tools/bigintHelper');
+const {
+    Tracer,
+    TimeLogger: timeLogger,
+    BigMap
+} = require('@dn0rmand/project-euler-tools');
 
 const MODULO = 1000000007;
 
-class State
-{
-    constructor(width, cols, count)
-    {
-        this.count  = count || 1;
-        this.cols   = cols || new Uint8Array(width);
-        this.rows   = [];
-        this.width  = width;
-        this.$key   = undefined;
+class State {
+    constructor(width, cols, count) {
+        this.count = count || 1;
+        this.cols = cols || new Uint8Array(width);
+        this.rows = [];
+        this.width = width;
+        this.$key = undefined;
     }
 
-    get key()
-    {
+    get key() {
         if (this.$key === undefined) {
-            this.$key = this.cols.reduce((a, v) => a*4 + v, 0);
+            this.$key = this.cols.reduce((a, v) => a * 4 + v, 0);
             if (this.$key > Number.MAX_SAFE_INTEGER)
                 throw "TOO BIG";
         }
-        return  this.$key;
+        return this.$key;
     }
 
-    clone(i, j)
-    {
+    clone(i, j) {
         const state = new State(this.width, Uint8Array.from(this.cols), this.count);
 
         state.cols[i]++;
         state.cols[j]++;
 
-        const row = 2**i + 2**j;
+        const row = 2 ** i + 2 ** j;
 
         state.rows = [...this.rows, row];
 
         return state;
     }
 
-    get invalid() 
-    {
+    get invalid() {
         return this.cols.some(v => v !== 2);
     }
 
-    *add()
-    {
-        for(let i = 0; i < this.width; i++) 
-        {
-            if (this.cols[i]+1 > 2)
+    * add() {
+        for (let i = 0; i < this.width; i++) {
+            if (this.cols[i] + 1 > 2)
                 continue;
-            for(let j = i+1; j < this.width; j++) {
-                if (this.cols[j]+1 > 2)
+            for (let j = i + 1; j < this.width; j++) {
+                if (this.cols[j] + 1 > 2)
                     continue;
 
                 yield this.clone(i, j);
@@ -62,14 +55,12 @@ class State
         }
     }
 
-    get(x, y, rotation, flipped)
-    {
+    get(x, y, rotation, flipped) {
         if (flipped) {
-            x = this.width-1-x;
+            x = this.width - 1 - x;
         }
 
-        switch(rotation)
-        {
+        switch (rotation) {
             case 1: {
                 [x, y] = [this.width - 1 - y, x];
                 break;
@@ -84,15 +75,13 @@ class State
             }
         }
 
-        const mask = 2**x;
+        const mask = 2 ** x;
         return (this.rows[y] & mask) === 0 ? 0 : 1;
     }
 
-    dump()
-    {
+    dump() {
         console.log('');
-        for(const r of this.rows)
-        {
+        for (const r of this.rows) {
             let s = r.toString(2);
             while (s.length !== this.width)
                 s = '0' + s;
@@ -100,54 +89,76 @@ class State
         }
     }
 
-    *getKeys()
-    {
-        const statuses = [
-            { rotation: 0, flipped: false },
-            { rotation: 1, flipped: false },
-            { rotation: 2, flipped: false },
-            { rotation: 3, flipped: false },
+    * getKeys() {
+        const statuses = [{
+                rotation: 0,
+                flipped: false
+            },
+            {
+                rotation: 1,
+                flipped: false
+            },
+            {
+                rotation: 2,
+                flipped: false
+            },
+            {
+                rotation: 3,
+                flipped: false
+            },
 
-            { rotation: 0, flipped: true },
-            { rotation: 1, flipped: true },
-            { rotation: 2, flipped: true },
-            { rotation: 3, flipped: true },
+            {
+                rotation: 0,
+                flipped: true
+            },
+            {
+                rotation: 1,
+                flipped: true
+            },
+            {
+                rotation: 2,
+                flipped: true
+            },
+            {
+                rotation: 3,
+                flipped: true
+            },
         ];
 
         const self = this;
 
-        function getKey({ rotation, flipped })
-        {
-            let value = 0n;            
-            for(let y = 0; y < self.width; y++) {
-                for(let x = 0; x < self.width; x++) {
+        function getKey({
+            rotation,
+            flipped
+        }) {
+            let value = 0n;
+            for (let y = 0; y < self.width; y++) {
+                for (let x = 0; x < self.width; x++) {
                     value = value << 1n | BigInt(self.get(x, y, rotation, flipped));
                 }
             }
             return value
         }
 
-        for(const status of statuses) {
+        for (const status of statuses) {
             yield getKey(status);
         }
     }
 }
 
-function g(n)
-{
+function g(n) {
     let states = new BigMap();
     let newStates = new BigMap();
 
     states.set(0, new State(n));
 
-    const tracer = new Tracer(1, true);
-    for(let i = 0; i < n; i++)
-    {
+    const tracer = new Tracer(true);
+    for (let i = 0; i < n; i++) {
         tracer.print(_ => `${n-i} - ${states.size}`);
         newStates.clear();
         let keys = 0
-        for(const state of states.values()) {
-            for(const newState of state.add()) {
+        for (const state of states.values()) {
+            for (const newState of state.add()) {
                 const key = keys++; // newState.key;
                 newState.$key = key;
                 // const old = newStates.get(key);
@@ -170,21 +181,18 @@ function g(n)
 
     let total = 0;
 
-    const tracer2 = new Tracer(1000, true);
+    const tracer2 = new Tracer(true);
 
-    for(const state of states.values())
-    {
+    for (const state of states.values()) {
         tracer2.print(_ => total);
         const keys = state.getKeys();
         const data = keys.next();
-        if (! used.has(data.value)) 
-        {
+        if (!used.has(data.value)) {
             tracer.clear();
             state.dump();
             total++;
             used.add(data.value);
-            for(const key of keys)
-            {
+            for (const key of keys) {
                 used.add(key);
             }
         }
@@ -197,12 +205,11 @@ function g(n)
 
 const $factorial = [1n, 1n];
 
-function factorial(n)
-{
+function factorial(n) {
     if ($factorial[n])
         return $factorial[n];
     let result = 1n;
-    for(let i = 2n; i <= n; i++) {
+    for (let i = 2n; i <= n; i++) {
         result = result.modMul(i, MODULO);
         $factorial[i] = result;
     }
@@ -212,8 +219,7 @@ function factorial(n)
 // http://oeis.org/A001499
 // a(n) = 4^(-n) * n!^2 * sum(i=0..n, (-2)^i * (2*n-2*i)! / (i!*(n-i)!^2)) )
 
-function f(n)
-{
+function f(n) {
     n = BigInt(n);
     const modulo = BigInt(MODULO);
 
@@ -223,12 +229,12 @@ function f(n)
     let A3 = 0n;
     let a3 = 1n;
     let div = 1n;
-    for(let i = 0n; i <= n; i++) {
-        const f1 = a3.modMul(factorial(2n*(n - i)), modulo);
-        const f2 = factorial(i).modMul(factorial(n-i).modPow(2n, modulo), modulo);
+    for (let i = 0n; i <= n; i++) {
+        const f1 = a3.modMul(factorial(2n * (n - i)), modulo);
+        const f2 = factorial(i).modMul(factorial(n - i).modPow(2n, modulo), modulo);
 
-        A3  = A3.modMul(f2, modulo);
-        A3  = (A3 + modulo + f1.modMul(div, modulo)) % modulo;
+        A3 = A3.modMul(f2, modulo);
+        A3 = (A3 + modulo + f1.modMul(div, modulo)) % modulo;
         div = div.modMul(f2, modulo);
         a3 *= -2n;
     }

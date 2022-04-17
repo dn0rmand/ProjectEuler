@@ -1,6 +1,6 @@
 const assert = require('assert');
-const divisors = require('tools/divisors');
-const timerLog = require('tools/timeLogger');
+const divisors = require('@dn0rmand/project-euler-tools/src/divisors');
+const timerLog = require('@dn0rmand/project-euler-tools/src/timeLogger');
 
 const MAX = 1000000
 

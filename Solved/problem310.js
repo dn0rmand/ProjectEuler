@@ -11,7 +11,7 @@
 // Find the number of losing positions for the next player if 0 ≤ a ≤ b ≤ c ≤ 100 000.
 
 const assert = require('assert');
-const timeLog = require('tools/timeLogger');
+const timeLog = require('@dn0rmand/project-euler-tools/src/timeLogger');
 
 const MAX = 100000;
 

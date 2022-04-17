@@ -1,21 +1,18 @@
 const assert = require('assert');
-const BigSet = require('tools/BigSet');
-
-require('tools/bigintHelper');
+const {
+    BigSet
+} = require('@dn0rmand/project-euler-tools');
 
 const MODULO = 1000000007n;
 
-class State
-{
-    constructor(w, h, map)
-    {
+class State {
+    constructor(w, h, map) {
         this.width = w;
-        this.height= h;
-        this.map   = map;
+        this.height = h;
+        this.map = map;
     }
 
-    get(x, y)
-    {
+    get(x, y) {
         if (x < 0 || x >= this.width || y < 0 || y >= this.height)
             return 0;
         const mask = 2n ** BigInt((this.width * y) + x);
@@ -25,69 +22,61 @@ class State
             return 0;
     }
 
-    switch(x, y)
-    {
+    switch (x, y) {
         if (x < 0 || x >= this.width || y < 0 || y >= this.height)
             return;
-        
-        const mask  = 2n ** BigInt((this.width * y) + x);
-        this.map   ^= mask;
+
+        const mask = 2n ** BigInt((this.width * y) + x);
+        this.map ^= mask;
     }
 
-    select(x, y)
-    {
+    select(x, y) {
         this.switch(x, y);
-        this.switch(x+1, y);
-        this.switch(x-1, y);
-        this.switch(x, y+1);
-        this.switch(x, y-1);
+        this.switch(x + 1, y);
+        this.switch(x - 1, y);
+        this.switch(x, y + 1);
+        this.switch(x, y - 1);
     }
 
-    get key()
-    { 
+    get key() {
         return this.map;
     }
 }
 
 const memoize = {};
 
-function calculate(w, h, trace)
-{
+function calculate(w, h, trace) {
     let k1 = `${w}x${h}`;
     let k2 = `${h}x${w}`;
     if (memoize[k1] || memoize[k2])
         return memoize[k1] || memoize[k2];
 
-    let states      = new BigSet();
-    let newStates   = new BigSet();
-    const counted   = new BigSet();
+    let states = new BigSet();
+    let newStates = new BigSet();
+    const counted = new BigSet();
 
     counted.add(0n);
     states.add(0n);
 
     const state = new State(w, h, 0n);
 
-    while(states.size > 0)
-    {
+    while (states.size > 0) {
         if (trace)
             process.stdout.write(`\r${states.size} : ${counted.size}   `);
 
-        for(const map of states.keys())
-        {
-            for(let x = 0; x < w; x++)
-            for(let y = 0; y < h; y++)
-            {
-                state.map = map;
-                state.select(x, y);
+        for (const map of states.keys()) {
+            for (let x = 0; x < w; x++)
+                for (let y = 0; y < h; y++) {
+                    state.map = map;
+                    state.select(x, y);
 
-                const k = state.key;
+                    const k = state.key;
 
-                if (! counted.has(k))
-                {
-                    counted.add(k);
-                    newStates.add(k);
+                    if (!counted.has(k)) {
+                        counted.add(k);
+                        newStates.add(k);
+                    }
                 }
-            }
         }
 
         [states, newStates] = [newStates, states];
@@ -101,15 +90,13 @@ function calculate(w, h, trace)
     return counted.size;
 }
 
-function solve(width, power, increases)
-{
-    let pos       = 1;
-    let index     = 0;
+function solve(width, power, increases) {
+    let pos = 1;
+    let index = 0;
 
-    while (pos++ < width)
-    {
+    while (pos++ < width) {
         power += increases[index];
-        index  = (index+1) % increases.length;
+        index = (index + 1) % increases.length;
     }
     // let value = 2n;
     // value = value.modPow(power, MODULO);
@@ -117,9 +104,9 @@ function solve(width, power, increases)
     return power;
 }
 
-assert.equal(calculate(2,1), 2);
-assert.equal(calculate(3,3), 512);
-assert.equal(calculate(4,4), 4096);
+assert.equal(calculate(2, 1), 2);
+assert.equal(calculate(3, 3), 512);
+assert.equal(calculate(4, 4), 4096);
 
 console.log("Tests passed");
 

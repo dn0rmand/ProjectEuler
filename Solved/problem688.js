@@ -1,5 +1,5 @@
 const assert = require('assert');
-const timeLog = require('tools/timeLogger');
+const timeLog = require('@dn0rmand/project-euler-tools/src/timeLogger');
 
 const MAX = 10n ** 16n;
 const MODULO = 1000000007n;

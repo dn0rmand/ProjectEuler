@@ -3,9 +3,9 @@ If n = (p1^a1)(p2^a2)...(pt^at), a(n) = ((2*a1 + 1)(2*a2 + 1) ... (2*at + 1) + 1
 */
 
 const assert = require('assert');
-const timeLogger = require('tools/timeLogger');
-const Tracer = require('tools/tracer');
-const primeHelper = require('tools/primeHelper')();
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
+const Tracer = require('@dn0rmand/project-euler-tools/src/tracer');
+const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper');
 const MAX = 1E12
 
 timeLogger.wrap('Loading primes', _ => primeHelper.initialize(1E6, true));

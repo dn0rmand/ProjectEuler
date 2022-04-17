@@ -18,7 +18,7 @@
 // Find g(1E7,10,3)
 
 const assert   = require('assert');
-const toDigits = require('tools/digits');
+const toDigits = require('@dn0rmand/project-euler-tools/src/digits');
 const MAX      = 1E7;
 
 const memoize = new Map();

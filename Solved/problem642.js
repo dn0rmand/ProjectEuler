@@ -1,7 +1,7 @@
 const assert = require('assert');
-const primeHelper   = require('tools/primeHelper')();
-const announce      = require('tools/announce');
-const BitArray      = require('tools/bitArray');
+const primeHelper   = require('@dn0rmand/project-euler-tools/src/primeHelper');
+const announce      = require('@dn0rmand/project-euler-tools/src/announce');
+const BitArray      = require('@dn0rmand/project-euler-tools/src/bitArray');
 
 const MAX        = 201820182018;
 const MODULO     = 1E9;

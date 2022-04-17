@@ -1,6 +1,6 @@
 const assert = require('assert');
 
-require('tools/bigintHelper');
+require('@dn0rmand/project-euler-tools/src/bigintHelper');
 
 // sum( (10^(1e16-1-3^i))%(3^i)) / 3^i )
 function solve(precision)

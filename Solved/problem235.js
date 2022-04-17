@@ -1,4 +1,4 @@
-const timerLogger = require('tools/timeLogger');
+const timerLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
 
 const MAX    = 5000;
 const TARGET = -600000000000;

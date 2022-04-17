@@ -1,4 +1,4 @@
-const primes = require('tools/primes.js');
+const primes = require('@dn0rmand/project-euler-tools/src/primes.js');
 const isNumberPrime = require('is-number-prime');
 
 function isPrime(value)

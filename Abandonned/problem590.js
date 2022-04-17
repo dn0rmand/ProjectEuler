@@ -1,46 +1,41 @@
 const assert = require('assert');
 
-require('tools/bigintHelper');
-require('tools/numberHelper');
+require('@dn0rmand/project-euler-tools');
 
-function LL(min, max)
-{
-    if (max-min > 50n) {
-        const middle = (max+min)/2n
+function LL(min, max) {
+    if (max - min > 50n) {
+        const middle = (max + min) / 2n
         const A = LL(min, middle);
-        const B = LL(middle+1n, max);
+        const B = LL(middle + 1n, max);
 
         return A.lcm(B);
     } else {
         let lcm = min;
-        for(let i = min+1n; i <= max; i++) {
+        for (let i = min + 1n; i <= max; i++) {
             lcm = lcm.lcm(i);
         }
         return lcm;
     }
 }
 
-function L(n)
-{
+function L(n) {
     n = BigInt(n);
     return LL(1n, BigInt(n));
 }
 
-function H(n)
-{
+function H(n) {
     let total = 0;
 
-    function inner(index, lcm)
-    {
+    function inner(index, lcm) {
         if (lcm == n) {
             total++;
         }
 
-        if (lcm > n) { 
-            return; 
+        if (lcm > n) {
+            return;
         }
 
-        for(let i = index+1; i <= n; i++) {
+        for (let i = index + 1; i <= n; i++) {
             inner(i, lcm.lcm(i));
         }
     }
@@ -62,7 +57,7 @@ console.log('Tests passed');
 
 const values = [];
 
-for(let i = 2; i < 7; i++) {
+for (let i = 2; i < 7; i++) {
     values.push(H(L(i)));
 }
 

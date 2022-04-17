@@ -1,14 +1,15 @@
-const timeLogger = require('tools/timeLogger');
-const primeHelper = require('tools/primeHelper')(1E5);
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
+const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper');
 
-require('tools/bigintHelper');
+primeHelper.initialize(1E5);
+
+require('@dn0rmand/project-euler-tools/src/bigintHelper');
 
 const MODULO = 1000000007;
 const MODULO_N = BigInt(MODULO);
-const MAX = 10n**18n;
+const MAX = 10n ** 18n;
 
-function assert(value, expected, title)
-{
+function assert(value, expected, title) {
     expected %= MODULO;
     if (value !== expected) {
         console.log(`${title} is incorrect. Expected ${expected} but got ${value}.`);
@@ -16,30 +17,26 @@ function assert(value, expected, title)
     }
 }
 
-const triangle = n => ((n-4n) * (n-3n)) / 2n;
+const triangle = n => ((n - 4n) * (n - 3n)) / 2n;
 
-function G(n, trace)
-{
+function G(n, trace) {
     n = BigInt(n);
 
     const exceptions = [
-        [1n,2n,3n,4n,6n,9n],
-        [1n,2n,3n,5n,9n,16n],
-        [1n,2n,4n,7n,12n],
-        [1n,2n,4n,9n,20n],
-        [1n,2n,6n,17n,48n],
-        [1n,2n,6n,19n,60n],
+        [1n, 2n, 3n, 4n, 6n, 9n],
+        [1n, 2n, 3n, 5n, 9n, 16n],
+        [1n, 2n, 4n, 7n, 12n],
+        [1n, 2n, 4n, 9n, 20n],
+        [1n, 2n, 6n, 17n, 48n],
+        [1n, 2n, 6n, 19n, 60n],
     ];
 
-    function addExceptions()
-    {
+    function addExceptions() {
         let total = 0n;
-        for(const exception of exceptions) 
-        {
+        for (const exception of exceptions) {
             let length = exception.length;
-            while (length >= 5 && exception[length-1] > n) 
-            { 
-                length--; 
+            while (length >= 5 && exception[length - 1] > n) {
+                length--;
             }
             if (length >= 5) {
                 total += triangle(BigInt(length));
@@ -48,23 +45,21 @@ function G(n, trace)
         return total;
     }
 
-    function getLength(k, direction, a0, a1)
-    {
+    function getLength(k, direction, a0, a1) {
         let length = 0n;
         a0 = a0 || 0n;
         a1 = a1 || 1n;
 
         const start = a1;
 
-        while(true) 
-        {
+        while (true) {
             length++;
-            let a2 = k*a1 + direction*a0;
+            let a2 = k * a1 + direction * a0;
             if (a2 > n) {
                 break;
             }
             if (a2 <= a1) {
-                break; 
+                break;
             }
             [a1, a0] = [a2, a1];
         }
@@ -72,46 +67,43 @@ function G(n, trace)
         if (start !== 1n && direction === 0n) {
             // Can I add 1 at the start
 
-            const x = start*(start - k);
+            const x = start * (start - k);
             if (x >= -2n && x <= 2n) {
-                length += 1n ;
+                length += 1n;
             }
         }
 
         return length;
     }
 
-    function getSpecialCount()
-    {
+    function getSpecialCount() {
         let length = 1n;
         let a1 = 2n;
 
-        while(a1 <= n) 
-        {
+        while (a1 <= n) {
             length++;
-            a1 = 3n*a1;
+            a1 = 3n * a1;
         }
 
-        return length > 4n ? length-4n : 0n;
+        return length > 4n ? length - 4n : 0n;
     }
 
     let total = triangle(n) + addExceptions() + getSpecialCount()
 
     // a(n) = k * a(n-1);
-    for(let k = 2n; ; k++) 
-    {
+    for (let k = 2n;; k++) {
         let count = 0n;
 
-        for(let l = 5n; ; l++) {
-            const max = n / k**(l-1n);
-            const c   = max - (max/k); 
+        for (let l = 5n;; l++) {
+            const max = n / k ** (l - 1n);
+            const c = max - (max / k);
             if (c === 0n) {
                 break;
             }
-            count += c * (l-4n);
+            count += c * (l - 4n);
         }
 
-        if (! count) {
+        if (!count) {
             break;
         }
 
@@ -120,11 +112,11 @@ function G(n, trace)
     }
 
     // a(n) = k * a(n-1) + a(n-2);
-    for(let k = 1n; ; k++) // k=1 => Fibonacci
-    { 
+    for (let k = 1n;; k++) // k=1 => Fibonacci
+    {
         let l1 = getLength(k, 1n);
         let l2 = k < 3n ? getLength(k, 1n, 1n, 1n) : 0n;
-        if (l1 < 5n && l2 < 5n) { 
+        if (l1 < 5n && l2 < 5n) {
             break;
         }
         if (l1 >= 5n)
@@ -134,16 +126,16 @@ function G(n, trace)
     }
 
     // a(n) = k * a(n-1) - a(n-2);
-    for(let k = 3n; ; k++) // with 2 it's 1,2,3,4,... which is already counted
-    { 
+    for (let k = 3n;; k++) // with 2 it's 1,2,3,4,... which is already counted
+    {
         let l1 = getLength(k, -1n);
         let l2 = k < 5n ? getLength(k, -1n, 1n, 1n) : 0n;
-        if (l1 < 5n && l2 < 5n) { 
+        if (l1 < 5n && l2 < 5n) {
             break;
         }
         if (l1 >= 5n)
             total += triangle(l1);
-        if (l2 >= 5n) 
+        if (l2 >= 5n)
             total += triangle(l2);
     }
 

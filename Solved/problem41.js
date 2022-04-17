@@ -8,7 +8,7 @@
 
 // What is the largest n-digit pandigital prime that exists?
 
-const isPrime = require('tools/isPrime.js');
+const isPrime = require('@dn0rmand/project-euler-tools/src/isPrime.js');
 
 function combinaisons(max)
 {

@@ -1,12 +1,12 @@
 const assert = require('assert');
-const timeLogger = require('tools/timeLogger');
-const Tracer = require('tools/tracer');
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
+const Tracer = require('@dn0rmand/project-euler-tools/src/tracer');
 
 const MODULO = 10n ** 9n;
 const MAX = 10n ** 16n;
 
-require('tools/bigintHelper');
-require('tools/numberHelper');
+require('@dn0rmand/project-euler-tools/src/bigintHelper');
+require('@dn0rmand/project-euler-tools/src/numberHelper');
 
 // a=3 , b=4, c=20
 

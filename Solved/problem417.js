@@ -1,10 +1,10 @@
 const assert = require('assert');
-const Tracer = require('tools/tracer');
-const timeLogger = require('tools/timeLogger');
-const divisors = require('tools/divisors');
-const primeHelper = require('tools/primeHelper')();
+const Tracer = require('@dn0rmand/project-euler-tools/src/tracer');
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
+const divisors = require('@dn0rmand/project-euler-tools/src/divisors');
+const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper');
 
-require('tools/numberHelper');
+require('@dn0rmand/project-euler-tools/src/numberHelper');
 const MAX = 1E8;
 const TEN = 10;
 

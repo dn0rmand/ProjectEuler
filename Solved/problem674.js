@@ -1,4 +1,4 @@
-require('tools/numberHelper');
+require('@dn0rmand/project-euler-tools/src/numberHelper');
 
 const assert    = require('assert');
 const fs        = require('fs');

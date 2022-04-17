@@ -1,15 +1,15 @@
 const assert = require('assert');
-const primeHelper = require('tools/primeHelper')();
-const timeLogger = require('tools/timeLogger');
-const Tracer = require('tools/tracer');
+const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper');
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
+const Tracer = require('@dn0rmand/project-euler-tools/src/tracer');
 
-require('tools/numberHelper');
+require('@dn0rmand/project-euler-tools/src/numberHelper');
 
 const MODULO    = 1000000007;
 const MAX       = 1E12;
 const MAX_PRIME = 1E6;
 
-require('tools/numberHelper');
+require('@dn0rmand/project-euler-tools/src/numberHelper');
 
 timeLogger.wrap('Loading primes', _ => primeHelper.initialize(MAX_PRIME, true));
 

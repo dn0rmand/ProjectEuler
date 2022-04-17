@@ -1,5 +1,5 @@
-const timeLogger= require('tools/timeLogger');
-const getDigits = require('tools/digits');
+const timeLogger= require('@dn0rmand/project-euler-tools/src/timeLogger');
+const getDigits = require('@dn0rmand/project-euler-tools/src/digits');
 const BigNumber = require('bignumber.js');
 
 const DECIMALS = 24;

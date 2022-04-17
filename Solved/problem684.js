@@ -1,9 +1,9 @@
 const assert = require('assert');
-const timeLog = require('tools/timeLogger');
+const timeLog = require('@dn0rmand/project-euler-tools/src/timeLogger');
 const {Matrix} = require('ml-matrix');
 
-require('tools/bigintHelper');
-require('tools/numberHelper');
+require('@dn0rmand/project-euler-tools/src/bigintHelper');
+require('@dn0rmand/project-euler-tools/src/numberHelper');
 
 const MODULO   = 1000000007;
 const MODULO_N = BigInt(MODULO);

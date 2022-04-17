@@ -1,5 +1,5 @@
 const assert = require('assert');
-const timerLog = require('tools/timeLogger');
+const timerLog = require('@dn0rmand/project-euler-tools/src/timeLogger');
 
 function solve2(maxPower, R)
 {

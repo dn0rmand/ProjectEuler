@@ -1,16 +1,16 @@
 const assert = require('assert');
-const timeLogger = require('tools/timeLogger');
-const Tracer = require('tools/tracer');
-
-require('tools/numberHelper');
+const {
+    TimeLogger,
+    Tracer
+} = require('@dn0rmand/project-euler-tools');
 
 const SIZE = 50515093;
 const MAX_T = 1E5;
 const CLOCKS = new Map();
 
-const S = timeLogger.wrap('Loading Sequence', _ => {
+const S = TimeLogger.wrap('Loading Sequence', _ => {
     const s = [290797];
-    const tracer = new Tracer(1, true);
+    const tracer = new Tracer(true);
 
     let previous = s[0];
     for (let t = 1; t < 4 * MAX_T; t++) {
@@ -103,7 +103,7 @@ function C(T) {
     let values = [];
     values[12] = State.start();
 
-    const tracer = new Tracer(1, true);
+    const tracer = new Tracer(true);
     for (let t = 1; t <= T; t++) {
         tracer.print(_ => T - t);
 

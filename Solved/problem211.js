@@ -10,14 +10,14 @@
 const MAX = 64000000;
 
 const assert = require('assert');
-const primeHelper = require('tools/primeHelper')(MAX);
-const divisors = require('tools/divisors');
+const divisors = require('@dn0rmand/project-euler-tools/src/divisors');
+const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper');
 
-function σ2(value)
-{
+primeHelper.initialize(MAX);
+
+function σ2(value) {
     let total = 0;
-    for(let divisor of divisors(value, primeHelper.isPrime))
-    {
+    for (let divisor of divisors(value, primeHelper.isPrime)) {
         let d = (divisor * divisor);
         if (d > Number.MAX_SAFE_INTEGER)
             throw "Need bigint";
@@ -28,11 +28,9 @@ function σ2(value)
     return total;
 }
 
-function solve()
-{
+function solve() {
     let total = 0;
-    for (let n = MAX-1; n > 0; n--)
-    {
+    for (let n = MAX - 1; n > 0; n--) {
         let v = σ2(n);
         let r = Math.sqrt(v);
         if (r === Math.floor(r))

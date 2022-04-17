@@ -1,4 +1,4 @@
-const timeLogger = require('tools/timeLogger');
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
 
 const MODULO = 4503599627370517n;
 const START  = 1504170715041707n;

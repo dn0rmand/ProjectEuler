@@ -1,5 +1,5 @@
 const assert = require('assert');
-require('tools/numberHelper');
+require('@dn0rmand/project-euler-tools/src/numberHelper');
 
 const MODULO = 1E9;
 const LENGTH = 11**12;

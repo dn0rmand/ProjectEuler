@@ -1,6 +1,6 @@
 const assert = require('assert');
-const Tracer = require('tools/tracer');
-const timeLogger = require('tools/timeLogger');
+const Tracer = require('@dn0rmand/project-euler-tools/src/tracer');
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
 
 const fs = require("fs");
 const loader = require("@assemblyscript/loader");
@@ -10,7 +10,7 @@ const Matrix = wasmModule.exports.Matrix;
 
 // const { Matrix } = require("./loadWasm");
 
-require('tools/numberHelper');
+require('@dn0rmand/project-euler-tools/src/numberHelper');
 
 const MODULO  = 1000000007
 const MAXSIZE = 10n**18n;

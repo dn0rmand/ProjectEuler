@@ -1,7 +1,7 @@
 const assert = require('assert');
-const timeLogger = require('tools/timeLogger');
-const Tracer = require('tools/tracer');
-const divisors = require('tools/divisors');
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
+const Tracer = require('@dn0rmand/project-euler-tools/src/tracer');
+const divisors = require('@dn0rmand/project-euler-tools/src/divisors');
 
 const MAX = 1E6;
 

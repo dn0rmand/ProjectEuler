@@ -1,45 +1,44 @@
 const assert = require('assert');
-const Tracer = require('tools/tracer');
-const BigMap = require('tools/BigMap');
+const {
+    Tracer,
+    BigMap
+} = require('@dn0rmand/project-euler-tools');
 
 const MODULO = 1000000007;
 let HEIGHT = 4
 
-function factorial(n)
-{
+function factorial(n) {
     let r = 1;
-    for(let p = n; p > 1; p--) {
+    for (let p = n; p > 1; p--) {
         r *= p;
     }
     return r;
 }
 
-function getKeyCount(n)
-{
+function getKeyCount(n) {
     let top = 1;
-    for(let k = 2*n-1; k > n; k--) {
+    for (let k = 2 * n - 1; k > n; k--) {
         top *= k;
     }
-    let bottom = factorial(n-1);
+    let bottom = factorial(n - 1);
 
     const result = top / bottom;
 
     return result;
 }
 
-function getLines(k)
-{
+function getLines(k) {
     const lines = [];
 
-    const max = 2**k;
+    const max = 2 ** k;
     if (max > Number.MAX_SAFE_INTEGER) {
         throw 'Too big';
     }
 
-    for(let i = 0; i < max; i++) {
-        let bits = (max+i).toString(2).split('').slice(1).map(b => +b);
+    for (let i = 0; i < max; i++) {
+        let bits = (max + i).toString(2).split('').slice(1).map(b => +b);
         let count = bits.reduce((a, b) => a + b, 0);
-        if (! lines[count])
+        if (!lines[count])
             lines[count] = [bits];
         else
             lines[count].push(bits);
@@ -48,13 +47,12 @@ function getLines(k)
     return lines;
 }
 
-function getColumns()
-{
-    const max = 2**HEIGHT;
+function getColumns() {
+    const max = 2 ** HEIGHT;
     const columns = [];
 
-    for(let i = 0; i < max; i++) {
-        let bits = (max+i).toString(2).split('').slice(1).map(b => +b);
+    for (let i = 0; i < max; i++) {
+        let bits = (max + i).toString(2).split('').slice(1).map(b => +b);
 
         columns.push(bits);
     }
@@ -62,16 +60,14 @@ function getColumns()
     return columns;
 }
 
-class State 
-{
-    constructor(previous)
-    {
+class State {
+    constructor(previous) {
         if (previous) {
             this.matrix = [...previous.matrix];
-            this.count  = previous.count;
+            this.count = previous.count;
         } else {
             this.matrix = [];
-            this.count  = 1;
+            this.count = 1;
         }
     }
 
@@ -86,20 +82,19 @@ class State
         }
         const reverse = this.matrix[0][0] ? [1, 0] : [0, 1];
         let k = 0;
-        for(let c = 0; c < K; c++) {
-            k = k*2 + reverse[this.matrix[c][0]];
-            k = k*2 + reverse[this.matrix[c][1]];
+        for (let c = 0; c < K; c++) {
+            k = k * 2 + reverse[this.matrix[c][0]];
+            k = k * 2 + reverse[this.matrix[c][1]];
         }
         return k;
     }
 
-    dump(K)
-    {
+    dump(K) {
         const reverse = this.matrix[0][0] ? ['#', '.'] : ['.', '#'];
         console.log(`--- ${this.count} ---`);
-        for(let r = 0; r < 2; r++) {
-            const row = [];            
-            for(let c = 0; c < K; c++) {
+        for (let r = 0; r < 2; r++) {
+            const row = [];
+            for (let c = 0; c < K; c++) {
                 row.push(reverse[this.matrix[c][r]]);
             }
             console.log(row.join(''));
@@ -107,17 +102,18 @@ class State
         console.log(``);
     }
 
-    addColumn(column, K)
-    {
+    addColumn(column, K) {
         const state = this.clone();
         state.matrix.push(column);
 
-        for(let c = 1; c < HEIGHT; c++) {
+        for (let c = 1; c < HEIGHT; c++) {
             let sum = 0;
-            for(let i = 0; i < K && i < state.matrix.length; i++) {
-                let w = state.matrix.length-1-i;
-                sum += state.matrix[w][c] + state.matrix[w][c-1];
-                if (sum > K) { return; } 
+            for (let i = 0; i < K && i < state.matrix.length; i++) {
+                let w = state.matrix.length - 1 - i;
+                sum += state.matrix[w][c] + state.matrix[w][c - 1];
+                if (sum > K) {
+                    return;
+                }
             }
             if (state.matrix.length >= K && sum !== K) {
                 return;
@@ -128,30 +124,27 @@ class State
     }
 }
 
-function slowB(k, n)
-{
+function slowB(k, n) {
     const columns = getColumns();
 
     let states = [new State()];
 
     const tracer = new Tracer(1, true);
 
-    for(let width = 1; width <= n; width++) {
+    for (let width = 1; width <= n; width++) {
         const newStates = [];
         let s = states.length;
-        for(const state of states)
-        {
+        for (const state of states) {
             tracer.print(_ => `${width}: ${s} / ${newStates.length}`);
             s--;
-            for(let c = 0; c < columns.length; c++) 
-            {
+            for (let c = 0; c < columns.length; c++) {
                 const column = columns[c];
                 const newState = state.addColumn(column, k);
-                if (! newState) continue;
+                if (!newState) continue;
 
                 newStates.push(newState);
             }
-        } 
+        }
         states = newStates;
     }
 
@@ -170,7 +163,7 @@ function slowB(k, n)
 
     console.log(`${k} => # of keys = ${newStates.size} - ${getKeyCount(k)}`);
     let total = 0;
-    for(const state of [...newStates.values()].sort((a, b) => a.count - b.count)) {
+    for (const state of [...newStates.values()].sort((a, b) => a.count - b.count)) {
         state.dump(k);
         total += state.count;
     }
@@ -178,21 +171,20 @@ function slowB(k, n)
     return total;
 }
 
-function makeBlocks(lines, k)
-{
+function makeBlocks(lines, k) {
     const blocks = [];
 
-    for(let top = 0; top <= k; top++) {
-        const topRows    = lines[top];
-        const bottomRows = lines[k-top];
+    for (let top = 0; top <= k; top++) {
+        const topRows = lines[top];
+        const bottomRows = lines[k - top];
 
-        for(const v1 of topRows) {
-            for(const v2 of bottomRows) {
-                const block = { 
-                    top: v1, 
+        for (const v1 of topRows) {
+            for (const v2 of bottomRows) {
+                const block = {
+                    top: v1,
                     bottom: v2,
                 };
-                blocks.push(block);                
+                blocks.push(block);
             }
         }
     }
@@ -200,8 +192,7 @@ function makeBlocks(lines, k)
     return blocks;
 }
 
-function expandBlocks(blocks, index)
-{
+function expandBlocks(blocks, index) {
     const newBlocks = new BigMap();
 
     const add = block => {
@@ -209,7 +200,7 @@ function expandBlocks(blocks, index)
         newBlocks.set(key, block);
     }
 
-    for(let block of blocks.values()) {
+    for (let block of blocks.values()) {
         const count = block.top[index] + block.bottom[index];
 
         if (count === 0) {
@@ -237,16 +228,15 @@ function expandBlocks(blocks, index)
     return newBlocks;
 }
 
-function B(k, n) 
-{
-    const lines   = getLines(k);
+function B(k, n) {
+    const lines = getLines(k);
     const $blocks = makeBlocks(lines, k);
-    let blocks    = { 
-        values: () => $blocks, 
+    let blocks = {
+        values: () => $blocks,
         forEach: (callback) => $blocks.forEach(callback),
     };
 
-    for(let i = 0, l = k; l < n; i++, l++) {
+    for (let i = 0, l = k; l < n; i++, l++) {
         blocks = expandBlocks(blocks, i);
     }
 
@@ -254,8 +244,8 @@ function B(k, n)
     let states = new BigMap();
 
     blocks.forEach(block => {
-        block.top = block.top.reduce((a, v) => a*2n+BigInt(v), 0n);
-        block.bottom = block.bottom.reduce((a, v) => a*2n+BigInt(v), 0n);
+        block.top = block.top.reduce((a, v) => a * 2n + BigInt(v), 0n);
+        block.bottom = block.bottom.reduce((a, v) => a * 2n + BigInt(v), 0n);
 
         const k = block.bottom;
         const old = mainBlocks.get(k);
@@ -268,16 +258,19 @@ function B(k, n)
         if (states.has(k)) {
             states.get(k).count++;
         } else {
-            states.set(k, { bottom: block.bottom, count: 1n });
+            states.set(k, {
+                bottom: block.bottom,
+                count: 1n
+            });
         }
     });
 
-    for(let h = 3; h <= HEIGHT; h++) {
+    for (let h = 3; h <= HEIGHT; h++) {
         const newStates = new BigMap();
 
-        for(const state of states.values()) {
+        for (const state of states.values()) {
             const others = mainBlocks.get(state.bottom) || [];
-            for(const other of others) {
+            for (const other of others) {
                 const newState = {
                     bottom: other.bottom,
                     count: state.count,
@@ -296,7 +289,7 @@ function B(k, n)
     }
 
     let total = 0n;
-    
+
     states.forEach(state => total = (total + state.count));
 
     return total;

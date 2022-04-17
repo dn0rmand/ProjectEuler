@@ -1,11 +1,11 @@
 const assert = require('assert');
-const Tracer = require('tools/tracer');
-const timeLogger = require('tools/timeLogger');
-const primeHelper = require('tools/primeHelper')();
-const announce = require('tools/announce');
-const divisors = require('tools/divisors');
+const Tracer = require('@dn0rmand/project-euler-tools/src/tracer');
+const timeLogger = require('@dn0rmand/project-euler-tools/src/timeLogger');
+const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper');
+const announce = require('@dn0rmand/project-euler-tools/src/announce');
+const divisors = require('@dn0rmand/project-euler-tools/src/divisors');
 
-require('tools/numberHelper');
+require('@dn0rmand/project-euler-tools/src/numberHelper');
 
 const MAX = 2 * 1E6;
 

@@ -1,6 +1,6 @@
 const assert      = require('assert');
-const timeLog     = require('tools/timeLogger');
-const primeHelper = require('tools/primeHelper')();
+const timeLog     = require('@dn0rmand/project-euler-tools/src/timeLogger');
+const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper');
 
 const MAX = 10n ** 18n;
 

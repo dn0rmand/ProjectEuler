@@ -1,5 +1,7 @@
 const assert = require('assert');
-const Tracer = require('tools/tracer');
+const {
+    Tracer
+} = require('@dn0rmand/project-euler-tools');
 
 const MODULO = 1000000007;
 const MAX = 1E15;
@@ -7,31 +9,26 @@ const MAX = 1E15;
 if (MAX > Number.MAX_SAFE_INTEGER)
     throw "TOO BIG";
 
-function f(a, b)
-{
+function f(a, b) {
     let count = 0;
 
-    while (a || b)
-    {
-        if ((a ^ b) & 1)
-        {
+    while (a || b) {
+        if ((a ^ b) & 1) {
             a--;
             count++;
             if (count >= MODULO)
                 count -= MODULO;
         }
-        [a, b] = [(b-a)/2 , -(a+b)/2];
+        [a, b] = [(b - a) / 2, -(a + b) / 2];
     }
 
     return count;
 }
 
-function BA(a, start, end)
-{
+function BA(a, start, end) {
     let total = 0;
 
-    for(let b = start; b <= end; b += 1)
-    {
+    for (let b = start; b <= end; b += 1) {
         const t = f(a, b);
         total = (total + t) % MODULO;
     }
@@ -39,13 +36,11 @@ function BA(a, start, end)
     return total;
 }
 
-function B(L)
-{
+function B(L) {
     let total = 0;
 
-    for(let a = -L; a <= L; a++)
-    {
-        const t = BA(a, -L ,L);
+    for (let a = -L; a <= L; a++) {
+        const t = BA(a, -L, L);
 
         total = (total + t) % MODULO;
     }
