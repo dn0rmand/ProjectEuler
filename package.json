@@ -13,7 +13,7 @@
   "license": "ISC",
   "dependencies": {
     "@assemblyscript/loader": "^0.14.8",
-    "@dn0rmand/project-euler-tools": "^1.0.1",
+    "@dn0rmand/project-euler-tools": "1.0.2",
     "assemblyscript": "^0.14.8",
     "big-integer": "^1.6.48",
     "bignumber.js": "^7.2.1",
