@@ -1,6 +1,6 @@
 const assert = require('assert');
 const {
-    TimeLogger: timeLogger,
+    TimeLogger,
     Tracer
 } = require('@dn0rmand/project-euler-tools');
 
@@ -16,7 +16,7 @@ function v2(n) {
     return t;
 }
 
-const S = timeLogger.wrap('Loading S', () => {
+const S = TimeLogger.wrap('Loading S', () => {
     const s = [0n];
 
     let b = 1n;
@@ -68,5 +68,5 @@ assert.strictEqual(U(5), 241);
 
 console.log('Tests passed');
 
-answer = timeLogger.wrap(`U(${MAX})`, _ => U(MAX, true));
+answer = TimeLogger.wrap(`U(${MAX})`, _ => U(MAX, true));
 console.log(`Answer is ${answer} - ${maxu}`);
