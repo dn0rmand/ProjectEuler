@@ -4,7 +4,7 @@ const {
     TimeLogger: timeLogger,
     Tracer,
     BigMap
-} = require('@dn0rmand/project-euler-tools';)
+} = require('@dn0rmand/project-euler-tools')
 
 const ZERO = 0n;
 const ONE = 1n;
