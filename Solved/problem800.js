@@ -6,12 +6,12 @@ const {
 
 const MAX_PRIME = 2E7;
 
-primeHelper.initialize(MAX_PRIME);
-const allPrimes = primeHelper.allPrimes();
+const allPrimes = TimeLogger.wrap('loading primes', _ => {
+    primeHelper.initialize(MAX_PRIME, true);
+    return primeHelper.allPrimes();
+});
 
 const log = Math.log10;
-const zero = 1E-15;
-const equals = (v1, v2) => Math.abs(v1 - v2) < zero;
 
 function solve(n, m) {
 
@@ -21,10 +21,6 @@ function solve(n, m) {
 
     function compare(p, q) {
         const v = q * log(p) + p * log(q);
-
-        if (equals(v, n)) {
-            return 0;
-        }
 
         if (v > n) {
             return -1;
