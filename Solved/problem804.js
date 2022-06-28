@@ -4,8 +4,15 @@ const {
     Tracer
 } = require('@dn0rmand/project-euler-tools');
 
+const ZERO = 0;
+const ONE = 1;
+const TWO = 2;
+const FORTYONE = 41;
+
 const MAX = (x, y) => x > y ? x : y;
 const MIN = (x, y) => x < y ? x : y;
+const FLOOR = x => Math.floor(x);
+const SQRT = x => Math.sqrt(x);
 
 function count(n) {
     let total = 0;
@@ -37,10 +44,33 @@ function count(n) {
     return total;
 }
 
-function case1(maxN) {
-    let maxY = (maxN / 41n).sqrt();
+function quickSearch(min, max, target, f) {
+    let x;
+    let v;
 
-    while (41n * maxY * maxY > maxN) {
+    while (min < max) {
+        x = FLOOR((min + max) / TWO);
+        v = f(x);
+
+        if (v > target) {
+            max = x - ONE;
+        } else {
+            min = x + ONE;
+        }
+    }
+
+    x = MAX(ONE, MIN(min, max));
+
+    while (x && f(x) > target) {
+        x--;
+    }
+    return x;
+}
+
+function case1(maxN) {
+    let maxY = FLOOR(SQRT(maxN / FORTYONE));
+
+    while (FORTYONE * maxY * maxY > maxN) {
         maxY--;
     }
 
@@ -48,7 +78,7 @@ function case1(maxN) {
 }
 
 function case2(maxN) {
-    let maxX = maxN.sqrt();
+    let maxX = FLOOR(SQRT(maxN));
 
     while (maxX * maxX > maxN) {
         maxX--;
@@ -57,78 +87,21 @@ function case2(maxN) {
     return maxX + maxX;
 }
 
-function quickSerch(min, max, target, f) {
-    let x;
-    let v;
-
-    // let min = 1n;
-    while (min < max) {
-        x = (min + max) / 2n;
-        v = f(x);
-
-        if (v > target) {
-            max = x - 1n;
-        } else {
-            min = x + 1n;
-        }
-    }
-
-    x = MAX(1n, MIN(min, max));
-
-    while (x && f(x) > target) {
-        x--;
-    }
-    return x;
-}
-
-function quickSerch2(m, target, f) {
-    let x;
-    let v;
-
-    let min = 1n;
-    let max = m;
-    while (min < max) {
-        x = (min + max) / 2n;
-        v = f(x);
-
-        if (v > target) {
-            min = x + 1n;
-        } else {
-            max = x - 1n;
-        }
-    }
-
-    x = MIN(min, max);
-    if (x < 1n) {
-        x = 1n;
-    } else if (x > m) {
-        x = m;
-    }
-
-    while (x < m && f(x) > target) {
-        x++;
-    }
-    while (x && f(x) <= target) {
-        x--;
-    }
-    return x;
-}
-
 function case3(maxN, trace) {
-    let total = 0n;
+    let total = ZERO;
 
-    let tracer = new Tracer(trace, '3:');
+    let tracer = new Tracer(trace);
 
-    let max = maxN.sqrt();
-    for (let y = 1n;; y++) {
-        const y2 = 41n * y * y;
+    let max = FLOOR(SQRT(maxN));
+    for (let y = ONE;; y++) {
+        const y2 = FORTYONE * y * y;
 
-        const subTotal = quickSerch(1n, max, maxN, x => x * x + x * y + y2);
-        if (subTotal === 0n) {
+        const subTotal = quickSearch(ONE, max, maxN, x => x * x + x * y + y2);
+        if (subTotal === ZERO) {
             break;
         }
 
-        max = subTotal + 2n;
+        max = subTotal + TWO;
         total += subTotal + subTotal;
 
         tracer.print(_ => subTotal);
@@ -138,44 +111,46 @@ function case3(maxN, trace) {
 }
 
 function case4(maxN, trace) {
-    let total = 0n;
+    let total = ZERO;
 
-    let max = maxN ** 2n;
-    let min = 1n;
+    let tracer = new Tracer(trace);
 
-    let tracer = new Tracer(trace, '4:')
+    let xMax = maxN ** TWO;
+    let xMin = ONE;
 
-    for (let y = 1n;; y++) {
-        const y2 = 41n * y * y;
+    for (let y = ONE;; y++) {
+        const y2 = FORTYONE * y * y;
         const f = x => x * x - x * y + y2;
 
-        let v = f(min);
+        let v = f(xMin);
         if (v > maxN) {
-            for (let x = min + 1n; x <= max; x++) {
+            for (let x = xMin + ONE; x <= xMax; x++) {
                 const v2 = f(x);
                 if (v2 <= maxN) {
-                    min = x;
+                    xMin = x;
                     break;
                 } else if (v2 > v) {
-                    min = max;
+                    xMin = xMax + ONE;
                     break;
                 } else {
                     v = v2;
                 }
             }
         }
-        if (min >= max) {
-            break;
-        }
-        const xMax = quickSerch(min, max, maxN, f);
-        max = xMax + 2n;
 
-        const subTotal = xMax - min + 1n;
-        if (subTotal === 0n) {
+        if (xMin > xMax) {
             break;
         }
 
-        tracer.print(_ => `${min} - ${max} - ${subTotal}`);
+        xMax = quickSearch(xMin, xMax, maxN, f);
+
+        const subTotal = xMax - xMin + ONE;
+        if (subTotal === ZERO) {
+            break;
+        }
+
+        xMax += TWO;
+        tracer.print(_ => xMax);
         total += subTotal + subTotal;
     }
 
@@ -184,8 +159,6 @@ function case4(maxN, trace) {
 }
 
 function solve(maxN, trace) {
-    maxN = BigInt(maxN);
-
     let t1 = case1(maxN);
     let t2 = case2(maxN);
     let t4 = TimeLogger.wrap('4', _ => case4(maxN, trace));
@@ -197,12 +170,12 @@ function solve(maxN, trace) {
 }
 
 assert.strictEqual(count(53), 4);
-assert.strictEqual(solve(1E3), 474n);
-assert.strictEqual(solve(1E6), 492128n);
-assert.strictEqual(solve(652), 310n);
-assert.strictEqual(solve(1E7), 4921382n);
+assert.strictEqual(solve(652), 310);
+assert.strictEqual(solve(1E3), 474);
+assert.strictEqual(solve(1E6), 492128);
+assert.strictEqual(solve(1E7), 4921382);
 
 console.log('Tests passed');
 
-const answer1 = TimeLogger.wrap('', _ => solve(10n ** 16n, true));
+const answer1 = TimeLogger.wrap('', _ => solve(10 ** 16, true));
 console.log(`Answer is ${answer1}`);
