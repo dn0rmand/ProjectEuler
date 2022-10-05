@@ -4,9 +4,8 @@
   "description": "Project Euler",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "asbuild:untouched": "asc assembly/index.ts --target debug",
-    "asbuild:optimized": "asc assembly/index.ts --target release",
+    "asbuild:untouched": "asc assembly/Matrix.ts  --target debug",
+    "asbuild:optimized": "asc assembly/Matrix.ts --target release",
     "asbuild": "npm run asbuild:untouched && npm run asbuild:optimized"
   },
   "author": "",
@@ -32,5 +31,8 @@
     "sorted": "^0.1.1",
     "workerpool": "^6.1.5",
     "written-number": "^0.8.1"
+  },
+  "devDependencies": {
+    "assemblyscript": "^0.14.13"
   }
 }
