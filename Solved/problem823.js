@@ -1,107 +1,45 @@
 const assert = require('assert');
-const sleep = require('atomic-sleep');
-const { Tracer, TimeLogger, primeHelper } = require('@dn0rmand/project-euler-tools');
+const { TimeLogger, primeHelper } = require('@dn0rmand/project-euler-tools');
+
 const MAX = 1e4;
 const MAX_M = 1e16;
 const MODULO = 1234567891;
-const MODULO_N = 1234567891n;
 
 primeHelper.initialize(MAX);
 
-const allPrimes = primeHelper.allPrimes().map((p) => BigInt(p));
+class Value {
+  constructor(value) {
+    if (Array.isArray(value)) {
+      value.sort((a, b) => a - b);
+      this.primes = value;
+    } else {
+      this.primes = [];
+      primeHelper.factorize(value, (p, f) => {
+        while (f--) {
+          this.primes.push(p);
+        }
+      });
+    }
+  }
 
-function reduce(value) {
-  for (let prime of allPrimes) {
-    if (prime > value) {
-      throw 'WHAT HAPPENED!!!';
-    }
-    if (value % prime === 0n) {
-      value /= prime;
-      return { prime, value };
-    }
+  reduce() {
+    return this.primes.shift();
+  }
+
+  get isOne() {
+    return this.primes.length === 0;
+  }
+
+  getValue() {
+    return this.primes.reduce((a, p) => a.modMul(p, MODULO), 1);
   }
 }
 
-const stdout = process.stdout;
+function updateDiagonals(diagonals, m, steps) {
+  steps = BigInt(m) + 1n - BigInt(steps);
 
-function dump(values, clear) {
-  function asString(p) {
-    let s = p.toString();
-    while (s.length < 4) {
-      s = ' ' + s;
-    }
-    return s + ' ';
-  }
-
-  let rows = [];
-  for (let v of values) {
-    let row = [];
-    rows.push(row);
-    for (let p of allPrimes) {
-      if (p > v) {
-        throw 'error';
-      }
-      while (v % p === 0n) {
-        row.push(p);
-        v /= p;
-      }
-      if (v === 1n) {
-        break;
-      }
-    }
-  }
-
-  if (clear !== false) {
-    stdout.write('\u001Bc');
-  }
-  for (let row of rows) {
-    for (let p of row) {
-      stdout.write(asString(p));
-    }
-    stdout.write(`\r\n`);
-  }
-}
-
-function isTriangle(values) {
-  let previous = 0;
-  for (let v of values) {
-    let count = 0;
-    for (let p of allPrimes) {
-      if (p > v) {
-        throw 'error';
-      }
-      while (v % p === 0n) {
-        v /= p;
-        count++;
-      }
-      if (v === 1n) {
-        break;
-      }
-    }
-    if (count < previous || count > previous + 2) {
-      return false;
-    }
-    previous = count;
-  }
-  return true;
-}
-
-function cycleLength(diagonal) {
-  for (let i = 1; i < diagonal.length; i++) {
-    if (diagonal[i - 1] !== diagonal[i]) {
-      return BigInt(diagonal.length);
-    }
-  }
-  return 1n;
-}
-
-function updateDiagonals(diagonals, steps) {
   for (const diagonal of diagonals) {
-    const cycle = cycleLength(diagonal);
-    if (cycle === 1n) {
-      continue;
-    }
-    let remaining = steps % cycle;
+    let remaining = steps % BigInt(diagonal.length);
     while (remaining--) {
       diagonal.push(diagonal.shift());
     }
@@ -111,46 +49,26 @@ function updateDiagonals(diagonals, steps) {
 function diagonalsToValues(diagonals) {
   const values = [];
   for (let i = 1; i <= diagonals[0].length; i++) {
-    let v = 1n;
+    let v = [];
     for (const d of diagonals) {
       const idx = d.length - i;
-      if (idx >= 0) {
-        v *= d[idx];
+      if (idx >= 0 && d[idx] > 1) {
+        v.push(d[idx]);
       }
     }
-    if (v > 1n) {
-      values.push(v);
+    if (v.length > 0) {
+      values.push(new Value(v));
     }
   }
-  values.reverse();
   return values;
 }
 
 function valuesToDiagonals(values) {
-  const rows = [];
-  for (let v of values) {
-    const row = [];
-    for (let p of allPrimes) {
-      while (v % p === 0n) {
-        row.push(p);
-        v /= p;
-      }
-      if (v === 1n) {
-        break;
-      }
-    }
-    rows.push(row);
-  }
-
   const diagonals = [];
-  for (let i = 0; i < rows.length; i++) {
-    let d = [];
-    let y = i;
-    let x = 0;
-    while (y < rows.length) {
-      d.push(rows[y][x] || 1n);
-      x++;
-      y++;
+  for (let i = 0; i < values.length; i++) {
+    const d = [];
+    for (let x = 0; x < values.length - i; x++) {
+      d.push(values[i + x].primes[x] || 1);
     }
     diagonals.push(d);
   }
@@ -158,55 +76,44 @@ function valuesToDiagonals(values) {
 }
 
 function doProcess(values) {
-  let newValue = 1n;
+  const newValue = [];
   for (let i = 0; i < values.length; i++) {
-    const { prime, value } = reduce(values[i]);
-    values[i] = value;
-    newValue *= prime;
+    newValue.push(values[i].reduce());
   }
-  values.push(newValue);
-  values = values.filter((v) => v !== 1n);
+  values = values.filter((v) => !v.isOne);
+  values.push(new Value(newValue));
   return values;
 }
 
-function S(n, m, expected, trace) {
+function S(n, m, expected) {
   const expectedSteps = expected ** 2;
-  m = BigInt(m);
 
   let values = [];
   for (let i = 2; i <= n; i++) {
-    values.push(BigInt(i));
+    values.push(new Value(i));
   }
-  const tracer = new Tracer(trace, `Looping for ${n}`);
-  let gotTriangle = false;
-  let step = 1n;
-  for (; step <= m; step++) {
-    tracer.print((_) => `${m - step}: ${values.length}`);
+  let step = 1;
+  for (; step <= expectedSteps && step <= m; step++) {
     values = doProcess(values);
-    if (step > expectedSteps && values.length === expected) {
-      if (isTriangle(values)) {
-        gotTriangle = true;
-        break;
-      }
-    }
+  }
+  for (; step <= m && values.length !== expected; step++) {
+    values = doProcess(values);
   }
 
-  if (gotTriangle) {
+  if (step <= m) {
     const diagonals = valuesToDiagonals(values);
-    updateDiagonals(diagonals, m - step);
+    updateDiagonals(diagonals, m, step);
     values = diagonalsToValues(diagonals);
   }
 
-  tracer.clear();
-  const answer = Number(values.reduce((a, v) => (a + v) % MODULO_N, 0n));
+  const answer = values.reduce((a, v) => (a + v.getValue()) % MODULO, 0);
   return answer;
 }
 
-assert.strictEqual(S(100, 1e8, 22, true), 105957327);
-
+assert.strictEqual(S(100, 1e8, 22), 105957327);
 assert.strictEqual(S(5, 3, 10), 21);
 assert.strictEqual(S(10, 100, 6), 257);
 console.log('Tests passed');
 
-const answer = TimeLogger.wrap('', (_) => S(MAX, MAX_M, 253, true));
+const answer = TimeLogger.wrap('', (_) => S(MAX, MAX_M, 253));
 console.log(`Answer is ${answer}`);
