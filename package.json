@@ -12,7 +12,7 @@
   "license": "ISC",
   "dependencies": {
     "@assemblyscript/loader": "^0.14.8",
-    "@dn0rmand/project-euler-tools": "1.0.4",
+    "@dn0rmand/project-euler-tools": "1.0.5",
     "assemblyscript": "^0.14.8",
     "atomic-sleep": "^1.0.0",
     "big-integer": "^1.6.48",
