@@ -214,16 +214,17 @@ class Context {
     let top = this.top;
     let amount = 0;
 
+    const p = this.prime.modPow(this.top, this.modulo);
+    const start = k;
     while (k <= this.last && this.top === top) {
-      const p = this.prime.modPow(this.top, this.modulo);
-      const b2 = this.modMul(this.b, p);
       const a = this.modAdd(this.getPower(k), this.getPower(this.n - k));
-      const value = this.modMul(b2, a);
+      const value = this.modMul(this.b, a);
       amount = this.modAdd(amount, value);
       this.update(k);
       k++;
     }
-    this.total = this.modAdd(this.total, amount);
+
+    this.total = this.modAdd(this.total, amount.modMul(p, this.modulo));
     return k;
   }
 
@@ -270,24 +271,20 @@ function S(n, trace) {
   return result;
 }
 
-// assert.strictEqual(S(10, false), 142469423360n);
-// assert.strictEqual(S(10000, false), 44930979938863017n);
-// assert.strictEqual(S(100000, false), 363005245175792116n);
-
-// assert.strictEqual(
-//   TimeLogger.wrap(`1e5 ${TEST_PRIME}`, (_) => smallS(10n ** 5n, TEST_PRIME)),
-//   410n
-// );
-
+assert.strictEqual(S(10, false), 142469423360n);
+assert.strictEqual(
+  TimeLogger.wrap(`1e5 ${TEST_PRIME}`, (_) => smallS(10n ** 5n, TEST_PRIME)),
+  410n
+);
 assert.strictEqual(
   TimeLogger.wrap(`1e7, ${TEST_PRIME}`, (_) => smallS(1e7, TEST_PRIME)),
   2841n
 );
 
-// console.log('Test passed');
+console.log('Test passed');
 
 // console.log(TimeLogger.wrap('', (_) => smallS(1e8, TEST_PRIME)));
-// console.log(TimeLogger.wrap('S(1e8)', (_) => S(1e8, true)));
+console.log(TimeLogger.wrap('S(1e8)', (_) => S(1e8, true)));
 
-const answer = S(10n ** 18n);
-console.log(`Answer is ${answer}`);
+// const answer = S(10n ** 18n);
+// console.log(`Answer is ${answer}`);

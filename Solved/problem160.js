@@ -10,8 +10,7 @@
 // Find f(1,000,000,000,000)
 
 const assert = require('assert');
-const bigInt = require('big-integer');
-const prettyHrtime = require('pretty-hrtime');
+const { TimeLogger } = require('@dn0rmand/project-euler-tools');
 
 function f(max) {
   const modulo = 1000000000;
@@ -55,7 +54,5 @@ assert.equal(f(100000), 62496);
 assert.equal(f(1000000), 12544);
 assert.equal(f(10000000), 94688);
 
-let start = process.hrtime();
-let answer = f(1000000000000);
-let end = process.hrtime(start);
-console.log('f(1,000,000,000,000) = ' + answer + ', solved in ' + prettyHrtime(end, { verbose: true }));
+const answer = TimeLogger.wrap('', _ => f(1000000000000));
+console.log('f(1,000,000,000,000) = ' + answer);
