@@ -1,4 +1,4 @@
-const { Tracer, primeHelper } = require('@dn0rmand/project-euler-tools');
+const { primeHelper } = require('@dn0rmand/project-euler-tools');
 
 primeHelper.initialize(1e6, true);
 
