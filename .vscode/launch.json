@@ -1,70 +1,61 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "C/C++ (current file)",
-            "type": "cppdbg",
-            "request": "launch",
-            "program": "${workspaceFolder}/dist/a.out",
-            "args": [],
-            "stopAtEntry": true,
-            "cwd": "${workspaceFolder}",
-            "environment": [],
-            "externalConsole": false,
-            "MIMode": "lldb",
-            "preLaunchTask": "gcc"
-        },
-        {
-            "type": "bashdb",
-            "request": "launch",
-            "name": "Bash-Debug (current file)",
-            "cwd": "${workspaceFolder}",
-            "program": "${file}",
-            "args": []
-        },
-        {
-            "name": "Python: Current File",
-            "type": "python",
-            "request": "launch",
-            "program": "${file}"
-        },
-        {
-            "type": "node",
-            "request": "attach",
-            "name": "Node: Attach by Process ID",
-            "processId": "${command:PickProcess}"
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "runtimeArgs": [
-                "--stack-size=8092",
-                "--max-old-space-size=12288",
-                "--expose-gc"
-            ],
-            "name": "Node: Current File",
-            "program": "${file}",
-            "cwd": "${fileDirname}",
-            "console": "integratedTerminal"
-        },
-        {
-            "type": "node",
-            "request": "launch",
-            "preLaunchTask": "tsc: build - tsconfig.json",
-            "runtimeArgs": [
-                "--stack-size=8092",
-                "--max-old-space-size=12288",
-                "--expose-gc"
-            ],
-            "name": "Node: current TS File",
-            "program": "${file}",
-            "cwd": "${fileDirname}",
-            "outFiles": [
-                "${workspaceFolder}/dist/**/*.js"
-            ]
-        }
-    ]
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "C/C++ (current file)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/dist/a.out",
+      "args": [],
+      "stopAtEntry": true,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "lldb",
+      "preLaunchTask": "gcc"
+    },
+    {
+      "type": "bashdb",
+      "request": "launch",
+      "name": "Bash-Debug (current file)",
+      "cwd": "${workspaceFolder}",
+      "program": "${file}",
+      "args": []
+    },
+    {
+      "name": "Python: Current File",
+      "type": "python",
+      "request": "launch",
+      "program": "${file}"
+    },
+    {
+      "type": "node",
+      "request": "attach",
+      "name": "Node: Attach by Process ID",
+      "processId": "${command:PickProcess}"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "runtimeArgs": ["--stack-size=8092", "--max-old-space-size=12288", "--expose-gc"],
+      "name": "Node: Current File",
+      "program": "${file}",
+      "cwd": "${fileDirname}",
+      "console": "integratedTerminal"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "preLaunchTask": "tsc: build - tsconfig.json",
+      "runtimeArgs": ["--stack-size=8092", "--max-old-space-size=12288", "--expose-gc"],
+      "name": "Node: current TS File",
+      "program": "${file}",
+      "cwd": "${fileDirname}",
+      "outFiles": ["${workspaceFolder}/dist/**/*.js"],
+      "console": "integratedTerminal"
+    }
+  ]
 }
