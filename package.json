@@ -6,7 +6,8 @@
   "scripts": {
     "asbuild:untouched": "asc assembly/Matrix.ts  --target debug",
     "asbuild:optimized": "asc assembly/Matrix.ts --target release",
-    "asbuild": "npm run asbuild:untouched && npm run asbuild:optimized"
+    "asbuild": "npm run asbuild:untouched && npm run asbuild:optimized",
+    "build": "npx tsc"
   },
   "author": "",
   "license": "ISC",
