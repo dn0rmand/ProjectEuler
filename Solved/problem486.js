@@ -1,14 +1,12 @@
 const assert = require('assert');
-const { TimeLogger, BigMap, linearRecurrence, Tracer, chineseRemainder, BigSet } = require('@dn0rmand/project-euler-tools');
+const { TimeLogger, polynomial, linearRecurrence, Tracer } = require('@dn0rmand/project-euler-tools');
 
 const MAX = 10n ** 18n;
 const P1 = 3 ** 2;
-const P2 = 23; //**/ 1997;
-const P3 = 53; //**/ 4877;
+const P2 = /*23; //**/ 1997;
+const P3 = /*53; //**/ 4877;
+
 const MODULO = P1 * P2 * P3;
-const MODULO_N = BigInt(MODULO);
-const P1_N = BigInt(P1);
-const P2_N = BigInt(P2);
 
 function calculateRecurrence() {
   const palindromes = (function () {
@@ -110,29 +108,39 @@ class Cycles {
     this.cycle = index;
   }
 
-  isValidIndex(i) {
-    return this.indexes.has(i % this.cycle);
-  }
 
-  generateIndexes(k, max, callback) {
+  generateIndexes(k, max, cycle1, cycle2, callback) {
     let start = k * this.cycle;
     let didWork = false;
     if (start > Number.MAX_SAFE_INTEGER) {
       start = BigInt(k) * BigInt(this.cycle);
-
-      this.indexes.forEach(idx => {
+      if (start > max) {
+        return true;
+      }
+      const s1 = Number(start % BigInt(cycle1));
+      const s2 = Number(start % BigInt(cycle2));
+      for (const idx of this.indexes.values()) {
         const i = start + BigInt(idx);
-        if (i <= max) {
-          didWork |= callback(Number(i % P1_N), Number(i % P2_N), idx);
+        if (i > max) {
+          break;
         }
-      });
+        didWork |= callback((s1 + idx) % cycle1, (s2 + idx) % cycle2, idx);
+      }
     } else {
-      this.indexes.forEach(idx => {
+      if (start > max) {
+        return true;
+      }
+
+      const s1 = start % cycle1;
+      const s2 = start % cycle2;
+
+      for (const idx of this.indexes.values()) {
         const i = start + idx;
-        if (i <= max) {
-          didWork |= callback(i % P1, i % P2, idx);
+        if (i > max) {
+          break;
         }
-      });
+        didWork |= callback((s1 + idx) % cycle1, (s2 + idx) % cycle2, idx);
+      }
     }
     return !didWork;
   }
@@ -183,59 +191,90 @@ function Prepare() {
   return { offset, cycle1, cycle2, cycle3 };
 }
 
-function D(L, { offset, cycle1, cycle2, cycle3 }) {
+function DD(L, { offset, cycle1, cycle2, cycle3 }) {
   const tracer = new Tracer(true);
   const max = L > Number.MAX_SAFE_INTEGER ? L - BigInt(offset) : L - offset;
 
+  const indexes1 = [...cycle1.indexes.values()].reduce((a, v) => { a[v] = 1; return a; }, []);
+  const indexes2 = [...cycle2.indexes.values()].reduce((a, v) => { a[v] = 1; return a; }, []);
+  let indexes3 = [...cycle3.indexes.values()];
+
+  cycle1 = cycle1.cycle;
+  cycle2 = cycle2.cycle;
+
   let total = 0;
-  let set1;
   let k1 = 0;
 
-  let bigStep = 0n;
+  let gcd = cycle1.gcd(cycle2).gcd(cycle3.cycle);
+  let bigStep = (cycle1 / gcd) * (cycle2 / gcd);
 
-  // [cycle2, cycle3] = [cycle3, cycle2];
-  let gcd = cycle1.cycle.gcd(cycle2.cycle).gcd(cycle3.cycle);
-  let big = (cycle1.cycle / gcd) * (cycle2.cycle / gcd);
+  // Find first k
 
-  for (let k = 0; ; k++) {
-    tracer.print(_ => big - (k - k1));
+  let start = 0;
 
-    if ((k - k1) > big) {
-      debugger;
+  for (let k = 0; ; start += cycle3.cycle, k++) {
+    if (start > max) {
+      break;
     }
-    const done = cycle3.generateIndexes(k, max, (i1, i2, i3) => {
-      if (bigStep) {
-        return false;
-      }
-      if (cycle1.isValidIndex(i1) && cycle2.isValidIndex(i2)) {
-        if (!set1) {
-          set1 = [i1, i2, i3];
-          k1 = k;
-        } else if (
-          set1[2] === i3 &&
-          set1[0] === i1 &&
-          set1[1] === i2) {
-          bigStep = k - k1;
-          return false;
-        }
-        total++;
-      }
-      return true;
-    });
 
-    if (done || bigStep) {
+    for (const i3 of indexes3) {
+      const idx = start + i3;
+      if (idx > max) {
+        break;
+      }
+      const i1 = idx % cycle1;
+      const i2 = idx % cycle2;
+
+      if (indexes1[i1] && indexes2[i2]) {
+        k1 = k;
+        break;
+      }
+    }
+
+    if (k1) {
       break;
     }
   }
-  if (bigStep) {
+
+  let done = false;
+  for (let k = k1; k - k1 < bigStep; start += cycle3.cycle, k++) {
+    tracer.print(_ => bigStep - (k - k1));
+
+    if (start > max) {
+      done = true;
+      break;
+    }
+
+    for (const i3 of indexes3) {
+      const idx = start + i3;
+      const i1 = idx % cycle1;
+      const i2 = idx % cycle2;
+
+      if (indexes1[i1] && indexes2[i2]) {
+        if (idx > max) {
+          done = true;
+          break;
+        } else {
+          total++;
+        }
+      }
+    }
+
+    if (done) {
+      break;
+    }
+  }
+
+  if (!done) {
     let maxSteps = (BigInt(max) / (BigInt(bigStep) * BigInt(cycle3.cycle)));
     let maxK = BigInt(bigStep) * maxSteps;
     total = total * Number(maxSteps);
+    let lastK = Number((BigInt(max) / BigInt(cycle3.cycle)) + 1n);
 
     for (let k = Number(maxK); ; k++) {
-      const done = cycle3.generateIndexes(k, max, (i1, i2, i3) => {
-        tracer.print(_ => BigInt(max) - BigInt(idx));
-        if (cycle1.isValidIndex(i1) && cycle2.isValidIndex(i2)) {
+      tracer.print(_ => lastK - k);
+      const done = cycle3.generateIndexes(k, max, cycle1, cycle2, (i1, i2, i3) => {
+        if (indexes1[i1] && indexes2[i2]) {
           total++;
         }
         return true;
@@ -256,10 +295,17 @@ function D(L, { offset, cycle1, cycle2, cycle3 }) {
 
 const context = TimeLogger.wrap('Pre-Calculation', _ => Prepare());
 
-// assert.strictEqual(D(1e7, context), 0);
-assert.strictEqual(D(5e9, context), P2 === 23 ? 448841 : 51);
+const D = L => DD(L, context);
+
+// assert.strictEqual(D(1e7), 0);
+assert.strictEqual(D(5e9), P2 === 23 ? 448841 : 51);
+assert.strictEqual(D(9524776956), 100);
+assert.strictEqual(D(18010838498), 200);
+assert.strictEqual(D(26168704503), 300);
+assert.strictEqual(D(33855231633), 400);
+assert.strictEqual(D(33855231632), 399);
 
 console.log('Tests passed');
 
-const answer = TimeLogger.wrap('Solving', _ => D(MAX, context));
+const answer = TimeLogger.wrap('Solving', _ => D(MAX));
 console.log(`Answer is ${answer}`);
