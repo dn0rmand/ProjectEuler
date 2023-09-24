@@ -13,9 +13,7 @@
   "license": "ISC",
   "dependencies": {
     "@assemblyscript/loader": "^0.14.8",
-    "@dn0rmand/project-euler-tools": "^1.2.3",
-    "assemblyscript": "^0.14.8",
-    "atomic-sleep": "^1.0.0",
+    "@dn0rmand/project-euler-tools": "^1.2.4",
     "big-integer": "^1.6.48",
     "bignumber.js": "^7.2.1",
     "bintrees": "^1.0.2",
@@ -23,7 +21,6 @@
     "chance": "^1.1.4",
     "decimal.js": "^10.2.0",
     "gcd": "0.0.1",
-    "is-number-prime": "^1.0.1",
     "ml-matrix": "^5.3.0",
     "mlcm": "0.0.3",
     "pixels-please": "^1.0.3",
@@ -37,7 +34,6 @@
   "devDependencies": {
     "@types/node": "^18.16.3",
     "@types/node-fetch": "^2.6.3",
-    "assemblyscript": "^0.14.13",
     "typescript": "^5.0.4"
   }
 }
