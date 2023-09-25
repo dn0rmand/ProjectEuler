@@ -12,19 +12,19 @@ let ids = 0;
 class Leaf {
   constructor(prime) {
     this.id = ids++;
-    this.value = prime;
+    this.prime = prime;
     this.inverse = prime.modInv(MODULO);
     this.max = 1;
     this.sum = 0;
   }
 
-  multiply(p, e) {
-    const v = p.modPow(e, MODULO);
+  multiply(e) {
+    const v = this.prime.modPow(e, MODULO);
     this.max = this.max.modMul(v, MODULO);
     this.sum = this.sum.modMul(v, MODULO);
   }
 
-  divise(p, e) {
+  divise(e) {
     const v = this.inverse.modPow(e, MODULO);
     this.max = this.max.modMul(v, MODULO);
     this.sum = this.sum.modMul(v, MODULO);
@@ -50,10 +50,56 @@ class Node {
 }
 
 class NCR {
-  constructor(n, primes) {
+  constructor(n) {
     this.n = n;
-    this.primes = primes;
+    this.primes = [];
     this.toUpdate = [];
+    this.root = this.generateTree();
+  }
+
+  makeLeaves() {
+    let current = new Leaf(1);
+    const nodes = [current];
+
+    for (const prime of primeHelper.allPrimes()) {
+      if (prime > this.n) {
+        break;
+      }
+
+      current.sum = prime - current.prime;
+      current = new Leaf(prime);
+      nodes.push(current);
+      this.primes[prime] = current;
+    }
+    current.sum = this.n + 1 - current.prime;
+    return nodes;
+  }
+
+  createParents(nodes) {
+    const parents = [];
+    for (let i = 0; i < nodes.length; i += 2) {
+      const left = nodes[i];
+      const right = nodes[i + 1];
+      if (right) {
+        parents.push(new Node(left, right));
+      } else {
+        parents.push(left);
+      }
+    }
+    return parents;
+  }
+
+  generateTree() {
+    ids = 0;
+
+    let nodes = this.makeLeaves();
+
+    // generate hierarchy
+    while (nodes.length > 1) {
+      nodes = this.createParents(nodes);
+    }
+
+    return nodes[0]; // The root
   }
 
   addToUpdate(node) {
@@ -65,7 +111,7 @@ class NCR {
   multiply(value) {
     primeHelper.factorize(value, (p, e) => {
       const leaf = this.primes[p];
-      leaf.multiply(p, e);
+      leaf.multiply(e);
       this.addToUpdate(leaf.parent);
     });
   }
@@ -73,7 +119,7 @@ class NCR {
   divise(value) {
     primeHelper.factorize(value, (p, e) => {
       const leaf = this.primes[p];
-      leaf.divise(p, e);
+      leaf.divise(e);
       this.addToUpdate(leaf.parent);
     });
   }
@@ -93,6 +139,28 @@ class NCR {
       }
     }
   }
+
+  get sum() { return this.root.sum; }
+}
+
+function F(n, trace) {
+  const nCr = new NCR(n);
+
+  let total = 2 * nCr.sum;
+
+  const tracer = new Tracer(trace);
+  for (let r = 1, R = n - 1; r <= R; r++, R--) {
+    tracer.print(_ => R - r);
+    nCr.next(r);
+    const sum = nCr.sum;
+    if (r !== R) {
+      total = (total + sum + sum) % MODULO;
+    } else {
+      total = (total + sum) % MODULO;
+    }
+  }
+  tracer.clear();
+  return total;
 }
 
 function S(B, n) {
@@ -106,63 +174,6 @@ function S(B, n) {
   });
 
   return max;
-}
-
-function F(n, trace) {
-  const primes = [];
-
-  function generateTree() {
-    // Generate leaves
-    ids = 0;
-    let current = new Leaf(1);
-    let nodes = [current];
-
-    for (const prime of primeHelper.allPrimes()) {
-      if (prime > n) {
-        break;
-      }
-
-      current.sum = prime - current.value;
-      current = new Leaf(prime);
-      nodes.push(current);
-      primes[prime] = current;
-    }
-    current.sum = n + 1 - current.value;
-
-    // generate hierarchy
-    while (nodes.length > 1) {
-      const parents = [];
-      for (let i = 0; i < nodes.length; i += 2) {
-        const left = nodes[i];
-        const right = nodes[i + 1];
-        if (right) {
-          parents.push(new Node(left, right));
-        } else {
-          parents.push(left);
-        }
-      }
-      nodes = parents;
-    }
-    return nodes[0]; // The root
-  }
-
-  const nCr = new NCR(n, primes);
-  const root = generateTree();
-
-  let total = 2 * root.sum;
-
-  const tracer = new Tracer(trace);
-  for (let r = 1, R = n - 1; r <= R; r++, R--) {
-    tracer.print(_ => R - r);
-    nCr.next(r);
-    const subTotal = root.sum;
-    total = (total + subTotal) % MODULO;
-    if (r !== R) {
-      total = (total + subTotal) % MODULO;
-    }
-  }
-  tracer.clear();
-  return total;
 }
 
 assert.strictEqual(S(1, 10), 1);
