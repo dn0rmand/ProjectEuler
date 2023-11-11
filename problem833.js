@@ -1,25 +1,12 @@
 const assert = require('assert');
 
-const { TimeLogger, Tracer, primeHelper } = require('@dn0rmand/project-euler-tools');
-
-primeHelper.initialize(1e6);
+const { TimeLogger, Tracer } = require('@dn0rmand/project-euler-tools');
 
 const MAX = 10n ** 35n;
+const MODULO = 136101521n;
 
 function T(a) {
   return (a * (a + 1n)) / 2n;
-}
-
-function factors(value) {
-  const f = [];
-  primeHelper.factorize(Number(value), (p, n) => {
-    if (n === 1) {
-      f.push(`${p}`);
-    } else {
-      f.push(`${p}^${n}`);
-    }
-  })
-  return f.join(' * ');
 }
 
 function S(n) {
@@ -28,7 +15,6 @@ function S(n) {
   const n2 = n * n;
 
   let total = 0n;
-  const values = [];
 
   for (let b = 2n; ; b++) {
     const tb = T(b);
@@ -46,30 +32,15 @@ function S(n) {
       }
       const c = c2.sqrt();
       if (c * c === c2) {
-        total += c;
-        values.push({ c, bb: b, cc: factors(c) });
+        total = (total + c) % MODULO;
       }
     }
   }
   tracer.clear();
-  values.sort((v1, v2) => Number(v1.c - v2.c));
   return total;
 }
 
-console.log(S(1e5));
-
-const values = [0n];
-let previous = 0n;
-for (let i = 1n; previous <= 10n ** 35n; i++) {
-  previous = previous + i;
-  values.push(previous);
-}
-
-console.log(values.join(', '));
-
-process.exit(0);
-
 assert.strictEqual(S(1E5), 1479802n);
-assert.strictEqual(S(1E9), 241614948794n);
+assert.strictEqual(S(1E9), 241614948794n % MODULO);
 
 console.log('Tests passed');
