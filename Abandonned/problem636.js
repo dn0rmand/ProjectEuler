@@ -22,7 +22,7 @@
 // Find F(1000000!) mod 1000000007
 
 const {
-    primeHelper
+  primeHelper
 } = require('@dn0rmand/project-euler-tools');
 
 const MAX = 1000000;
@@ -30,65 +30,65 @@ const MAX = 1000000;
 primeHelper.initialize(MAX);
 
 function prepare(max) {
-    let table = new Map();
+  let table = new Map();
 
-    function add(prime, factor) {
-        let old = table.get(prime) || 0;
-        table.set(prime, old + factor);
+  function add(prime, factor) {
+    let old = table.get(prime) || 0;
+    table.set(prime, old + factor);
+  }
+
+  function factorize(n) {
+    if (primeHelper.isPrime(n)) {
+      add(n, 1);
+      return;
     }
 
-    function factorize(n) {
-        if (primeHelper.isPrime(n)) {
-            add(n, 1);
-            return;
-        }
+    for (let p of primeHelper.allPrimes()) {
+      if (p > n)
+        break;
 
-        for (let p of primeHelper.primes()) {
-            if (p > n)
-                break;
+      let factors = 0;
 
-            let factors = 0;
+      while (n % p === 0) {
+        factors++;
+        n /= p;
+      }
+      if (factors > 0)
+        add(p, factors);
+      if (n === 1)
+        return;
 
-            while (n % p === 0) {
-                factors++;
-                n /= p;
-            }
-            if (factors > 0)
-                add(p, factors);
-            if (n === 1)
-                return;
-
-            if (primeHelper.isPrime(n)) {
-                add(n, 1);
-                return;
-            }
-        }
-
-        if (n > 1)
-            add(n, 1);
+      if (primeHelper.isPrime(n)) {
+        add(n, 1);
+        return;
+      }
     }
 
-    for (let n = 2; n <= max; n++) {
-        factorize(n);
-    }
+    if (n > 1)
+      add(n, 1);
+  }
 
-    let trimed = new Map();
+  for (let n = 2; n <= max; n++) {
+    factorize(n);
+  }
 
-    for (let entry of table) {
-        if (entry[1] > 1)
-            trimed.set(entry[0], entry[1]);
-    }
+  let trimed = new Map();
 
-    return trimed;
+  for (let entry of table) {
+    if (entry[1] > 1)
+      trimed.set(entry[0], entry[1]);
+  }
+
+  return trimed;
 }
 
 function solve(max) {
-    let map = prepare(max);
+  let map = prepare(max);
 
-    for (let entry of map) {
-        console.log(entry[0], '^', entry[1]);
-    }
-    console.log('');
+  for (let entry of map) {
+    console.log(entry[0], '^', entry[1]);
+  }
+  console.log('');
 }
 
 solve(1);

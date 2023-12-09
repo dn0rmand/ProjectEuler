@@ -17,68 +17,61 @@
 // Find the sum of all distinct pseudo-Fortunate numbers for admissible numbers N less than 1000000000.
 
 const assert = require('assert');
-const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper.js')();
+const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper.js');
 
 const MAX = 1000000000;
 
 primeHelper.initialize(Math.floor(Math.sqrt(MAX)));
 
-function admissible(n)
-{
-    if ((n & 1) !== 0)
-        return false;
+function admissible(n) {
+  if ((n & 1) !== 0)
+    return false;
 
-    if (n === 2)
-        return true;
+  if (n === 2)
+    return true;
 
-    for (let p of primeHelper.primes())
-    {
-        if (p > n)
-            break;
-        
-        if (n % p !== 0)
-            return false;
-        
-        while ((n % p) === 0)
-            n /= p;
+  for (let p of primeHelper.allPrimes()) {
+    if (p > n)
+      break;
 
-        if (n === 1)
-            break;
-    }
+    if (n % p !== 0)
+      return false;
 
-    return n === 1;
+    while ((n % p) === 0)
+      n /= p;
+
+    if (n === 1)
+      break;
+  }
+
+  return n === 1;
 }
 
-function pseudoFortunate(n)
-{
-    let m = n+3;
-    while(! primeHelper.isPrime(m))
-        m += 2;
-    return m-n;
+function pseudoFortunate(n) {
+  let m = n + 3;
+  while (!primeHelper.isPrime(m))
+    m += 2;
+  return m - n;
 }
 
-function *getAdmissible(max)
-{
-    for(let n = 2; n < max; n += 2)
-    {
-        if (admissible(n))
-            yield n;
-    }
+function* getAdmissible(max) {
+  for (let n = 2; n < max; n += 2) {
+    if (admissible(n))
+      yield n;
+  }
 }
 
 assert.equal(pseudoFortunate(630), 11);
 
 let used = new Map();
-let total= 0;
+let total = 0;
 
-for(let a of getAdmissible(MAX))
-{
-    let m = pseudoFortunate(a);
-    if (! used.has(m))
-    {
-        used.set(m);
-        total += m;
-    }
+for (let a of getAdmissible(MAX)) {
+  let m = pseudoFortunate(a);
+  if (!used.has(m)) {
+    used.set(m);
+    total += m;
+  }
 }
 
 console.log("The sum of all distinct pseudo-Fortunate numbers for admissible numbers N less than 1000000000 is " + total);

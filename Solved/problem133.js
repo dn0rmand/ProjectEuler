@@ -1,42 +1,37 @@
-const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper');
+const { primeHelper } = require('@dn0rmand/project-euler-tools');
 const assert = require('assert');
 
-require('@dn0rmand/project-euler-tools/src/bigintHelper');
 
 const MAX = 100000;
-primeHelper.initialize(MAX+1);
+primeHelper.initialize(MAX + 1);
 
-function solve()
-{
-    let total = 0;
-    let TEN = 10n;
+function solve() {
+  let total = 0;
+  let TEN = 10n;
 
-    for (let prime of primeHelper.primes())
+  for (let prime of primeHelper.allPrimes()) {
+    if (prime >= MAX)
+      break;
+    if (prime === 3) // Exceptions
     {
-        if (prime >= MAX)
-            break;
-        if (prime === 3) // Exceptions
-        {
-            total += 3;
-            continue;
-        }
-
-        let p9 = BigInt(prime) * 9n;
-        total += prime;
-
-        for (let digits = 1, value = 10n; digits < 20 ; value *= 10n, digits++)
-        {
-            let m = TEN.modPow(value, p9);
-            if (m === 1n)
-            {
-                total -= prime;
-                break;
-            }
-        }
+      total += 3;
+      continue;
     }
 
-    return total;
+    let p9 = BigInt(prime) * 9n;
+    total += prime;
+
+    for (let digits = 1, value = 10n; digits < 20; value *= 10n, digits++) {
+      let m = TEN.modPow(value, p9);
+      if (m === 1n) {
+        total -= prime;
+        break;
+      }
+    }
+  }
+
+  return total;
 }
 
 let answer = solve();
-console.log('Answer is', answer , 'good answer is 453647705');
+console.log('Answer is', answer, 'good answer is 453647705');

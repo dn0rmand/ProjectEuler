@@ -24,145 +24,145 @@
 const MAX = 120000;
 
 const assert = require('assert');
-const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper');
+const { primeHelper } = require('@dn0rmand/project-euler-tools');
 
 primeHelper.initialize(120000);
 const allPrimes = primeHelper.allPrimes();
 
 function solve(max) {
-    let MAXA = max / 2;
-    let PRIMES_A = [];
+  let MAXA = max / 2;
+  let PRIMES_A = [];
 
-    function verify(a, b, rad) {
-        if (a >= b)
+  function verify(a, b, rad) {
+    if (a >= b)
+      return false;
+
+    let c = a + b;
+    if (c >= max)
+      return false;
+
+    if (rad >= c)
+      return false;
+
+    if (c === 1 || primeHelper.isPrime(c)) {
+      rad *= c;
+    } else {
+      let v = c;
+      for (let p of allPrimes) {
+        if (p > v)
+          break;
+        if (v % p === 0) {
+          rad *= p;
+          if (rad >= c)
             return false;
+          while (v % p === 0)
+            v /= p;
 
-        let c = a + b;
-        if (c >= max)
-            return false;
+          if (v === 1)
+            break;
 
-        if (rad >= c)
-            return false;
+          if (primeHelper.isPrime(v)) {
+            rad *= v;
+            break;
+          }
+        }
+      }
+    }
 
-        if (c === 1 || primeHelper.isPrime(c)) {
-            rad *= c;
+    return rad < c;
+  }
+
+  function* processB(a, rad) {
+    let MAXB = max - a;
+
+    function* generateB(value, rad, index) {
+      if (rad > max)
+        return;
+
+      if (value > MAXB)
+        return;
+
+      if (value > a) {
+        yield {
+          value: value,
+          rad: rad
+        };
+      }
+
+      for (let i = index; i < allPrimes.length; i++) {
+        let p = allPrimes[i];
+        if (PRIMES_A[p] === 1) // Cannot use same prime as for a
+          continue;
+
+        let v = value * p;
+        if (v > MAXB)
+          break;
+
+        if (value % p !== 0) {
+          let r1 = rad * p;
+          if (r1 > max)
+            break;
+
+          yield* generateB(v, r1, i);
         } else {
-            let v = c;
-            for (let p of primeHelper.primes()) {
-                if (p > v)
-                    break;
-                if (v % p === 0) {
-                    rad *= p;
-                    if (rad >= c)
-                        return false;
-                    while (v % p === 0)
-                        v /= p;
-
-                    if (v === 1)
-                        break;
-
-                    if (primeHelper.isPrime(v)) {
-                        rad *= v;
-                        break;
-                    }
-                }
-            }
+          yield* generateB(v, rad, i);
         }
-
-        return rad < c;
+      }
     }
 
-    function* processB(a, rad) {
-        let MAXB = max - a;
+    for (let e of generateB(1, rad, 0)) {
+      let b = e.value;
+      if (verify(a, b, e.rad)) {
+        yield a + b;
+      }
+    }
+  }
 
-        function* generateB(value, rad, index) {
-            if (rad > max)
-                return;
+  function* processA() {
+    function* generateA(value, rad, index) {
+      if (rad > max)
+        return;
 
-            if (value > MAXB)
-                return;
+      if (value > MAXA)
+        return;
 
-            if (value > a) {
-                yield {
-                    value: value,
-                    rad: rad
-                };
-            }
+      yield {
+        value: value,
+        rad: rad
+      };
 
-            for (let i = index; i < allPrimes.length; i++) {
-                let p = allPrimes[i];
-                if (PRIMES_A[p] === 1) // Cannot use same prime as for a
-                    continue;
+      for (let i = index; i < allPrimes.length; i++) {
+        let p = allPrimes[i];
+        let v = value * p;
+        if (v > MAXA)
+          break;
 
-                let v = value * p;
-                if (v > MAXB)
-                    break;
+        if (value % p !== 0) {
+          let r1 = rad * p;
 
-                if (value % p !== 0) {
-                    let r1 = rad * p;
-                    if (r1 > max)
-                        break;
+          if (r1 > max)
+            break;
 
-                    yield* generateB(v, r1, i);
-                } else {
-                    yield* generateB(v, rad, i);
-                }
-            }
+          PRIMES_A[p] = 1;
+          yield* generateA(v, r1, i);
+          PRIMES_A[p] = 0;
+        } else {
+          yield* generateA(v, rad, i);
         }
-
-        for (let e of generateB(1, rad, 0)) {
-            let b = e.value;
-            if (verify(a, b, e.rad)) {
-                yield a + b;
-            }
-        }
+      }
     }
 
-    function* processA() {
-        function* generateA(value, rad, index) {
-            if (rad > max)
-                return;
-
-            if (value > MAXA)
-                return;
-
-            yield {
-                value: value,
-                rad: rad
-            };
-
-            for (let i = index; i < allPrimes.length; i++) {
-                let p = allPrimes[i];
-                let v = value * p;
-                if (v > MAXA)
-                    break;
-
-                if (value % p !== 0) {
-                    let r1 = rad * p;
-
-                    if (r1 > max)
-                        break;
-
-                    PRIMES_A[p] = 1;
-                    yield* generateA(v, r1, i);
-                    PRIMES_A[p] = 0;
-                } else {
-                    yield* generateA(v, rad, i);
-                }
-            }
-        }
-
-        for (let e of generateA(1, 1, 0)) {
-            yield* processB(e.value, e.rad);
-        }
+    for (let e of generateA(1, 1, 0)) {
+      yield* processB(e.value, e.rad);
     }
+  }
 
-    let total = 0;
+  let total = 0;
 
-    for (let c of processA()) {
-        total += c;
-    }
-    return total;
+  for (let c of processA()) {
+    total += c;
+  }
+  return total;
 }
 
 assert.equal(solve(1000), 12523);

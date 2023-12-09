@@ -12,54 +12,46 @@
 // How many generalised Hamming numbers of type 100 are there which don't exceed 10^9?
 
 const assert = require('assert');
-const primeHelper = require('@dn0rmand/project-euler-tools/src/primeHelper');
+const { primeHelper } = require('@dn0rmand/project-euler-tools');
 
 primeHelper.initialize(100);
 
-function calculate(maxValue, maxPrime)
-{
-    let visited = [undefined, 1];
-    let count = 1;
+function calculate(maxValue, maxPrime) {
+  let visited = [undefined, 1];
+  let count = 1;
 
-    let primes = (() =>
-    {
-        let primes = [];
-    
-        for (let p of primeHelper.primes())
-        {
-            if (p > maxPrime)
-                break;
-            primes.push(p);
-        }
-        return primes;
-    })();
+  let primes = (() => {
+    let primes = [];
 
-    function inner()
-    {
-        for (let i = 0; i < visited.length; i++)
-        {
-            let v = visited[i];
-            if (v === undefined)
-                continue;
-
-            for(let p of primes)
-            {
-                v = i * p;
-
-                if (v <= maxValue)
-                {
-                    if (visited[v] !== 1)
-                    {
-                        visited[v] = 1;
-                        count++;
-                    }
-                }
-            }
-        }
+    for (let p of primeHelper.allPrimes()) {
+      if (p > maxPrime)
+        break;
+      primes.push(p);
     }
+    return primes;
+  })();
 
-    inner();
-    return count;
+  function inner() {
+    for (let i = 0; i < visited.length; i++) {
+      let v = visited[i];
+      if (v === undefined)
+        continue;
+
+      for (let p of primes) {
+        v = i * p;
+
+        if (v <= maxValue) {
+          if (visited[v] !== 1) {
+            visited[v] = 1;
+            count++;
+          }
+        }
+      }
+    }
+  }
+
+  inner();
+  return count;
 }
 
 console.time("X");
