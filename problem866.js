@@ -1,21 +1,11 @@
 const assert = require('assert');
-const { TimeLogger } = require("@dn0rmand/project-euler-tools");
+const { TimeLogger, Tracer, BigMap, polynomial } = require("@dn0rmand/project-euler-tools");
 
 const MODULO = 987654319
 
-/*
-123
+const PRODUCT = k => k.modMul(2 * k - 1, MODULO);
 
-1 (1) => 1, 3 (1)(3)=> 1, 2 (1-3) => 3 * 5 = 15 => 1 * 1 * 15
-3 (3) => 1, 1 (1)(3)=> 1, 2 (1-3) => 3 * 5 = 15 => 1 * 1 * 15
-
-1 (1) => 1, 2 (1-2) => 2 * 3 = 6, 3 (1-3) => 3 * 5 = 15 => 1 * 6 * 15
-2 (2) => 1, 3 (2-3) => 2 * 3 = 6, 1 (1-3) => 3 * 5 = 15 => 1 * 6 * 15
-2 (2) => 1, 1 (1-2) => 2 * 3 = 6, 3 (1-3) => 3 * 5 = 15 => 1 * 6 * 15
-3 (3) => 1, 2 (2-3) => 2 * 3 = 6, 1 (1-3) => 3 * 5 = 15 => 1 * 6 * 15
-
-expected = 65
-*/
+const collect = typeof (global.gc) === 'function' ? global.gc : () => { };
 
 class State {
   constructor(segments, product, count) {
@@ -25,97 +15,135 @@ class State {
   }
 
   get key() {
-    if (this.segments.length === 0) { return 'x'; }
-
-    const offset = this.segments[0].start;
-    const newSegments = this.segments.map(({ start, end }) => ({ start: start - offset, end: end - offset }));
-    const subKey = newSegments.reduce((a, s, i) => {
-      if (i) {
-        const s0 = this.segments[i - 1];
-        a.push(s.start - s0.end + 1);
+    const subKey = this.segments.reduce((a, count, length) => {
+      if (count === 1) {
+        a.push(`${length}`);
+      } else if (count) {
+        a.push(`${length}x${count}`);
       }
-      a.push(s.end - s.start + 1);
       return a;
-    }, [offset]).join('-');
-
-    return `${this.product}:${subKey}`
+    }, []);
+    return `${this.segments.join(',')}`;
   }
 
-  createState(newSegments, i) {
-    if (i && newSegments[i - 1].end + 1 === newSegments[i].start) {
-      newSegments[i].start = newSegments[i - 1].start;
-      newSegments.splice(i - 1, 1);
-    } else if (i + 1 < newSegments.length && newSegments[i].end + 1 == newSegments[i + 1].start) {
-      newSegments[i].end = newSegments[i + 1].end;
-      newSegments.splice(i + 1, 1);
-    }
+  *splitSegment(length) {
+    const count = this.count.modMul(this.segments[length], MODULO);
 
-    const k = newSegments[i].end - newSegments[i].start + 1;
+    for (let i = 1; i <= length; i++) {
+      let left = i - 1;
+      let right = length - i;
 
-    return new State(newSegments, this.product * (k * (2 * k - 1)), this.count);
-  }
+      const p1 = PRODUCT(left) || 1;
+      const p2 = PRODUCT(right) || 1;
+      const p = p1.modMul(p2, MODULO);
 
-  addPiece(piece) {
-    for (let i = 0; i < this.segments.length; i++) {
-      const { start, end } = this.segments[i];
-      if (piece >= start && piece <= end) {
-        return;
-      }
       const newSegments = [...this.segments];
-      if (start === piece + 1) {
-        newSegments[i] = { start: piece, end };
-        return this.createState(newSegments, i);
-      } else if (end + 1 === piece) {
-        newSegments[i] = { start, end: piece };
-        return this.createState(newSegments, i);
-      }
-    }
 
-    const newSegments = [...this.segments, { start: piece, end: piece }];
-    newSegments.sort((a, b) => a.start - b.start);
-    return new State(newSegments, this.product, this.count);
+      newSegments[0]++;
+      newSegments[length]--;
+      if (left) {
+        newSegments[left]++;
+      }
+      if (right) {
+        newSegments[right]++;
+      }
+
+      yield new State(newSegments, this.product.modMul(p, MODULO), count);
+    }
+  }
+
+  *removePiece() {
+    for (let length = 1; length < this.segments.length; length++) {
+      const count = this.segments[length];
+      if (!count) { continue; }
+
+      yield* this.splitSegment(length);
+    }
   }
 };
 
-function solve(N) {
-  let states = new Map();
-  let newStates = new Map();
-
-  states.set(1, new State([], 1, 1));
-
+function solve1(N, trace) {
+  let states = new BigMap();
+  let newStates = new BigMap();
+  const start = new State([], PRODUCT(N), 1);
   for (let i = 0; i < N; i++) {
+    start.segments[i] = 0;
+  }
+  start.segments[N] = 1;
+  states.set(start.key, start);
+
+  let sum = 0;
+  let count = 0;
+  let step = N;
+
+  const tracer = new Tracer(trace);
+  while (states.size) {
     newStates.clear();
+    collect();
+    let size = states.size;
     for (const state of states.values()) {
-      for (let piece = 1; piece <= N; piece++) {
-        const newState = state.addPiece(piece);
-        if (!newState) { continue; }
+      tracer.print(_ => `${step}: ${states.size}: ${size} - ${newStates.size}`);
+      size--;
+      if (state.segments[0] === N) {
+        sum = (sum + state.product.modMul(state.count, MODULO)) % MODULO;
+        count = (count + state.count) % MODULO;
+        continue;
+      }
+      for (const newState of state.removePiece()) {
         const k = newState.key;
         const o = newStates.get(k);
         if (o) {
-          o.count += newState.count;
+          const p1 = o.count.modMul(o.product, MODULO);
+          const p2 = newState.count.modMul(newState.product, MODULO);
+          const c = (o.count + newState.count) % MODULO;
+          const p = (p1 + p2).modDiv(c, MODULO);
+          o.count = c;
+          o.product = p;
+          // o.count = (o.count + newState.count) % MODULO;
         } else {
           newStates.set(k, newState);
         }
       }
     }
     [states, newStates] = [newStates, states];
+    step--;
   }
-
-  let total = 0;
-  let ways = 0;
-  for (const state of states.values()) {
-    total += state.count * state.product;
-    ways += state.count;
-  }
-
-  total /= ways;
-  return total;
+  tracer.clear();
+  sum = sum.modDiv(count, MODULO);
+  return sum;
 }
 
-console.log(solve(3));
+function solve(N) {
+  function inner(size) {
+    if (size === 0) { return { product: 0, ways: 1 } };
+    if (size === 1) { return { product: 1, ways: 1 } };
 
+    let k = size * (2 * size - 1);
+    let product = 0;
+    let ways = 0;
+
+    for (let i = 1; i <= size; i++) {
+      const left = i - 1;
+      const right = size - i;
+
+      const { product: p1, ways: w1 } = inner(left);
+      const { product: p2, ways: w2 } = inner(right);
+
+      product += (p1 * w1 + p2 * w2);
+      ways += w1 * w2;
+    }
+
+    product = (product * k);
+    return { product: product / ways, ways };
+  }
+
+  const { product } = inner(N);
+  return product;
+}
+
+assert.strictEqual(solve(3), 65);
 assert.strictEqual(solve(4), 994);
 console.log('Test passed');
 
-const answer = solve(100)
+const answer = TimeLogger.wrap("", _ => solve(100, true));
 console.log(`Answer is ${answer}`);
