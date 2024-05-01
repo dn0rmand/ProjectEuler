@@ -1,13 +1,19 @@
 const assert = require('assert');
-const { BigSet, BigMap, TimeLogger, Tracer } = require('@dn0rmand/project-euler-tools');
+const { BigSet, BigMap, TimeLogger, Tracer, matrixSmall: Matrix } = require('@dn0rmand/project-euler-tools');
 
 let MAX_VALUE = 1e4;
 
 const badOnes = new BigSet();
 
 class State {
-  constructor(a, b, c) {
+  constructor(a, b, c, previous) {
+    this.previous = previous;
+
     const n = (a < 0 ? 1 : 0) + (b < 0 ? 1 : 0) + (c < 0 ? 1 : 0);
+
+    this.done = a === 0 || b === 0 || c === 0;
+    this.bad = !this.done && (n === 3 || n === 0);
+
     if (n > 1) {
       a = -a;
       b = -b;
@@ -15,39 +21,35 @@ class State {
     }
     [a, b, c] = [a, b, c].sort((a, b) => a - b);
     const g = Math.abs(a.gcd(b).gcd(c));
-    if (g !== 1) {
-      this.a = a / g;
-      this.b = b / g;
-      this.c = c / g;
-    } else {
-      this.a = a;
-      this.b = b;
-      this.c = c;
-    }
+    this.a = a / g;
+    this.b = b / g;
+    this.c = c / g;
+    this.a = a;
+    this.b = b;
+    this.c = c;
     this.key = `${a}:${b}:${c}`;
-  }
-
-  get done() {
-    return this.a === 0 || this.b === 0 || this.c === 0;
   }
 
   *next() {
     const a1 = 2 * (this.b + this.c) - this.a;
     const b1 = 2 * (this.a + this.c) - this.b;
     const c1 = 2 * (this.a + this.b) - this.c;
-    if (this.b && this.c && a1 <= MAX_VALUE) {
-      yield new State(a1, this.b, this.c);
+    const s1 = new State(a1, this.b, this.c, this);
+    const s2 = new State(this.a, b1, this.c, this);
+    const s3 = new State(this.a, this.b, c1, this);
+    if (!s1.bad) {
+      yield s1;
     }
-    if (this.a && this.c && b1 <= MAX_VALUE) {
-      yield new State(this.a, b1, this.c);
+    if (!s2.bad) {
+      yield s2;
     }
-    if (this.a && this.b && c1 <= MAX_VALUE) {
-      yield new State(this.a, this.b, c1);
+    if (!s3.bad) {
+      yield s3;
     }
   }
 }
 
-function f0(a, b, c) {
+function f(a, b, c) {
   const start = new State(a, b, c);
   if (badOnes.has(start.key)) {
     return 0;
@@ -85,18 +87,18 @@ function f0(a, b, c) {
   return 0;
 }
 
-const $f = new BigMap();
+const $ff = new BigMap();
 
 function ff(state) {
   if (state.done) {
     return 1;
   }
-  let result = $f.get(state.key);
+  let result = $ff.get(state.key);
   if (result !== undefined) {
     return result;
   }
   result = 0;
-  $f.set(state.key, 0); // avoid re-entrance
+  $ff.set(state.key, 0); // avoid re-entrance
   let values = [...state.next()];
   if (values.some(s => s.done)) {
     result = 2;
@@ -108,16 +110,16 @@ function ff(state) {
       result = 0
     }
   }
-  $f.set(state.key, result);
+  $ff.set(state.key, result);
   return result;
 }
 
-function f(a, b, c) {
+function f1(a, b, c) {
   const start = new State(a, b, c);
   const maxVal = (start.a + 1) * (start.b + 1) * 10;
   if (maxVal > MAX_VALUE) {
     MAX_VALUE = maxVal;
-    $f.clear();
+    $ff.clear();
   }
   const result = ff(start);
   return result ? result - 1 : 0;
@@ -126,6 +128,7 @@ function f(a, b, c) {
 function F(a, b) {
   const tracer = new Tracer(true);
   let total = 0;
+  const x = f(a, b, 32);
   const max = (a + 1) * (b + 1);
   for (let c = max; c; c--) {
     tracer.print(_ => c);
@@ -150,6 +153,32 @@ function solve(maxPower) {
   return total;
 }
 
+function test(a, b, c) {
+  const M = new Matrix(3, 3);
+  let S = new Matrix(3, 3);
+
+  M.set(0, 0, -1), M.set(0, 1, 2), M.set(0, 2, 2);
+  M.set(1, 0, 2), M.set(1, 1, -1), M.set(1, 2, 2);
+  M.set(2, 0, 2), M.set(2, 1, 2), M.set(2, 2, -1);
+
+  S.set(0, 0, a), S.set(0, 1, b), S.set(0, 2, c);
+  S.set(1, 0, a), S.set(1, 1, b), S.set(1, 2, c);
+  S.set(2, 0, a), S.set(2, 1, b), S.set(2, 2, c);
+
+  let steps = 0;
+  while (steps < c) {
+    steps++;
+    S = S.multiply(M);
+    if (!S.get(0, 0) || !S.get(0, 1) || !S.get(0, 2) ||
+      !S.get(1, 0) || !S.get(1, 1) || !S.get(1, 2) ||
+      !S.get(2, 0) || !S.get(2, 1) || !S.get(2, 2)) {
+      return steps;
+    }
+  }
+  return 0;
+}
+
+test(6, 10, 35);
 assert.strictEqual(f(6, 10, 35), 3);
 assert.strictEqual(f(6, 10, 36), 0);
 assert.strictEqual(F(6, 10), 17);
