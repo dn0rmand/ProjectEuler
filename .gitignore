@@ -3,3 +3,4 @@
 /pypy/
 /dist/
 .DS_Store
+/pnpm-lock.yaml
