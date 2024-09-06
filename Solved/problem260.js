@@ -5,7 +5,19 @@ const MAX_SIZE = 1001;
 const MAKE_KEY = (a, b, c) => (a * MAX_SIZE + b) * MAX_SIZE + c;
 const MAX_KEY = MAKE_KEY(1000, 1000, 1000);
 
-const $memoize = new Uint8Array(MAX_KEY + 1);
+const $memoize = (function () {
+    const mem = new Uint8Array(MAX_KEY + 1);
+    for (let n = 0; n < MAX_SIZE; n++) {
+        mem[MAKE_KEY(n, n, n)] = 2;
+        mem[MAKE_KEY(0, n, n)] = 2;
+        mem[MAKE_KEY(n, 0, n)] = 2;
+        mem[MAKE_KEY(n, n, 0)] = 2;
+        mem[MAKE_KEY(0, 0, n)] = 2;
+        mem[MAKE_KEY(n, 0, 0)] = 2;
+        mem[MAKE_KEY(0, n, 0)] = 2;
+    }
+    return mem;
+})();
 
 function get(a, b, c) {
     const key = MAKE_KEY(a, b, c);
@@ -109,7 +121,13 @@ function solve(max) {
         for (let b = a; b <= max; b++) {
             tracer.print(() => `${max - a}: ${max - b}`);
             for (let c = b; c <= max; c++) {
-                if (isLosing(a, b, c)) {
+                if (a === b && b === c) {
+                    set(a, b, c, 2); // Winning
+                } else if (a === 0 && b === c) {
+                    set(a, b, c, 2); // Winning
+                } else if (a === 0 && b === 0) {
+                    set(a, b, c, 2); // Winning
+                } else if (isLosing(a, b, c)) {
                     total += a + b + c;
                 }
             }
