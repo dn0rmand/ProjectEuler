@@ -1,182 +1,120 @@
-const assert = require('assert');
-const {
-  Tracer,
-  TimeLogger: timeLogger,
-  matrixSmall: Matrix
-} = require('@dn0rmand/project-euler-tools');
+const assert = require("assert");
+const { Tracer, TimeLogger, matrixSmall: Matrix, linearRecurrence } = require("@dn0rmand/project-euler-tools");
 
-const MAX = 1E16;
+const MAX = 1e16;
 const MODULO = 1000000007;
-
-// if (MAX > Number.MAX_SAFE_INTEGER) {
-//   throw "It's too big";
-// }
+const MODULO_N = BigInt(MODULO);
 
 function fast(n) {
-  const matrix = Matrix.fromRecurrence([262144, -688128, 774144, -488960, 190848, -47712, 7640, -756, 42]);
-  const id = new Matrix(9, 1);
+    const matrix = Matrix.fromRecurrence([262144, -688128, 774144, -488960, 190848, -47712, 7640, -756, 42]);
+    const id = new Matrix(9, 1);
 
-  id.set(0, 0, 134814336);
-  id.set(1, 0, 13472288);
-  id.set(2, 0, 1302064);
-  id.set(3, 0, 120064);
-  id.set(4, 0, 10336);
-  id.set(5, 0, 806);
-  id.set(6, 0, 57);
-  id.set(7, 0, 5);
-  id.set(8, 0, 1);
+    id.set(0, 0, 134814336);
+    id.set(1, 0, 13472288);
+    id.set(2, 0, 1302064);
+    id.set(3, 0, 120064);
+    id.set(4, 0, 10336);
+    id.set(5, 0, 806);
+    id.set(6, 0, 57);
+    id.set(7, 0, 5);
+    id.set(8, 0, 1);
 
-  const m = matrix.pow(n, MODULO);
-  const v = m.multiply(id, MODULO)
+    const m = matrix.pow(n, MODULO);
+    const v = m.multiply(id, MODULO);
 
-  return v.get(m.rows - 1, 0);
+    return v.get(m.rows - 1, 0);
+}
+
+const MAX_64_BITS = 2n ** 64n;
+const MASK_64_BITS = MAX_64_BITS - 1n;
+
+const m1 = 0x5555555555555555n; //binary: 0101...
+const m2 = 0x3333333333333333n; //binary: 00110011..
+const m4 = 0x0f0f0f0f0f0f0f0fn; //binary:  4 zeros,  4 ones ...
+const m8 = 0x00ff00ff00ff00ffn; //binary:  8 zeros,  8 ones ...
+const m16 = 0x0000ffff0000ffffn; //binary: 16 zeros, 16 ones ...
+const m32 = 0x00000000ffffffffn; //binary: 32 zeros, 32 ones
+const h01 = 0x0101010101010101n; //the sum of 256 to the power of 0,1,2,3...
+
+function bitCount(n) {
+    const count = n >= MAX_64_BITS ? bitCount(n >> 64n) : 0n;
+
+    n &= MASK_64_BITS;
+
+    n = (n & m1) + ((n >> 1n) & m1); //put count of each  2 bits into those  2 bits
+    n = (n & m2) + ((n >> 2n) & m2); //put count of each  4 bits into those  4 bits
+    n = (n & m4) + ((n >> 4n) & m4); //put count of each  8 bits into those  8 bits
+    n = (n & m8) + ((n >> 8n) & m8); //put count of each 16 bits into those 16 bits
+    n = (n & m16) + ((n >> 16n) & m16); //put count of each 32 bits into those 32 bits
+    n = (n & m32) + ((n >> 32n) & m32); //put count of each 64 bits into those 64 bits
+
+    return count + n;
+}
+
+function f(n) {
+    if (n === 0n) {
+        return 0;
+    }
+
+    let factor = 1n;
+
+    while ((n & 1n) === 0n) {
+        factor *= 2n;
+        n /= 2n;
+    }
+
+    const ones = bitCount(n);
+    const total = (ones * n * factor).modPow(2n, MODULO_N);
+    return Number(total);
 }
 
 function S(max, trace) {
-  function f(n) {
-    let total = 0;
-    let m = n % MODULO;
+    max = BigInt(max);
+    const tracer = new Tracer(trace);
 
-    while (n) {
-      if (n & 1) {
-        total = (total + m) % MODULO;
-        n -= 1;
-      }
-      n /= 2;
+    let power = 0;
+    let start = 1n;
+    let end = max;
+
+    while (2n * start <= max) {
+        power++;
+        start *= 2n;
     }
-    return total;
-  }
 
-  const tracer = new Tracer(trace);
-
-  let power = 0;
-  let start = 1;
-  let end = max;
-  let sign = 1;
-
-  while (2 * start <= max) {
-    power++;
-    start *= 2;
-  }
-
-  if (max - start > start + start - max) {
-    power++;
-    end = start + start;
-    start = max + 1;
-    sign = -1;
-  } else {
-    sign = 1;
-    start = start + 1;
     end = max;
-  }
 
-  let part1 = fast(power);
-  let part2 = 0;
+    let part1 = fast(power);
+    let part2 = 0;
 
-  for (let i = start; i <= end; i++) {
-    tracer.print(_ => end - i);
+    for (let i = start + 1n; i <= end; i++) {
+        tracer.print((_) => end - i);
 
-    let F = f(i);
-    F = F.modMul(F, MODULO);
-    part2 = (part2 + F) % MODULO;
-  }
+        part2 = (part2 + f(i)) % MODULO;
+    }
 
-  tracer.clear();
-  if (sign === 1) {
+    tracer.clear();
     return (part1 + part2) % MODULO;
-  } else {
-    return (part1 + MODULO - part2) % MODULO;
-  }
 }
 
-function solve(n) {
-  const matrix = Matrix.fromRecurrence([262144, -688128, 774144, -488960, 190848, -47712, 7640, -756, 42]);
-  const id = new Matrix(9, 1);
+function test() {
+    let values = [];
 
-  id.set(0, 0, 134814336);
-  id.set(1, 0, 13472288);
-  id.set(2, 0, 1302064);
-  id.set(3, 0, 120064);
-  id.set(4, 0, 10336);
-  id.set(5, 0, 806);
-  id.set(6, 0, 57);
-  id.set(7, 0, 5);
-  id.set(8, 0, 1);
-
-  const m = matrix.pow(n, MODULO);
-  const v = m.multiply(id, MODULO)
-
-  return v.get(m.rows - 1, 0);
-}
-
-function test(n) {
-  let states = new Matrix(1, 4);
-  states.set(0, 0, 1);
-  // states.set(1, 0, 1);
-
-  const matrix = new Matrix(4, 4);
-
-  let b = 1;
-  while (true) {
-    if (n & b) {
-      matrix.set(0, 0, 3 + 2 * b);
-      matrix.set(0, 1, 1 + 1 * b);
-      matrix.set(0, 2, 0);
-      matrix.set(0, 3, 0);
-      matrix.set(1, 0, 1);
-      matrix.set(1, 1, 3 + 3 * b);
-      matrix.set(1, 2, 0);
-      matrix.set(1, 3, 0);
-      matrix.set(2, 0, 1);
-      matrix.set(2, 1, 1 + 1 * b);
-      matrix.set(2, 2, 2 + 2 * b);
-      matrix.set(2, 3, 0);
-      matrix.set(3, 0, 0);
-      matrix.set(3, 1, 2 + 2 * b);
-      matrix.set(3, 2, 1);
-      matrix.set(3, 3, 1 + 1 * b);
-    } else {
-      matrix.set(0, 0, 1);
-      matrix.set(0, 1, 1 + 1 * b);
-      matrix.set(0, 2, 2 + 2 * b);
-      matrix.set(0, 3, 0);
-      matrix.set(1, 0, 0);
-      matrix.set(1, 1, 2 + 2 * b);
-      matrix.set(1, 2, 1);
-      matrix.set(1, 3, 1 + 1 * b);
-      matrix.set(2, 0, 0);
-      matrix.set(2, 1, 0);
-      matrix.set(2, 2, 3 + 2 * b);
-      matrix.set(2, 3, 1 + 1 * b);
-      matrix.set(3, 0, 0);
-      matrix.set(3, 1, 0);
-      matrix.set(3, 2, 1);
-      matrix.set(3, 3, 3 + 3 * b);
+    for (let i = 1n; values.length < 100; i += 2n) {
+        console.log(f(i), f(i + 1n));
     }
-
-    states = states.multiply(matrix, MODULO);
-    if (b >= n) {
-      break;
-    }
-
-    b *= 2;
-  }
-
-  const under = (states.get(0, 0) + states.get(0, 1)) % MODULO;
-  const over = (states.get(0, 2) + states.get(0, 3)) % MODULO;
-
-  const result = (under - over + MODULO) % MODULO;
-
-  return result;
+    console.log(linearRecurrence(values, true));
+    process.exit(1);
 }
+
+// test();
 
 assert.strictEqual(S(10), 1530);
 assert.strictEqual(S(100), 4798445);
 assert.strictEqual(S(2 ** 5), 120064);
 assert.strictEqual(S(2 ** 6), 1302064);
 
-console.log('Tests passed');
+console.log("Tests passed");
 
-const answer = timeLogger.wrap('', _ => S(MAX, true));
+const answer = TimeLogger.wrap("", (_) => S(MAX, true));
 
 console.log(`Answer is ${answer}`);

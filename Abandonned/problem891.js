@@ -1,4 +1,4 @@
-const { TimeLogger, Tracer } = require('@dn0rmand/project-euler-tools');
+const { TimeLogger, Tracer, BigMap } = require('@dn0rmand/project-euler-tools');
 
 class PreciseNumber {
     static Zero = PreciseNumber.create(0, 1);
@@ -68,6 +68,43 @@ class PreciseNumber {
         return this.numerator * other.divisor < this.divisor * other.numerator;
     }
 
+    plus(other) {
+        const d = this.divisor * other.divisor;
+        if (d > Number.MAX_SAFE_INTEGER) {
+            throw 'Too big';
+        }
+
+        const n = this.numerator * other.divisor + this.divisor * other.numerator;
+        if (n > Number.MAX_SAFE_INTEGER) {
+            throw 'Too big';
+        }
+
+        return new PreciseNumber(n, d);
+    }
+
+    minus(other) {
+        const d = this.divisor * other.divisor;
+        if (d > Number.MAX_SAFE_INTEGER) {
+            throw 'Too big';
+        }
+
+        const n = this.numerator * other.divisor - this.divisor * other.numerator;
+        if (n > Number.MAX_SAFE_INTEGER || n < Number.MIN_SAFE_INTEGER) {
+            throw 'Too big';
+        }
+
+        return PreciseNumber.create(n, d);
+    }
+
+    modulo(value) {
+        value *= this.divisor;
+        if (this.numerator < 0) {
+            return new PreciseNumber((this.numerator % value) + value, this.divisor);
+        } else {
+            return new PreciseNumber(this.numerator % value, this.divisor);
+        }
+    }
+
     toString() {
         if (this.divisor == 1) {
             return `${this.numerator}`;
@@ -78,75 +115,19 @@ class PreciseNumber {
 
 const $360 = PreciseNumber.create(360, 1);
 
-const COEF = 1000;
-const PRECISION = 1; //36 * COEF;
-
-function MOD(v, m) {
-    m = m * v.divisor;
-    v = PreciseNumber.create(v.numerator, v.divisor);
-    v.numerator %= m;
-    v.simplify();
-    return v;
-}
-
-function PLUS(v1, v2) {
-    const d = v1.divisor * v2.divisor;
-    if (d > Number.MAX_SAFE_INTEGER) {
-        throw 'Too big';
-    }
-
-    let n = v1.numerator * v2.divisor + v1.divisor * v2.numerator;
-    if (n > Number.MAX_SAFE_INTEGER) {
-        throw 'Too big';
-    }
-
-    const k = $360.numerator * d;
-    if (k > Number.MAX_SAFE_INTEGER) {
-        throw 'Too big';
-    }
-
-    if (n >= k) {
-        n -= k;
-    }
-
-    v1.numerator = n;
-    v1.divisor = d;
-    v1.simplify();
-
-    return v1;
-}
-
-function MINUS(v1, v2) {
-    const d = v1.divisor * v2.divisor;
-    if (d > Number.MAX_SAFE_INTEGER) {
-        throw 'Too big';
-    }
-
-    let n = v1.numerator * v2.divisor - v1.divisor * v2.numerator;
-    if (n > Number.MAX_SAFE_INTEGER || n < Number.MIN_SAFE_INTEGER) {
-        throw 'Too big';
-    }
-
-    if (n < 0) {
-        n += $360.numerator * d;
-    }
-
-    return PreciseNumber.create(n, d);
-}
+const PRECISION = 59 * 7;
 
 class Time {
     static SECOND = 0;
     static MINUTE = 0;
     static HOUR = 0;
     static PRECISION = PRECISION;
-    static MAX_TICKS = 0;
 
     static setup(precision) {
         Time.PRECISION = precision;
-        Time.SECOND = $360.divide(PreciseNumber.create(60 * precision, 1));
+        Time.SECOND = $360.divide(PreciseNumber.create(60 * Time.PRECISION, 1));
         Time.MINUTE = Time.SECOND.divide(PreciseNumber.create(60, 1));
         Time.HOUR = Time.MINUTE.divide(PreciseNumber.create(12, 1));
-        Time.MAX_TICKS = 12 * 60 * 60 * precision;
     }
 
     constructor() {
@@ -161,12 +142,12 @@ class Time {
     }
 
     getKey(ref, v1, v2) {
-        const a1 = MINUS(v1, ref);
-        const a2 = MINUS(v2, ref);
+        const a1 = v1.minus(ref).modulo(360);
+        const a2 = v2.minus(ref).modulo(360);
         if (a1.less(a2)) {
-            return [a2, a1];
-        } else {
             return [a1, a2];
+        } else {
+            return [a2, a1];
         }
     }
 
@@ -185,7 +166,7 @@ class Time {
     key() {
         let [a1, a2] = this.getKey(this.minute, this.hour, this.second);
         let [b1, b2] = this.getKey(this.second, this.hour, this.minute);
-        let [c1, c2] = this.getKey(this.second, this.minute, this.hour);
+        let [c1, c2] = this.getKey(this.hour, this.minute, this.second);
 
         [a1, a2] = this.best(a1, a2, b1, b2);
         [a1, a2] = this.best(a1, a2, c1, c2);
@@ -194,10 +175,10 @@ class Time {
     }
 
     tick() {
-        this.second = PLUS(this.second, Time.SECOND);
-        this.minute = PLUS(this.minute, Time.MINUTE);
-        this.hour = PLUS(this.hour, Time.HOUR);
-        this.ticks = (this.ticks + 1) % Time.MAX_TICKS;
+        this.second = this.second.plus(Time.SECOND).modulo(360);
+        this.minute = this.minute.plus(Time.MINUTE).modulo(360);
+        this.hour = this.hour.plus(Time.HOUR).modulo(360);
+        this.ticks = this.ticks + 1;
     }
 
     equals(t) {
@@ -205,14 +186,21 @@ class Time {
     }
 
     convert(s, m, h) {
-        const k1 = h.divide(Time.HOUR);
-        const k2 = m.divide(Time.MINUTE);
-        const k3 = s.divide(Time.SECOND);
+        let k1 = h.divide(Time.HOUR);
+        let k2 = m.divide(Time.MINUTE);
+        let k3 = s.divide(Time.SECOND);
+
+        // if (k1.divisor !== 1 || k2.divisor !== 1 || k3.divisor !== 1) {
+        //     const factor = k1.divisor.lcm(k2.divisor).lcm(k3.divisor);
+        //     k1 = k1.times(factor);
+        //     k2 = k2.times(factor);
+        //     k3 = k3.times(factor);
+        // }
 
         if (k1.divisor == 1 && k1.numerator == this.ticks) {
             return;
         }
-        if (MOD(k1, 60 * 60 * Time.PRECISION).equals(k2) && MOD(k2, 60 * Time.PRECISION).equals(k3)) {
+        if (k1.modulo(60 * 60 * Time.PRECISION).equals(k2) && k2.modulo(60 * Time.PRECISION).equals(k3)) {
             return k1;
         }
     }
@@ -260,16 +248,18 @@ class Time {
 }
 
 function toTime(t) {
-    t /= PRECISION;
+    const other = t % Time.PRECISION;
+    const p = PreciseNumber.create(other, Time.PRECISION);
+    t = (t - other) / PRECISION;
     const seconds = t % 60;
     t = (t - seconds) / 60;
     const minutes = t % 60;
     t = (t - minutes) / 60;
 
-    return `${t}:${minutes}:${seconds}`;
+    return `${t}:${minutes}:${seconds}.${p.toString()}`;
 }
 
-function solve1() {
+function solve() {
     Time.setup(PRECISION);
 
     let total = new Set();
@@ -277,31 +267,42 @@ function solve1() {
     const tracer = new Tracer(true);
     const time = new Time();
 
-    const steps = 1; // Math.max(1, Math.floor(COEF / 100));
-    // const offset = Math.floor(Math.random() * steps);
+    const speed = 60 * Time.PRECISION;
 
-    // for (let i = 0; i < offset; i++) {
-    //     time.tick();
-    // }
-
-    const speed = 60 * PRECISION;
+    // const map = new BigMap();
 
     for (let h = 0; h < 12; h++) {
         for (let m = 0; m < 60; m++) {
-            for (let s = 0; s < speed; s += steps) {
+            for (let s = 0; s < speed; s++) {
                 tracer.print((_) => `${12 - h - 1}:${60 - m - 1}:${speed - s - 1} - ${total.size}`);
                 time.tick();
                 time.equivalent((k) => {
                     total.add(k.toString());
                 });
+                // const [a1, a2] = time.key();
+                // const key = `${a1}:${a2}`;
+                // const old = map.get(key);
+                // if (old) {
+                //     old.count++;
+                // } else {
+                //     map.set(key, { count: 1 });
+                // }
             }
         }
     }
-    tracer.clear();
+
+    // let total = 0;
+    // map.forEach((value) => {
+    //     if (value.count > 1) {
+    //         total += value.count;
+    //     }
+    // });
+    // tracer.clear();
+    // return total;
     return total.size;
 }
 
-function solve() {
+function solve2() {
     Time.setup(PRECISION);
 
     function isValid(h, m, s) {
