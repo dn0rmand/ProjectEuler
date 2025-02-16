@@ -2,6 +2,7 @@ const assert = require('assert');
 const { TimeLogger, Tracer } = require('@dn0rmand/project-euler-tools');
 
 const MAX = 16;
+const MAX_P = 10 ** (MAX / 2);
 
 function getSquares(max, callback) {
     for (let n = 2; ; n++) {
@@ -27,7 +28,7 @@ function is2025(value) {
     let right = ZERO;
     let p = ONE;
 
-    while (left > ZERO) {
+    while (left > ZERO && p <= MAX_P) {
         const d = left % TEN;
         right = right + d * p;
         left = (left - d) / TEN;
