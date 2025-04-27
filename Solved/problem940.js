@@ -14,8 +14,6 @@ const fibs = TimeLogger.wrap('Loading Fibonacci', () => {
     return values;
 });
 
-const verticalMap = new Map();
-const horizontalMap = new Map();
 const coefficients = new Map();
 
 coefficients.set(0, { av: 0, bv: 1, ah: 0, bh: 1 });
@@ -45,8 +43,6 @@ function populate(key) {
     coefficients.set(key, { av, bv, ah, bh });
 }
 
-const data = [[0, 1, 1], [1, 2], [3]];
-
 function A(m, n) {
     const { ah, bh } = coefficients.get(n);
     const { av, bv } = coefficients.get(m);
@@ -66,10 +62,10 @@ function S(max, trace) {
     }
 
     const indexes = fibs.filter((f, i) => i >= 2 && i <= max);
-    const total = indexes.reduce(
-        (total, i) => indexes.reduce((total, j) => (total + A(i, j)) % MODULO, total),
-        0
-    );
+
+    const reduceV = (total, i) => indexes.reduce((total, j) => (total + A(i, j)) % MODULO, total);
+
+    const total = indexes.reduce(reduceV, 0);
 
     tracer.clear();
     return total;
