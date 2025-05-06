@@ -3,33 +3,52 @@ const { TimeLogger, Tracer } = require('@dn0rmand/project-euler-tools');
 
 const MAX = 1e6;
 
-function getSequence(a, b, N) {
+function getSequence(a, b, minSum) {
     let value = a;
+    let sum = 0;
     const sequence = [];
+    const lengths = [];
 
     const next = () => (value = value === a ? b : a);
     const loop = (length) => {
         for (let i = 0; i < length; i++) {
-            sequence.push(value);
+            lengths.push(value);
+            sum += value;
+            minSum -= value;
         }
     };
 
     let length = a;
     let index = 0;
 
-    while (sequence.length < N) {
+    while (minSum > 0) {
         loop(length);
         next();
-        length = sequence[index++];
+        if (value === a) {
+            sequence.push(sum);
+            sum = 0;
+        }
+        length = lengths[++index];
     }
-    sequence = sequence.slice(0, N);
-    return sequence;
+
+    return { lengths, sequence };
 }
 
 function T(a, b, n) {
-    const sequence = getSequence(a, b, n);
+    const { lengths, sequence } = getSequence(a, b, n);
 
-    total = sequence.reduce((a, v) => a + v, 0);
+    let total = 0;
+
+    for (const l of lengths) {
+        if (l > n) {
+            total += n * a;
+            break;
+        } else {
+            total += l * a;
+            n -= l;
+        }
+        [a, b] = [b, a];
+    }
 
     return total;
 }
