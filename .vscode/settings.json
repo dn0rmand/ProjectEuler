@@ -6,5 +6,12 @@
   "prettier.jsxSingleQuote": true,
   "prettier.printWidth": 110,
   "prettier.singleQuote": true,
-  "prettier.withNodeModules": true
+  "prettier.withNodeModules": true,
+  "files.associations": {
+    "ctype.h": "c",
+    "_ctype.h": "c",
+    "cdefs.h": "c",
+    "_bounds.h": "c",
+    "pthread.h": "c"
+  }
 }

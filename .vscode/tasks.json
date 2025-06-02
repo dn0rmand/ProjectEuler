@@ -7,15 +7,28 @@
             "label": "gcc",
             "type": "shell",
             "command": "gcc",
-            "args": ["${file}", "-o", "${workspaceFolder}/dist/a.out"],
-            "group":"build"
+            "args": [
+                "${file}",
+                "-g",
+                "-o",
+                "${workspaceFolder}/dist/a.out",
+                "-dsym-dir",
+                "${workspaceFolder}/dist",
+                "-fstandalone-debug"
+            ],
+            "group": "build"
         },
         {
             "label": "kotlinc",
             "type": "shell",
             "command": "kotlinc",
-            "args": ["${file}", "-include-runtime", "-d", "${workspaceFolder}/dist/a.jar"],
-            "group":"build"
+            "args": [
+                "${file}",
+                "-include-runtime",
+                "-d",
+                "${workspaceFolder}/dist/a.jar"
+            ],
+            "group": "build"
         }
     ]
 }

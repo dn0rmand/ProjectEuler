@@ -10,12 +10,12 @@
       "request": "launch",
       "program": "${workspaceFolder}/dist/a.out",
       "args": [],
-      "stopAtEntry": true,
+      "stopAtEntry": false,
       "cwd": "${workspaceFolder}",
       "environment": [],
-      "externalConsole": false,
+      "externalConsole": true,
       "MIMode": "lldb",
-      "preLaunchTask": "gcc"
+      "preLaunchTask": "gcc",
     },
     {
       "type": "bashdb",
@@ -40,7 +40,11 @@
     {
       "type": "node",
       "request": "launch",
-      "runtimeArgs": ["--stack-size=8092", "--max-old-space-size=12288", "--expose-gc"],
+      "runtimeArgs": [
+        "--stack-size=8092",
+        "--max-old-space-size=12288",
+        "--expose-gc"
+      ],
       "name": "Node: Current File",
       "program": "${file}",
       "cwd": "${fileDirname}",
@@ -50,11 +54,17 @@
       "type": "node",
       "request": "launch",
       "preLaunchTask": "tsc: build - tsconfig.json",
-      "runtimeArgs": ["--stack-size=8092", "--max-old-space-size=12288", "--expose-gc"],
+      "runtimeArgs": [
+        "--stack-size=8092",
+        "--max-old-space-size=12288",
+        "--expose-gc"
+      ],
       "name": "Node: current TS File",
       "program": "${file}",
       "cwd": "${fileDirname}",
-      "outFiles": ["${workspaceFolder}/dist/**/*.js"],
+      "outFiles": [
+        "${workspaceFolder}/dist/**/*.js"
+      ],
       "console": "integratedTerminal"
     }
   ]

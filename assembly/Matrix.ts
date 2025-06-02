@@ -2,7 +2,7 @@
 @external("env", "stdoutWrite")
 declare function stdoutWrite(val: string) : void;
 
-export class Matrix
+class Matrix
 {
     array: StaticArray<Uint32Array>;
 
@@ -16,7 +16,7 @@ export class Matrix
         this.columns= columns;
     }
 
-    static empty(rows: u32, columns: u32) : StaticArray<Uint32Array> 
+    static empty(rows: u32, columns: u32) : StaticArray<Uint32Array>
     {
         const array = new StaticArray<Uint32Array>(rows);
         for(let i : u32 = 0; i < rows; i++)
@@ -48,7 +48,7 @@ export class Matrix
         const MODULO : u64 = modulo;
 
         let traceCount = 0;
-        for (let i : u32 = 0; i < this.rows; i++) 
+        for (let i : u32 = 0; i < this.rows; i++)
         {
             if (enableTracing)
             {
@@ -58,14 +58,14 @@ export class Matrix
                 if (traceCount++ > 100)
                     traceCount = 0;
             }
-                
+
             const left  : Uint32Array = this.array[i];
             const target: Uint32Array = result.array[i];
 
-            for (let j : u32 = 0; j < right.columns; j++) 
+            for (let j : u32 = 0; j < right.columns; j++)
             {
                 let sum : u64 = 0;
-                for (let y : u32 = 0; y < this.columns; y++) 
+                for (let y : u32 = 0; y < this.columns; y++)
                 {
                     const v1 : u64 = left[y];
                     const v2 : u64 = right.array[y][j];
@@ -119,7 +119,7 @@ export class Matrix
                 trace("Finisup - Step " + (steps++).toString());
             m = m.multiply(mm, modulo);
         }
-        
+
         return m;
     }
 
@@ -135,4 +135,10 @@ export class Matrix
         const m = this.innerPow(power, modulo, trace);
         this.array = m.array;
     }
+}
+
+export function createMatrix(rows: u32, columns: u32) : Matrix {
+    const matrix = new Matrix(rows, columns);
+
+    return matrix;
 }

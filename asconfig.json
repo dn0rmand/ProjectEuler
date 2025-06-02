@@ -1,20 +1,21 @@
 {
-  "targets": {
-    "debug": {
-      "binaryFile": "build/debug.wasm",
-      "textFile": "build/debug.wat",
-      "sourceMap": true,
-      "debug": true
+    "entries": ["./assembly/Matrix.ts"],
+    "targets": {
+        "debug": {
+            "binaryFile": "build/debug.wasm",
+            "textFile": "build/debug.wat",
+            "sourceMap": true,
+            "debug": true
+        },
+        "release": {
+            "binaryFile": "build/release.wasm",
+            "textFile": "build/release.wat",
+            "sourceMap": true,
+            "optimize": true,
+            "optimizeLevel": 3
+        }
     },
-    "release": {
-      "binaryFile": "build/release.wasm",
-      "textFile": "build/release.wat",
-      "sourceMap": true,
-      "optimize": true,
-      "optimizeLevel": 3
+    "options": {
+        "optimizeLevel": 3
     }
-  },
-  "options": {
-    "optimizeLevel": 3
-  }
 }

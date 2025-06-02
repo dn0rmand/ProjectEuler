@@ -4,8 +4,8 @@
     "description": "Project Euler",
     "main": "index.js",
     "scripts": {
-        "asbuild:untouched": "asc assembly/Matrix.ts  --target debug",
-        "asbuild:optimized": "asc assembly/Matrix.ts --target release",
+        "asbuild:untouched": "asc --bindings esm --target debug",
+        "asbuild:optimized": "asc --bindings esm --target release",
         "asbuild": "npm run asbuild:untouched && npm run asbuild:optimized",
         "build": "npx tsc"
     },
@@ -14,6 +14,8 @@
     "dependencies": {
         "@assemblyscript/loader": "^0.14.8",
         "@dn0rmand/project-euler-tools": "^1.5.1",
+        "asc": "^2.1.5",
+        "assemblyscript": "^0.27.36",
         "big-integer": "^1.6.52",
         "bignumber.js": "^9.1.2",
         "bintrees": "^1.0.2",
