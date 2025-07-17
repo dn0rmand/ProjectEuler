@@ -58,7 +58,7 @@ class Image {
     }
 
     static async create() {
-        const img = Sharp('data/bonus_secret_statement.png');
+        const img = Sharp('../data/bonus_secret_statement.png');
 
         const metadata = await img.metadata();
         const w = metadata.width;
