@@ -1,6 +1,6 @@
 // A lagged Fibonacci sequence
 // ---------------------------
-// Problem 258 
+// Problem 258
 // -----------
 // A sequence is defined as:
 //   - gk = 1, for 0 ≤ k ≤ 1999
@@ -11,25 +11,19 @@
 'use strict';
 
 const assert = require('assert');
-const {Matrix} = require('ml-matrix');
-const bigInt = require('big-integer');
-const prettyHrtime = require('pretty-hrtime');
+const { Matrix } = require('ml-matrix');
 
-const LAG     = 2000; // 00;
-const MODULO  = 20092010;
+const LAG = 2000; // 00;
+const MODULO = 20092010;
 
-class DNMatrix extends Matrix
-{
-    static get [Symbol.species]() 
-    {
-      return this;
+class DNMatrix extends Matrix {
+    static get [Symbol.species]() {
+        return this;
     }
 
-    mmul(other) 
-    {
+    mmul(other) {
         other = this.constructor.checkMatrix(other);
-        if (this.columns !== other.rows) 
-        {
+        if (this.columns !== other.rows) {
             // eslint-disable-next-line no-console
             console.warn('Number of columns of left matrix are not equal to number of rows of right matrix.');
         }
@@ -41,19 +35,15 @@ class DNMatrix extends Matrix
         var result = new this.constructor[Symbol.species](m, p);
 
         var Bcolj = new Array(n);
-        for (var j = 0; j < p; j++) 
-        {
-            for (var k = 0; k < n; k++) 
-            {
+        for (var j = 0; j < p; j++) {
+            for (var k = 0; k < n; k++) {
                 Bcolj[k] = other.get(k, j);
             }
 
-            for (var i = 0; i < m; i++) 
-            {
+            for (var i = 0; i < m; i++) {
                 var s = 0;
-                for (k = 0; k < n; k++) 
-                {
-                    s = (s + (this.get(i, k) * Bcolj[k])) % MODULO;
+                for (k = 0; k < n; k++) {
+                    s = (s + this.get(i, k) * Bcolj[k]) % MODULO;
                 }
 
                 result.set(i, j, s);
@@ -63,65 +53,53 @@ class DNMatrix extends Matrix
         return result;
     }
 
-    static create()
-    {
+    static create() {
         let matrix = this.zeros(LAG, LAG);
 
         let i;
 
-        for (let r = 1; r < LAG; r++)
-        {
-            matrix.set(r, r-1, 1);
+        for (let r = 1; r < LAG; r++) {
+            matrix.set(r, r - 1, 1);
         }
 
-        matrix.set(0,LAG-1,1);
-        matrix.set(0,LAG-2,1);
+        matrix.set(0, LAG - 1, 1);
+        matrix.set(0, LAG - 2, 1);
         return matrix;
     }
 
-    static createVector()
-    {
+    static createVector() {
         let vector = this.zeros(LAG, 1);
 
-        for (let r = 0; r < LAG; r++)
-        {
+        for (let r = 0; r < LAG; r++) {
             vector.set(r, 0, G(r));
         }
 
         return vector;
     }
 
-    pow(pow)
-    {
-        let m  = this;
+    pow(pow) {
+        let m = this;
         let mm = undefined;
 
-        if (pow === 1)
-            return m;
+        if (pow === 1) return m;
 
-        while (pow > 1)
-        {
-            if ((pow & 1) !== 0)
-            {
+        while (pow > 1) {
+            if ((pow & 1) !== 0) {
                 console.log(pow);
-                if (mm === undefined)
-                    mm = m;
-                else
-                    mm = mm.mmul(m);
+                if (mm === undefined) mm = m;
+                else mm = mm.mmul(m);
 
                 pow--;
             }
 
-            while (pow > 1 && (pow & 1) === 0)
-            {
+            while (pow > 1 && (pow & 1) === 0) {
                 console.log(pow);
                 pow /= 2;
-                m =  m.mmul(m);
+                m = m.mmul(m);
             }
         }
 
-        if (mm !== undefined)
-        {
+        if (mm !== undefined) {
             console.log(pow);
             m = m.mmul(mm);
         }
@@ -132,37 +110,29 @@ class DNMatrix extends Matrix
 
 let memoize = new Map();
 
-function G(n)
-{
-    if (n < LAG)
-        return 1;
+function G(n) {
+    if (n < LAG) return 1;
     let result = memoize.get(n);
-    if (result !== undefined)
-    {
+    if (result !== undefined) {
         return result;
-    }
-    else
-    {
-        result = (G(n-LAG) + G(n-LAG+1)) % MODULO; 
+    } else {
+        result = (G(n - LAG) + G(n - LAG + 1)) % MODULO;
         memoize.set(n, result);
         return result;
     }
 }
 
-function *GENERATE()
-{
+function* GENERATE() {
     let cache = [];
-    let idx   = 0;
+    let idx = 0;
 
-    for(let i = 0; i < LAG; i++)
-    {
+    for (let i = 0; i < LAG; i++) {
         cache.push(1);
         yield 1;
     }
 
-    while (1)
-    {
-        let v = (cache[idx] + cache[(idx+1) % LAG]) % MODULO;
+    while (1) {
+        let v = (cache[idx] + cache[(idx + 1) % LAG]) % MODULO;
 
         yield v;
 
@@ -174,19 +144,16 @@ function *GENERATE()
 let matrix = DNMatrix.create();
 let vector = DNMatrix.createVector();
 
-let T = Math.pow(10,18);
+let T = Math.pow(10, 18);
 // let T = 100000; // For Test
 
 matrix = matrix.pow(T);
 vector = matrix.mmul(vector);
 
-let target = vector.get(LAG-1, 0);
+let target = vector.get(LAG - 1, 0);
 
-if (T <= 100000)
-{
+if (T <= 100000) {
     let x = G(T);
     assert.equal(target, x);
     console.log('Done');
-}
-else
-    console.log('G(' + T + ') = ' + target + " - Should be 12747994");
+} else console.log('G(' + T + ') = ' + target + ' - Should be 12747994');

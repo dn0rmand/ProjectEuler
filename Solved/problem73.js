@@ -1,6 +1,6 @@
 // Counting fractions in a range
-// Problem 73 
-// Consider the fraction, n/d, where n and d are positive integers. If n<d and HCF(n,d)=1, it is called a reduced proper 
+// Problem 73
+// Consider the fraction, n/d, where n and d are positive integers. If n<d and HCF(n,d)=1, it is called a reduced proper
 // fraction.
 
 // If we list the set of reduced proper fractions for d ≤ 8 in ascending order of size, we get:
@@ -11,43 +11,35 @@
 
 // How many fractions lie between 1/3 and 1/2 in the sorted set of reduced proper fractions for d ≤ 12,000?
 
-const gcd = require('gcd');
 const assert = require('assert');
+const { TimeLogger } = require('@dn0rmand/project-euler-tools');
 
-function solve(max)
-{
-    let values    = new Map();
-    let count     = 0;
-    let minTarget = 1/3;
-    let maxTarget = 1/2;
+function solve(max) {
+    let values = new Map();
+    let count = 0;
+    let minTarget = 1 / 3;
+    let maxTarget = 1 / 2;
 
-    for(let d = 2; d <= max; d++)
-    {
-        let start = Math.floor((d / 3));
-        if (start < 1)
-            start = 1;
+    for (let d = 2; d <= max; d++) {
+        let start = Math.floor(d / 3);
+        if (start < 1) start = 1;
 
-        for(let n = start; n < d; n++)
-        {
+        for (let n = start; n < d; n++) {
             let value = n / d;
-            if (value >= maxTarget)
-                break;
+            if (value >= maxTarget) break;
 
-            if (value > minTarget)
-            {
-                let x = gcd(d, n);
-    
-                divisor   = d / x;
+            if (value > minTarget) {
+                let x = d.gcd(n);
+
+                divisor = d / x;
                 numerator = n / x;
 
                 let sub = values.get(divisor);
-                if (sub === undefined)
-                {
+                if (sub === undefined) {
                     sub = new Map();
                     values.set(divisor, sub);
                 }
-                if (! sub.has(numerator))
-                {
+                if (!sub.has(numerator)) {
                     sub.set(numerator, 1);
                     count++;
                 }
@@ -60,5 +52,5 @@ function solve(max)
 
 assert.equal(solve(8), 3);
 
-let result = solve(12000);
-console.log(result + " fractions lie between 1/3 and 1/2 when for d ≤ 12,000");
+let result = TimeLogger.wrap('', () => solve(12000));
+console.log(result + ' fractions lie between 1/3 and 1/2 when for d ≤ 12,000');
